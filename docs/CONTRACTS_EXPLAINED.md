@@ -39,15 +39,23 @@ sponsors ──sponsor()──▶ SeasonPot (100% to the chosen season)
 
 | Action | Launch price | Rule |
 | --- | --- | --- |
-| Found a colony | 1,000 WIF | One living colony per wallet. You may found again after a collapse (and pay again). |
-| Feed the queen | 100 WIF + 3 leaves | At most once per 24 h. Grows the colony and adds score. |
+| Found a colony | 1,500 WIF (1,200 with a Voter's Pass) | One living colony per wallet. You may found again after a collapse (and pay again). |
+| Feed the queen | 100 WIF (80 with a Voter's Pass) + 3 leaves | At most once per 24 h. Grows the colony and adds score. |
 | Speed up a hand forage | 300 WIF | Once per 24 h for leaves, once for sugar. Collects that forage now. |
 | Shield | 1,000 WIF | No new raids against you for 8 h, at most once per 24 h. |
 | Revive a starving queen | 2,000 + 20 per worker | Only in the 24 h after the queen has gone 72 h unfed. |
 
 **Free actions.** `tend` (collect hand forages and trail/farm output in one go), `digChamber`, `buildTrail`, `buildFarm` and `assignWorkers` (paid in leaves and sugar), plus the raid actions.
 
-**Raids, step by step.**
+Prices are set in WIF and the owner can tune them within the caps below, so they are likely to change as the WIF price moves.
+
+**Voter's Pass.** A wallet that has voted in a World is Fair event gets a discount on founding and feeding: 20% at launch, adjustable from 0 to 30%. Nothing else is discounted, and the pass doesn't affect score or pot share. The 70/20/10 split applies to the discounted amount.
+
+- **The voter list.** The keeper indexes every address that sent at least 1 WIF to a candidate's vote wallet, publishes the full list as `docs/voters.json`, and posts its Merkle root onchain (`setVoterRoot`).
+- **Proving you're on it.** A player passes their Merkle proof once, with `foundColony` or `feedQueen`. The contract checks it against the root using the caller's own address, sets `hasVoterPass` permanently, and never needs a proof again.
+- **No proof, or a wrong one,** just means full price. It never reverts.
+
+**Raids, step by step.
 1. **Seal.** `launchRaid`: the raider picks a target colony and up to 30% of their idle workers as soldiers, and submits a hash of the secret target resource. Nobody can read the target from the hash.
 2. **Guard.** `guard`: within 4 h, the defender may guess and guard one resource.
 3. **Reveal.** `reveal`: within the next 24 h, the raider reveals the target. The contract checks it matches the hash, then fixes a future drand round, the first one at least 30 s later.
@@ -62,7 +70,8 @@ sponsors ──sponsor()──▶ SeasonPot (100% to the chosen season)
 | `guard` | Only the defending colony's owner |
 | `reveal` | Only the raiding colony's owner |
 | `settle`, `collect`, `pokeCollapse` | Anyone (the outcome can't be influenced) |
-| `setConfig`, `setCurrentSeasonEnd` | Owner only, within hard caps |
+| `setConfig`, `setCurrentSeasonEnd`, `setVoterRootSetter` | Owner only, within hard caps |
+| `setVoterRoot` | The owner, or the voter-root setter (the keeper) |
 
 **What the owner can change, and the limits.**
 - **Prices and cooldowns:** between ¼ and 4× their launch values.
@@ -74,6 +83,8 @@ sponsors ──sponsor()──▶ SeasonPot (100% to the chosen season)
 Every change emits an event (`ConfigUpdated`, `SeasonEndChanged`) that anyone can watch.
 
 **What an attacker would try, and why it fails.**
+- **Use someone else's Voter's Pass proof.** The leaf is built from the caller's own address, so another wallet's proof doesn't verify.
+- **Post a fake voter root.** Only the owner or the voter-root setter can change it, every change emits `VoterRootUpdated`, and the published list lets anyone rebuild and check the root. At worst, a bad root hands out a discount of up to 30% on two actions; it can never move pot money.
 - **Predict or grind a raid's outcome.** The roll comes from a drand round that's fixed at reveal and lies in the future, so nobody knows its signature in advance. Each round has exactly one valid signature, so a settler can't pick between outcomes.
 - **Submit a fake or recycled signature.** `settle` verifies the BLS signature against drand's public key for exactly the assigned round. A wrong signature, or a real one from a different round, reverts.
 - **Read the target and guard it perfectly.** The target is only a hash until the guard window closes.
@@ -137,7 +148,7 @@ Both pause automatically if paying would leave less than **0.0003 ETH** in the t
 
 **What an attacker would try, and why it fails.**
 - **Call `drip` or `refundSettle` directly.** Only ColonyGame can call them.
-- **Farm founder drips with many wallets.** Each drip needs a 1,000 WIF founding fee, which is worth more than the drip, and there are at most 25 drips a day.
+- **Farm founder drips with many wallets.** Each drip needs a founding fee of at least 1,200 WIF, which is worth more than the drip, and there are at most 25 drips a day.
 - **Farm settlement refunds with a high gas bid.** The refund uses the gas price actually charged; on Robinhood Chain `tx.gasprice` returns the base fee, not the bid, which was checked live. It's capped per raid, each raid settles once, and tests confirm the refund is never more than the gas paid.
 - **Drain the ETH pool.** Every payment checks the 0.0003 ETH floor first.
 

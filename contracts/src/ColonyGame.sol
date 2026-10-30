@@ -9,6 +9,7 @@ import {IWIF} from "./interfaces/IWIF.sol";
 import {ISeasonPot} from "./interfaces/ISeasonPot.sol";
 import {ITreasury} from "./interfaces/ITreasury.sol";
 import {IColonyGameView} from "./interfaces/IColonyGameView.sol";
+import {MerkleProof} from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import {DrandVerifier} from "./DrandVerifier.sol";
 
 /// @title ColonyGame
@@ -96,10 +97,12 @@ contract ColonyGame is ERC721, Ownable, ReentrancyGuard, IColonyGameView {
         // Raider win chance out of 100. Cap: 50 to 85.
         uint8 winOddsUnguarded;
         uint8 winOddsGuardedOther;
+        // Voter's Pass discount on founding and feeding, in percent. Cap: 0 to 30.
+        uint8 voterDiscountPct;
     }
 
     function launchConfig() public pure returns (Config memory c) {
-        c.foundPrice = 1_000 ether;
+        c.foundPrice = 1_500 ether;
         c.feedPrice = 100 ether;
         c.speedUpPrice = 300 ether;
         c.shieldPrice = 1_000 ether;
@@ -117,6 +120,7 @@ contract ColonyGame is ERC721, Ownable, ReentrancyGuard, IColonyGameView {
         c.seasonLength = 7 days;
         c.winOddsUnguarded = 65;
         c.winOddsGuardedOther = 75;
+        c.voterDiscountPct = 20;
     }
 
     Config internal config;
@@ -219,6 +223,14 @@ contract ColonyGame is ERC721, Ownable, ReentrancyGuard, IColonyGameView {
     mapping(uint64 => uint256[]) internal activeRaids;
     mapping(uint256 => mapping(uint64 => uint256)) internal activeIndex; // raidId => colony => index + 1
 
+    /// @notice Voter's Pass: Merkle root of every address that has voted in a World is Fair event.
+    ///         Leaves follow OpenZeppelin StandardMerkleTree for one `address` value.
+    bytes32 public voterRoot;
+    /// @notice Address (besides the owner) allowed to post a new voter root, normally the keeper.
+    address public voterRootSetter;
+    /// @notice Set once a wallet proves it is on the voter list; permanent after that.
+    mapping(address => bool) public hasVoterPass;
+
     // ================================================================== events
 
     event ConfigUpdated(Config oldConfig, Config newConfig);
@@ -261,6 +273,9 @@ contract ColonyGame is ERC721, Ownable, ReentrancyGuard, IColonyGameView {
         uint256 refund
     );
     event RaidCollected(uint256 indexed raidId, RaidStatus status, uint32 soldiersLost);
+    event VoterRootUpdated(bytes32 root, string listURI);
+    event VoterRootSetterUpdated(address setter);
+    event VoterPassGranted(address indexed player);
 
     // ================================================================== errors
 
@@ -295,6 +310,7 @@ contract ColonyGame is ERC721, Ownable, ReentrancyGuard, IColonyGameView {
     error SettleExpired();
     error BadSignature();
     error NothingToCollect();
+    error NotVoterRootSetter();
 
     // ================================================================== setup
 
@@ -348,10 +364,23 @@ contract ColonyGame is ERC721, Ownable, ReentrancyGuard, IColonyGameView {
                 || !_within4x(c.shieldDuration, l.shieldDuration) || !_within4x(c.shieldCooldown, l.shieldCooldown)
                 || c.guardWindow < 1 hours || c.guardWindow > 8 hours || c.seasonLength < MIN_SEASON_LENGTH
                 || c.seasonLength > MAX_SEASON_LENGTH || c.winOddsUnguarded < 50 || c.winOddsUnguarded > 85
-                || c.winOddsGuardedOther < 50 || c.winOddsGuardedOther > 85
+                || c.winOddsGuardedOther < 50 || c.winOddsGuardedOther > 85 || c.voterDiscountPct > 30
         ) revert BadConfig();
         // A feed must stay possible before the queen starves.
         if (c.feedMinInterval >= STARVE_AFTER) revert BadConfig();
+    }
+
+    /// @notice Choose the address (besides the owner) that may post voter roots, normally the keeper.
+    function setVoterRootSetter(address setter) external onlyOwner {
+        voterRootSetter = setter;
+        emit VoterRootSetterUpdated(setter);
+    }
+
+    /// @notice Post a new Voter's Pass Merkle root. `listURI` points at the published voter list.
+    function setVoterRoot(bytes32 root, string calldata listURI) external {
+        if (msg.sender != owner() && msg.sender != voterRootSetter) revert NotVoterRootSetter();
+        voterRoot = root;
+        emit VoterRootUpdated(root, listURI);
     }
 
     function _within4x(uint256 v, uint256 launch) internal pure returns (bool) {
@@ -462,11 +491,38 @@ contract ColonyGame is ERC721, Ownable, ReentrancyGuard, IColonyGameView {
         emit Paid(colonyId, action, amount, toPot, burned, toTreasury);
     }
 
+    // ================================================================== voter's pass
+
+    /// @dev True if the caller holds a Voter's Pass, granting it first if `proof` is valid.
+    ///      An empty or invalid proof simply returns false; it never reverts.
+    function _voterPass(bytes32[] calldata proof) internal returns (bool) {
+        if (hasVoterPass[msg.sender]) return true;
+        bytes32 root = voterRoot;
+        if (proof.length == 0 || root == bytes32(0)) return false;
+        bytes32 leaf = keccak256(bytes.concat(keccak256(abi.encode(msg.sender))));
+        if (!MerkleProof.verifyCalldata(proof, root, leaf)) return false;
+        hasVoterPass[msg.sender] = true;
+        emit VoterPassGranted(msg.sender);
+        return true;
+    }
+
+    function _discounted(uint256 price, bool pass) internal view returns (uint256) {
+        return pass ? price * (100 - config.voterDiscountPct) / 100 : price;
+    }
+
+    /// @notice Founding and feeding prices for `player`, including their Voter's Pass discount if they hold one.
+    function pricesFor(address player) external view returns (uint256 foundPrice, uint256 feedPrice) {
+        bool pass = hasVoterPass[player];
+        foundPrice = _discounted(config.foundPrice, pass);
+        feedPrice = _discounted(config.feedPrice, pass);
+    }
+
     // ================================================================== core loop
 
     /// @notice Found a colony for this season. One living colony per wallet; refounding after a collapse
     ///         is allowed and pays again. A wallet's first ever colony may receive a gas drip.
-    function foundColony() external nonReentrant returns (uint64 id) {
+    /// @param voterProof Optional Voter's Pass proof (empty array for none).
+    function foundColony(bytes32[] calldata voterProof) external nonReentrant returns (uint64 id) {
         uint32 s = _syncSeason();
         uint64 existing = colonyOf[s][msg.sender];
         if (existing != 0) {
@@ -488,7 +544,7 @@ contract ColonyGame is ERC721, Ownable, ReentrancyGuard, IColonyGameView {
         c.lastAccrual = uint64(block.timestamp);
         colonyOf[s][msg.sender] = id;
 
-        _pay(id, "found", config.foundPrice);
+        _pay(id, "found", _discounted(config.foundPrice, _voterPass(voterProof)));
         _mint(msg.sender, id);
         emit ColonyFounded(id, msg.sender, s);
 
@@ -519,7 +575,8 @@ contract ColonyGame is ERC721, Ownable, ReentrancyGuard, IColonyGameView {
 
     /// @notice Feed the queen: costs 3 leaves and the feed price. Every worker eats 1 sugar (a shortfall
     ///         kills that many workers), then new workers = min(surplus sugar / 2, free chamber space).
-    function feedQueen() external nonReentrant {
+    /// @param voterProof Optional Voter's Pass proof (empty array for none).
+    function feedQueen(bytes32[] calldata voterProof) external nonReentrant {
         (uint64 id, Colony storage c) = _myAliveColony();
         if (!_ready(c.lastFeedAt, config.feedMinInterval)) revert NotReady();
         _accrue(c);
@@ -555,7 +612,7 @@ contract ColonyGame is ERC721, Ownable, ReentrancyGuard, IColonyGameView {
         c.feedCount += 1;
         if (c.feedCount == 2) fedTwiceCount[c.season] += 1;
 
-        _pay(id, "feed", config.feedPrice);
+        _pay(id, "feed", _discounted(config.feedPrice, _voterPass(voterProof)));
         emit QueenFed(id, c.workers, born, died, added, c.score);
     }
 

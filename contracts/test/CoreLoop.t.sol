@@ -20,13 +20,13 @@ contract CoreLoopTest is Base {
         assertEq(v.data.sugar, 20 * RES);
         assertEq(game.ownerOf(id), alice);
 
-        // 1,000 WIF: 700 to pot, 200 burned, 100 to treasury
-        assertEq(wif.balanceOf(address(pot)), 700 ether);
-        assertEq(wif.balanceOf(address(treasury)), 100 ether);
-        assertEq(supplyBefore - wif.totalSupply(), 200 ether);
+        // 1,500 WIF: 1,050 to pot, 300 burned, 150 to treasury
+        assertEq(wif.balanceOf(address(pot)), 1_050 ether);
+        assertEq(wif.balanceOf(address(treasury)), 150 ether);
+        assertEq(supplyBefore - wif.totalSupply(), 300 ether);
         assertEq(wif.balanceOf(address(game)), 0);
         (uint256 seasonPot,,,,,,,,,,,,) = pot.seasons(1);
-        assertEq(seasonPot, 700 ether);
+        assertEq(seasonPot, 1_050 ether);
     }
 
     function testFuzz_split_7020_10(uint256 price) public {
@@ -58,7 +58,7 @@ contract CoreLoopTest is Base {
         _found(alice);
         vm.prank(alice);
         vm.expectRevert(ColonyGame.AlreadyHasColony.selector);
-        game.foundColony();
+        game.foundColony(NO_PROOF);
     }
 
     function test_nft_isSoulbound() public {
@@ -181,7 +181,7 @@ contract CoreLoopTest is Base {
         vm.warp(vm.getBlockTimestamp() + 24 hours - 1);
         vm.prank(alice);
         vm.expectRevert(ColonyGame.NotReady.selector);
-        game.feedQueen();
+        game.feedQueen(NO_PROOF);
         vm.warp(vm.getBlockTimestamp() + 1);
         _feed(alice);
     }
@@ -238,7 +238,7 @@ contract CoreLoopTest is Base {
         assertEq(uint8(_colony(id).status), uint8(ColonyGame.Status.Starving));
         vm.prank(alice);
         vm.expectRevert(ColonyGame.NotAlive.selector);
-        game.feedQueen();
+        game.feedQueen(NO_PROOF);
 
         vm.warp(founded + 96 hours);
         uint256 before = wif.balanceOf(alice);
@@ -341,7 +341,7 @@ contract CoreLoopTest is Base {
         assertEq(uint8(_colony(id).status), uint8(ColonyGame.Status.SeasonOver));
         vm.prank(alice);
         vm.expectRevert(ColonyGame.NoColony.selector);
-        game.feedQueen();
+        game.feedQueen(NO_PROOF);
         uint64 id2 = _found(alice); // fresh colony in season 2
         assertEq(game.colonyOf(2, alice), id2);
     }

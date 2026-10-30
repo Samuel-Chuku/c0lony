@@ -22,6 +22,15 @@
 - [ ] Recheck settle refund against real testnet receipts
 - [x] CONTRACTS_EXPLAINED.md, SECURITY_REVIEW.md
 
+## Voter's Pass (added on top of Phase 1)
+- [x] Contract: voter root + setter role, optional proof on found/feed, permanent pass, discount 20% (cap 30%)
+- [x] Founding price raised to 1,500 WIF; feeding stays 100
+- [x] Tests: valid/empty/invalid/foreign proofs, persistence, setter access, cap, split on discounted amount
+- [x] Confirmed vote transfers (1 WIF to candidate wallets) are visible via eth_getLogs on mainnet
+- [ ] Keeper: index votes, build the OpenZeppelin Merkle tree, publish docs/voters.json, post root daily, serve proofs
+- [ ] Cross-check the leaf encoding against @openzeppelin/merkle-tree output
+- [ ] Frontend: Voter's Pass badge, discounted prices, World is Fair card in the Season tab
+
 ## Phase 2: keeper
 - [ ] Event watcher, drand fetch, auto-settle, balance alert, pm2 config
 

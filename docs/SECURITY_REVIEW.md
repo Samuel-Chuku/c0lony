@@ -43,17 +43,28 @@ An honest self-audit of the Colony contracts written during the build. It is not
 | Defender learns the target before guarding | The target is a commitment hash until reveal, and reveal is only allowed after the guard window closes. | Closed |
 | Commitment brute force | Commitment = keccak256(target, salt, raidId). The salt comes from the raider's wallet signing the raid ID, so it can't be guessed. Raid IDs include the colony number, so commitments can't be replayed across raids. | Closed |
 | Raider sees the defender guarded correctly and refuses to reveal | Not revealing loses every soldier sent, versus half if revealed. The raider can choose this to deny the defender's loot, but it always costs them more soldiers. | Accepted (a game choice) |
-| Farming score with a second colony | Each guarded raid costs the attacking colony half its soldiers and 10–15% of a resource. A farming colony shrinks out of raid range quickly, and every colony costs 1,000 WIF to found. | Mitigated |
+| Farming score with a second colony | Each guarded raid costs the attacking colony half its soldiers and 10–15% of a resource. A farming colony shrinks out of raid range quickly, and every colony costs 1,500 WIF to found (1,200 with a Voter's Pass). | Mitigated |
 | Owner starves colonies by changing timers | The starvation timer (72 h), revive window (24 h), settle timeout (48 h) and randomness delay (30 s) are constants. The feed interval can't reach 72 h. | Closed |
 | Owner ends a season early | Allowed only to a future time within 21 days of the season start, and emits `SeasonEndChanged`. Ending very early could stop colonies reaching two feedings. | Accepted, disclosed |
 | Colony transfer to dodge one-per-wallet | Colony NFTs revert on any transfer. | Closed |
+
+## Voter's Pass
+
+| Risk | How it's handled | Status |
+| --- | --- | --- |
+| Using another wallet's proof | The Merkle leaf is built from `msg.sender`, so a proof only works for the address it was made for. | Closed |
+| A wrong or malicious voter root | Only the owner or the voter-root setter can post a root, and each change emits `VoterRootUpdated(root, listURI)`. The full list is published so anyone can rebuild and check the root. The impact is capped: at most a 30% discount on founding and feeding, and no effect on score, payouts or the pot. | Mitigated |
+| A bad proof blocks play | An empty or invalid proof means full price; `foundColony` and `feedQueen` never revert because of a proof. | Closed |
+| Leaf/inner-node confusion | Leaves are double-hashed (OpenZeppelin StandardMerkleTree format), so an internal node can't pass as a leaf. | Closed |
+| The pass outlives the list | By design, the pass is permanent once granted, even if a later root drops the address. | Accepted |
+| A single-voter list | With exactly one voter the valid proof is empty, which the contract treats as "no proof". Irrelevant at the real list size. | Accepted |
 
 ## Gas sponsorship
 
 | Risk | How it's handled | Status |
 | --- | --- | --- |
 | Draining the ETH pool | Drips and refunds both stop when paying would leave less than 0.0003 ETH. | Closed |
-| Drip farming | Once per wallet ever, 25 per day, and each requires a 1,000 WIF founding fee worth more than the 0.00005 ETH drip. | Closed |
+| Drip farming | Once per wallet ever, 25 per day, and each requires a founding fee of at least 1,200 WIF, worth more than the 0.00005 ETH drip. | Closed |
 | Refund exceeds gas paid | The refund is measured gas × `tx.gasprice` + L1 fee from ArbGasInfo, capped at 0.00005 ETH. On Robinhood Chain `tx.gasprice` returns the base fee, not the sender's bid (checked live), so bidding high doesn't raise the refund. A test confirms the refund stays below actual gas, at about 93%. To be rechecked against real testnet receipts. | Closed (recheck on testnet) |
 | Treasury reverts break gameplay | ColonyGame calls the treasury in `try/catch`, and the treasury skips instead of reverting, so founding and settling always work. | Closed |
 | ArbGasInfo missing or failing | Read with a low-level call; if it fails, the L1 fee counts as 0 (under-refund, never over). | Closed |

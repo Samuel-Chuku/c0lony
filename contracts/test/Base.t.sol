@@ -73,6 +73,7 @@ abstract contract Base is Test {
     uint256 internal T0;
 
     mapping(uint64 => bytes) internal sigOf;
+    bytes32[] internal NO_PROOF;
 
     function setUp() public virtual {
         _loadRounds();
@@ -118,12 +119,12 @@ abstract contract Base is Test {
 
     function _found(address who) internal returns (uint64 id) {
         vm.prank(who);
-        id = game.foundColony();
+        id = game.foundColony(NO_PROOF);
     }
 
     function _feed(address who) internal {
         vm.prank(who);
-        game.feedQueen();
+        game.feedQueen(NO_PROOF);
     }
 
     function _salt(address who, uint256 raidId) internal pure returns (bytes32) {

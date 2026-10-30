@@ -25,7 +25,7 @@ contract TreasuryTest is Base {
     function test_drip_dailyCap25() public {
         for (uint256 i; i < 25; ++i) {
             address p = address(uint160(0x1000 + i));
-            wif.mint(p, 1_000 ether);
+            wif.mint(p, 1_500 ether);
             vm.prank(p);
             wif.approve(address(game), type(uint256).max);
             _found(p);
@@ -82,7 +82,7 @@ contract TreasuryTest is Base {
     // ------------------------------------------------------------------ owner and sweep
 
     function test_owner_withdrawals_emit_and_onlyOwner() public {
-        _found(alice); // 100 WIF to treasury
+        _found(alice); // 150 WIF to treasury
         vm.expectEmit(address(treasury));
         emit Treasury.WifWithdrawn(owner, 40 ether);
         vm.prank(owner);
@@ -102,17 +102,17 @@ contract TreasuryTest is Base {
     }
 
     function test_sweep_movesExcessAboveReserve_toNextSeason() public {
-        _found(alice); // treasury: 100 WIF
-        _found(bob); // treasury: 200 WIF
+        _found(alice); // treasury: 150 WIF
+        _found(bob); // treasury: 300 WIF
         vm.prank(owner);
         treasury.setWifReserve(50 ether);
 
         vm.prank(carol); // anyone
         uint256 swept = treasury.sweepToPot();
-        assertEq(swept, 150 ether);
+        assertEq(swept, 250 ether);
         assertEq(wif.balanceOf(address(treasury)), 50 ether);
         (uint256 s2,,,,,,,,,,,,) = pot.seasons(2);
-        assertEq(s2, 150 ether, "goes to next season's pot");
+        assertEq(s2, 250 ether, "goes to next season's pot");
 
         vm.expectRevert(Treasury.NothingToSweep.selector);
         treasury.sweepToPot();

@@ -76,12 +76,12 @@ contract FullWeekTest is Base {
             // Four check-ins a day: hand forages every 6 h (leaves) and 3 h (sugar)
             _tendAll(_day(d));
             vm.prank(alice);
-            game.feedQueen();
+            game.feedQueen(NO_PROOF);
             vm.prank(bob);
-            game.feedQueen();
+            game.feedQueen(NO_PROOF);
             if (d < 2) {
                 vm.prank(carol); // carol stops feeding after day 1
-                game.feedQueen();
+                game.feedQueen(NO_PROOF);
             }
             // Raids happen mid-morning; each day's fixture round is published at day start + 6 h.
             if (d == 1) {
