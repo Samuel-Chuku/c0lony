@@ -28,6 +28,7 @@ Note: the faucet returns HTTP 429 to scripted requests, so it has to be opened i
 | BN254 `ecMul` (0x07) | works | `eth_call` with G1·2 returns 2·G1 |
 | BN254 `ecPairing` (0x08) | works | empty input returns `1` (mainnet and testnet) |
 | `modexp` (0x05) | works | 3² mod 5 returns `4` |
+| ArbGasInfo (0x6c) `getCurrentTxL1GasFees()` | works | mainnet returned 1,363,128,000 wei (≈0.0000000014 ETH); testnet returns 0 because it charges no L1 fee |
 | PUSH0 / MCOPY / TSTORE (Cancun) | supported | `eth_call` of raw creation code returns success; an `INVALID` opcode control returns an error |
 
 So the contracts compile with `evm_version = "cancun"`, and BLS verification on BN254 can run natively.
