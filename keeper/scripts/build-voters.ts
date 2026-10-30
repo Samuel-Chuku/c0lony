@@ -1,12 +1,12 @@
 // Builds the Voter's Pass list and Merkle tree from the indexed vote transfers.
 //   node --env-file=.env scripts/build-voters.ts
-// Writes docs/voters.json (public: anyone can rebuild the root) and state/proofs.json (served to the app).
-import { writeFileSync } from "node:fs";
+// Writes VOTERS_PUBLIC_DIR/voters.json (public: anyone can rebuild the root) and proofs/<address>.json, which
+// Caddy serves from the VPS so daily list updates never need a site redeploy.
 import { join } from "node:path";
 import { loadConfig } from "../src/config.ts";
-import { JsonStore } from "../src/state.ts";
 import { loadVoteWallets, VoteStore } from "../src/voters/votes.ts";
 import { buildVoterTree } from "../src/voters/tree.ts";
+import { publishVoterFiles } from "../src/voters/publish.ts";
 
 const cfg = loadConfig();
 const wallets = loadVoteWallets(cfg.voteWalletsFile);
@@ -24,6 +24,5 @@ const published = {
   stats: store.stats(),
   voters,
 };
-writeFileSync(cfg.votersOutFile, JSON.stringify(published, null, 2) + "\n");
-new JsonStore(join(cfg.stateDir, "proofs.json"), {}).write({ root, proofs });
+publishVoterFiles(cfg.votersPublicDir, published, proofs);
 console.log(`root ${root} · ${voters.length} voters ·`, store.stats());

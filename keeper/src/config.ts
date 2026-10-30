@@ -44,8 +44,9 @@ export function loadConfig() {
     startBlock: int("START_BLOCK", 0),
     voteWalletsFile: resolve(env("VOTE_WALLETS_FILE", "../data/world-is-fair-vote-wallets.json")),
     votesStartBlock: int("VOTES_START_BLOCK", 40_000_000),
-    votersListUri: env("VOTERS_LIST_URI", ""),
-    votersOutFile: resolve(env("VOTERS_OUT_FILE", "../docs/voters.json")),
+    votersListUri: env("VOTERS_LIST_URI", "https://keeper.c0lony.xyz/voters/voters.json"),
+    // Served as static files by Caddy at https://keeper.c0lony.xyz/voters/ (voters.json, proofs/<address>.json)
+    votersPublicDir: resolve(env("VOTERS_PUBLIC_DIR", "public/voters")),
     stateDir,
   };
 }

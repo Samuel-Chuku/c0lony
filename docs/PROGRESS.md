@@ -37,13 +37,19 @@
 - [x] RPC from env (ROBINHOOD_RPC_URL, ROBINHOOD_TESTNET_RPC_URL) in Foundry, keeper and web examples
 - [x] Keeper intake: one EventSource interface; Streams webhook (HMAC-checked) or eth_getLogs poller (15 s), switched by EVENT_SOURCE
 - [x] Streams filter functions generated from config (keeper/streams/)
-- [ ] Web: /api/rpc proxy so the Quicknode key never reaches the browser (Phase 3)
+- [ ] Web: /api/rpc Cloudflare Pages Function so the Quicknode key never reaches the browser (Phase 3)
 
 ## Phase 2: keeper
 - [ ] drand fetch, auto-settle, balance alert, notifications, pm2 config (on top of the intake)
+
+## Hosting
+- [x] Web is a Next.js static export (`web/out`) for Cloudflare Pages; `_headers` sets caching and security headers; clean build confirmed
+- [x] Voter's Pass published as static files (`voters.json`, `proofs/<address>.json`) for Caddy to serve from the VPS
+- [ ] Keeper on the VPS in Docker behind Caddy at keeper.c0lony.xyz
+- [ ] Cloudflare Pages project connected, c0lony.xyz attached
 
 ## Phase 3: frontend
 - [ ] Colony tab (approval checkpoint), Raids, Season, Activity, Get WIF sheet
 
 ## Phase 4: launch
-- [ ] Mainnet deploy, treasury funding, Season 1 seed, verification, Vercel, README
+- [ ] Mainnet deploy, treasury funding, Season 1 seed, verification, Cloudflare Pages, README

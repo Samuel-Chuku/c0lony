@@ -51,7 +51,7 @@ Prices are set in WIF and the owner can tune them within the caps below, so they
 
 **Voter's Pass.** A wallet that has voted in a World is Fair event gets a discount on founding and feeding: 20% at launch, adjustable from 0 to 30%. Nothing else is discounted, and the pass doesn't affect score or pot share. The 70/20/10 split applies to the discounted amount.
 
-- **The voter list.** The keeper indexes every address that sent at least 1 WIF to a candidate's vote wallet, publishes the full list as `docs/voters.json`, and posts its Merkle root onchain (`setVoterRoot`).
+- **The voter list.** The keeper indexes every address that sent at least 1 WIF to a candidate's vote wallet, publishes the full list at [keeper.c0lony.xyz/voters/voters.json](https://keeper.c0lony.xyz/voters/voters.json), and posts its Merkle root onchain (`setVoterRoot`).
 - **Proving you're on it.** A player passes their Merkle proof once, with `foundColony` or `feedQueen`. The contract checks it against the root using the caller's own address, sets `hasVoterPass` permanently, and never needs a proof again.
 - **No proof, or a wrong one,** just means full price. It never reverts.
 

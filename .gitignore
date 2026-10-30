@@ -20,11 +20,10 @@ npm-debug.log*
 pnpm-debug.log*
 yarn-error.log*
 
-# Next.js / Vercel
+# Next.js (static export, Cloudflare Pages)
 web/.next/
 web/out/
 web/next-env.d.ts
-.vercel/
 *.tsbuildinfo
 
 # Keeper
@@ -44,3 +43,6 @@ Thumbs.db
 .claude/
 tmp/
 coverage/
+
+# keeper: published Voter's Pass files (served from the VPS)
+keeper/public/

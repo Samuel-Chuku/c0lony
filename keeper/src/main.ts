@@ -7,7 +7,6 @@ import { Rpc } from "./intake/rpc.ts";
 import { PollerSource } from "./intake/poller.ts";
 import { StreamsWebhookServer } from "./intake/streamsWebhook.ts";
 import { logKey, type EventSource, type LogFilter, type LogHandler } from "./intake/types.ts";
-import { JsonStore } from "./state.ts";
 import { loadVoteWallets, votesFilter, VoteStore } from "./voters/votes.ts";
 
 const cfg = loadConfig();
@@ -34,22 +33,8 @@ const onVoteLogs: LogHandler = async (logs, info) => {
   log(`votes: ${logs.length} logs via ${info.source}, ${added} new`);
 };
 
-// Voter's Pass proofs for the frontend: GET /voters/proof/<address>
-const proofs = new JsonStore<{ root?: string; proofs: Record<string, string[]> }>(join(cfg.stateDir, "proofs.json"), {
-  proofs: {},
-});
-
-const server = new StreamsWebhookServer({
-  maxAgeSec: cfg.streamsMaxAgeSec,
-  log,
-  get: (path) => {
-    const m = /^\/voters\/proof\/(0x[0-9a-fA-F]{40})$/.exec(path);
-    if (!m) return undefined;
-    const p = proofs.read();
-    const proof = p.proofs[m[1].toLowerCase()];
-    return { status: 200, body: { address: m[1].toLowerCase(), root: p.root ?? null, eligible: !!proof, proof: proof ?? [] } };
-  },
-});
+// Voter's Pass proofs are static files (scripts/build-voters.ts) that Caddy serves at /voters/, not routes here.
+const server = new StreamsWebhookServer({ maxAgeSec: cfg.streamsMaxAgeSec, log });
 
 const sources: [EventSource, LogHandler][] = [];
 if (cfg.eventSource === "streams") {

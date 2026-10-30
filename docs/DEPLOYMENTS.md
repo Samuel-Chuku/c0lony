@@ -4,6 +4,22 @@ Every address and constant C0LONY uses is recorded here with the source it was r
 
 Checks were run on **2026-10-30** (UTC).
 
+## Hosting
+
+| Piece | Where | Address |
+| --- | --- | --- |
+| Website | Cloudflare Pages: static Next.js export from `web/`, output `web/out` | https://c0lony.xyz |
+| Keeper and Voter's Pass files | VPS, Docker behind Caddy (automatic HTTPS) | https://keeper.c0lony.xyz |
+
+- **No Node server for the site.** Server code exists only as Cloudflare Pages Functions in `web/functions`. Their secrets, such as the Quicknode URL, are encrypted runtime variables, never build variables.
+- **Build variables are public.** Every `NEXT_PUBLIC_` value is baked into the static files; `web/.env.example` lists them.
+- **Voter's Pass files** are served from the VPS, not the site, so daily list updates need no redeploy:
+  - `https://keeper.c0lony.xyz/voters/voters.json`: the full list and root.
+  - `https://keeper.c0lony.xyz/voters/proofs/<address>.json`: `{ address, root, proof }`.
+  - No file means no pass.
+  - The app uses a proof only if its root matches `ColonyGame.voterRoot()`.
+- **Headers:** `web/public/_headers` caches hashed assets for a year, keeps the app shell, service worker and `/api/*` uncached, and sets basic security headers without a script/connect CSP (wallets, WalletConnect, Privy, RPC, drand, KyberSwap and the proof host are all cross-origin).
+
 ## Networks
 
 | | Mainnet | Testnet |
