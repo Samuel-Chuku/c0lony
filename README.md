@@ -1,4 +1,6 @@
-# Colony
+# C0LONY
+
+**[c0lony.xyz](https://c0lony.xyz)** · The "0" in C0LONY is a zero, not the letter O.
 
 An onchain ant-colony strategy game on Robinhood Chain, built for the World is Flat hackathon. Every paid action spends $WIF, and raid outcomes are decided by drand evmnet randomness verified onchain.
 

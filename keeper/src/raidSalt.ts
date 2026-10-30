@@ -2,7 +2,7 @@ import { keccak256, type Address, type Hash } from "viem";
 
 /** The message a raider's wallet signs to derive a raid's salt. Deterministic, so any device can regenerate it. */
 export function raidSaltMessage(chainId: number, game: Address, raidId: bigint): string {
-  return `Colony raid salt\nchain: ${chainId}\ngame: ${game.toLowerCase()}\nraid: ${raidId}`;
+  return `C0LONY raid salt\nchain: ${chainId}\ngame: ${game.toLowerCase()}\nraid: ${raidId}`;
 }
 
 /**

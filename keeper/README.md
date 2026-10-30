@@ -1,4 +1,4 @@
-# Colony keeper
+# C0LONY keeper
 
 A small Node.js service that runs on a VPS. This part covers:
 

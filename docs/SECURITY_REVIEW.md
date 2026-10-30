@@ -1,6 +1,6 @@
 # Security self-review
 
-An honest self-audit of the Colony contracts written during the build. It is not a substitute for a professional audit. Each row says what was considered, how the code handles it, and what is left open.
+An honest self-audit of the C0LONY contracts written during the build. It is not a substitute for a professional audit. Each row says what was considered, how the code handles it, and what is left open.
 
 ## Money
 

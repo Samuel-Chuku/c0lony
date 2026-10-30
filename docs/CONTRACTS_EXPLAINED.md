@@ -1,6 +1,6 @@
-# Colony contracts in plain English
+# C0LONY contracts in plain English
 
-Colony runs on four onchain pieces, all on Robinhood Chain:
+C0LONY runs on four onchain pieces, all on Robinhood Chain:
 
 | Piece | One-line job |
 | --- | --- |

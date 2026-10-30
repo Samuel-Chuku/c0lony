@@ -54,6 +54,11 @@ contract CoreLoopTest is Base {
         assertEq(wif.balanceOf(address(game)), 0, "game never holds WIF");
     }
 
+    function test_nft_nameAndSymbol() public view {
+        assertEq(game.name(), "C0LONY");
+        assertEq(game.symbol(), "C0L");
+    }
+
     function test_found_onlyOneLivingColony() public {
         _found(alice);
         vm.prank(alice);

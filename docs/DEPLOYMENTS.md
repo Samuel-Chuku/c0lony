@@ -1,6 +1,6 @@
 # Deployments and verified constants
 
-Every address and constant Colony uses is recorded here with the source it was read from. Contracts and scripts take these values from config; none are hard-coded elsewhere without a reference to this file.
+Every address and constant C0LONY uses is recorded here with the source it was read from. Contracts and scripts take these values from config; none are hard-coded elsewhere without a reference to this file.
 
 Checks were run on **2026-10-30** (UTC).
 
@@ -16,7 +16,7 @@ Checks were run on **2026-10-30** (UTC).
 | Faucet | n/a | `https://faucet.testnet.chain.robinhood.com` |
 | Gas price observed | 0.02 gwei (`cast gas-price`) | 0.01 gwei (`cast gas-price`) |
 
-**Colony's RPC provider is [Quicknode](https://www.quicknode.com/chains/robinhood)** (mainnet and testnet, HTTPS and WSS, Streams). The endpoint URLs contain an API key, so they live only in env vars (`ROBINHOOD_RPC_URL`, `ROBINHOOD_TESTNET_RPC_URL`) and are never committed. The checks on this page were run against the public endpoints before Quicknode was set up.
+**C0LONY's RPC provider is [Quicknode](https://www.quicknode.com/chains/robinhood)** (mainnet and testnet, HTTPS and WSS, Streams). The endpoint URLs contain an API key, so they live only in env vars (`ROBINHOOD_RPC_URL`, `ROBINHOOD_TESTNET_RPC_URL`) and are never committed. The checks on this page were run against the public endpoints before Quicknode was set up.
 
 Sources: [Robinhood Chain: connecting](https://docs.robinhood.com/chain/connecting), [add network to wallet](https://docs.robinhood.com/chain/add-network-to-wallet), [BitGo: Robinhood Chain](https://developers.bitgo.com/docs/robinhood-chain.md) (faucet URL), [Alchemy: Robinhood testnet](https://www.alchemy.com/rpc/robinhood-testnet.md).
 
@@ -60,7 +60,7 @@ From [Differences from Ethereum](https://docs.robinhood.com/chain/differences-fr
 - Runtime bytecode (3,248 bytes) contains the selectors `0x42966c68` `burn(uint256)` and `0x79cc6790` `burnFrom(address,uint256)`. It has no `mint` selector.
 - A simulated `burn(1000)` from a real holder (`0x8366…0951`) succeeds and emits `Transfer(holder → 0x0000…0000, 1000)`, which is the OpenZeppelin `ERC20Burnable` pattern and lowers `totalSupply`.
 
-**Decision:** Colony burns its 20% share by calling `WIF.burn(amount)`. It does not transfer to the dead address.
+**Decision:** C0LONY burns its 20% share by calling `WIF.burn(amount)`. It does not transfer to the dead address.
 
 Blockscout's web UI and API sit behind a Cloudflare challenge for scripted requests, so these facts were read straight from the chain over RPC. To view them in a browser: [Blockscout: WIF](https://robinhoodchain.blockscout.com/address/0x5173b8eA6923c2d40267890D45C46a3480954773).
 
@@ -90,13 +90,13 @@ Fetched from [`https://api.drand.sh/04f1e9062b8a81f848fded9c12306733282b2727ecce
 - round `r` is published at `genesis + 3·(r − 1)`
 - the round current at time `t` is `floor((t − genesis) / 3) + 1`
 
-**Verifier library:** [kevincharm/bls-bn254](https://github.com/kevincharm/bls-bn254), MIT license, commit `9f70fb4dff2cd0921dc2144929dc0aff6f21a9b9` (repo last pushed 2024-09-21). `contracts/BLS.sol` + `contracts/ModExp.sol` expose `verifySingle`, `hashToPoint`, `isValidSignature`, `isValidPublicKey`. It is a Hardhat repo, so Colony vendors the two `.sol` files at that pinned commit. The exact message encoding and domain tag for evmnet are proved in Phase 1 by verifying the rounds above onchain in a Foundry test.
+**Verifier library:** [kevincharm/bls-bn254](https://github.com/kevincharm/bls-bn254), MIT license, commit `9f70fb4dff2cd0921dc2144929dc0aff6f21a9b9` (repo last pushed 2024-09-21). `contracts/BLS.sol` + `contracts/ModExp.sol` expose `verifySingle`, `hashToPoint`, `isValidSignature`, `isValidPublicKey`. It is a Hardhat repo, so C0LONY vendors the two `.sol` files at that pinned commit. The exact message encoding and domain tag for evmnet are proved in Phase 1 by verifying the rounds above onchain in a Foundry test.
 
 Background: [drand HTTP API](https://docs.drand.love/developer/API-v1/drand-http-api), [EVM-compatible drand and bls-bn254](https://hackmd.io/@kevincharm/rJA4r_Iia).
 
 ## KyberSwap Aggregator (`robinhood` route)
 
-Quote request: `GET https://aggregator-api.kyberswap.com/robinhood/api/v1/routes?tokenIn=0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE&tokenOut=0x5173…4773&amountIn=…&chargeFeeBy=currency_in&isInBps=true&feeAmount=50&feeReceiver=<treasury>` with header `x-client-id`. The fee receiver for these test quotes was a placeholder; the treasury address is filled in after deploy.
+Quote request: `GET https://aggregator-api.kyberswap.com/robinhood/api/v1/routes?tokenIn=0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE&tokenOut=0x5173…4773&amountIn=…&chargeFeeBy=currency_in&isInBps=true&feeAmount=50&feeReceiver=<treasury>` with header `x-client-id: c0lony` (the same value is sent as the `source` parameter). The fee receiver for these test quotes was a placeholder; the treasury address is filled in after deploy.
 
 | ETH in | WIF out | USD in | USD out | Total loss (incl. 0.5% fee) |
 | --- | --- | --- | --- | --- |

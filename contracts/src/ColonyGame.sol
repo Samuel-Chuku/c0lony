@@ -315,7 +315,7 @@ contract ColonyGame is ERC721, Ownable, ReentrancyGuard, IColonyGameView {
     // ================================================================== setup
 
     constructor(IWIF wif_, ISeasonPot pot_, ITreasury treasury_, address owner_)
-        ERC721("Colony", "COLONY")
+        ERC721("C0LONY", "C0L")
         Ownable(owner_)
     {
         wif = wif_;

@@ -1,4 +1,4 @@
-// Colony keeper entry point: event intake (Quicknode Streams webhook, or eth_getLogs polling as fallback)
+// C0LONY keeper entry point: event intake (Quicknode Streams webhook, or eth_getLogs polling as fallback)
 // plus the Voter's Pass proof endpoint. Settlement and notifications build on this intake.
 import { appendFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
