@@ -1,0 +1,46 @@
+# Secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+keystore/
+keys/
+
+# Foundry
+contracts/out/
+contracts/cache/
+contracts/broadcast/*/31337/
+contracts/broadcast/**/dry-run/
+
+# Node
+node_modules/
+.pnpm-store/
+npm-debug.log*
+pnpm-debug.log*
+yarn-error.log*
+
+# Next.js / Vercel
+web/.next/
+web/out/
+web/next-env.d.ts
+.vercel/
+*.tsbuildinfo
+
+# Keeper
+keeper/dist/
+keeper/state/
+keeper/logs/
+*.log
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Local scratch
+.claude/
+tmp/
+coverage/
