@@ -47,7 +47,7 @@ Note: the faucet returns HTTP 429 to scripted requests, so it has to be opened i
 | BN254 `ecMul` (0x07) | works | `eth_call` with G1·2 returns 2·G1 |
 | BN254 `ecPairing` (0x08) | works | empty input returns `1` (mainnet and testnet) |
 | `modexp` (0x05) | works | 3² mod 5 returns `4` |
-| ArbGasInfo (0x6c) `getCurrentTxL1GasFees()` | works | mainnet returned 1,363,128,000 wei (≈0.0000000014 ETH); testnet returns 0 because it charges no L1 fee |
+| ArbGasInfo (0x6c) `getCurrentTxL1GasFees()` | works | mainnet returned 1,363,128,000 wei (≈0.0000000014 ETH). Testnet returned 0 at first, but during the play-through it reported a real L1 fee that matched the receipt's `gasUsedForL1` exactly |
 | Contract size limit | above 24 KB accepted | `eth_estimateGas` for creating contracts of 24,577, 30,000, 49,153 and 65,535 bytes all succeed on both networks |
 | `tx.gasprice` | returns the base fee, not the sender's bid | `eth_call` with a 1 gwei bid returns ≈0.02 gwei (mainnet) / 0.01 gwei (testnet) |
 | PUSH0 / MCOPY / TSTORE (Cancun) | supported | `eth_call` of raw creation code returns success; an `INVALID` opcode control returns an error |
@@ -153,7 +153,24 @@ Measured gas per call (`forge snapshot`, see `contracts/.gas-snapshot`): `settle
 
 ## Deployed contracts
 
-### Robinhood Chain testnet (46630), deployed 2026-10-30
+### Robinhood Chain testnet (46630), current deployment (2026-10-30, second)
+
+Redeployed with the settle refund fix and Voter's Pass linking (`claimVoterPass`). Blocks 145,471,559–145,471,563, 9,649,279 gas in total. All contracts are verified on Blockscout; the DrandVerifier library and the MockWIF source are unchanged from the first deployment.
+
+| Contract | Address |
+| --- | --- |
+| ColonyGame | [`0xE186253067C229CC1774830C09Be901ee16B26c8`](https://explorer.testnet.chain.robinhood.com/address/0xE186253067C229CC1774830C09Be901ee16B26c8) |
+| SeasonPot | [`0x2B10C87A6A9bbAE418878FdCDE66F1C34f4F6128`](https://explorer.testnet.chain.robinhood.com/address/0x2B10C87A6A9bbAE418878FdCDE66F1C34f4F6128) |
+| Treasury | [`0x5d7B210326435e1bDbC39AeFDD6E0969843183e4`](https://explorer.testnet.chain.robinhood.com/address/0x5d7B210326435e1bDbC39AeFDD6E0969843183e4) |
+| DrandVerifier (linked library, reused) | [`0x2513832059bac29e5a5115634694F22B6B302Ae1`](https://explorer.testnet.chain.robinhood.com/address/0x2513832059bac29e5a5115634694F22B6B302Ae1) |
+| MockWIF (testnet only) | [`0xC7524F3D78E5f6150aff0Eac811e9Bd0D0Fd9B68`](https://explorer.testnet.chain.robinhood.com/address/0xC7524F3D78E5f6150aff0Eac811e9Bd0D0Fd9B68) |
+
+Owner: `0x4B11611CF7C90aEc2003721d71107d7E1cBf37c2`. Treasury funded with 0.002 testnet ETH. Runs the launch settings (4 h guard window, 24 h feed interval) until changed for testing.
+
+### Robinhood Chain testnet (46630), first deployment (retired)
+
+Used for the play-through in [TESTNET_RUN.md](TESTNET_RUN.md). It has the old settle refund formula and no linking.
+
 
 Deployed in blocks 145,287,070–145,287,216 by `script/Deploy.s.sol` (13,342,600 gas in total). All five contracts are verified on Blockscout.
 

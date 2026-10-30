@@ -57,6 +57,10 @@ An honest self-audit of the C0LONY contracts written during the build. It is not
 | A bad proof blocks play | An empty or invalid proof means full price; `foundColony` and `feedQueen` never revert because of a proof. | Closed |
 | Leaf/inner-node confusion | Leaves are double-hashed (OpenZeppelin StandardMerkleTree format), so an internal node can't pass as a leaf. | Closed |
 | The pass outlives the list | By design, the pass is permanent once granted, even if a later root drops the address. | Accepted |
+| Stealing a pass through the linking path | `claimVoterPass` needs the Merkle proof and an EIP-712 signature from the voting address naming the caller as the game wallet. A wrong signer, a signature for a different wallet, and a stale nonce all revert (tested). | Closed |
+| Replaying a link signature / one vote, many wallets | `voterUsed[voter]` is set on the first grant (linking or direct play) and every later claim with that voter reverts; the direct path then gives no discount. The nonce and the EIP-712 domain (name, version, chain, contract) stop reuse on other contracts or chains. | Closed |
+| A game wallet burning several voters' grants | A wallet that already has the pass can't claim again (`AlreadyHasPass`), so a voter's one grant isn't wasted. | Closed |
+| Smart-contract voting wallets | Accepted through ERC-1271 (OpenZeppelin `SignatureChecker`). The wallet contract decides what counts as a valid signature, as with any ERC-1271 signer. | Accepted |
 | A single-voter list | With exactly one voter the valid proof is empty, which the contract treats as "no proof". Irrelevant at the real list size. | Accepted |
 
 ## Gas sponsorship

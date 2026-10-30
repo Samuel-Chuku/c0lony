@@ -10,6 +10,8 @@ import {ISeasonPot} from "./interfaces/ISeasonPot.sol";
 import {ITreasury} from "./interfaces/ITreasury.sol";
 import {IColonyGameView} from "./interfaces/IColonyGameView.sol";
 import {MerkleProof} from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
+import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
+import {SignatureChecker} from "@openzeppelin/contracts/utils/cryptography/SignatureChecker.sol";
 import {DrandVerifier} from "./DrandVerifier.sol";
 
 /// @title ColonyGame
@@ -17,7 +19,7 @@ import {DrandVerifier} from "./DrandVerifier.sol";
 ///         70% season pot / 20% burned / 10% treasury. Raid rolls come only from drand evmnet rounds
 ///         verified onchain, and rolls only ever move leaves, sugar and soldiers, never WIF.
 /// @dev Colony NFTs are non-transferable. Timers use block.timestamp only.
-contract ColonyGame is ERC721, Ownable, ReentrancyGuard, IColonyGameView {
+contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView {
     using SafeERC20 for IWIF;
 
     // ================================================================== constants
@@ -232,6 +234,11 @@ contract ColonyGame is ERC721, Ownable, ReentrancyGuard, IColonyGameView {
     address public voterRootSetter;
     /// @notice Set once a wallet proves it is on the voter list; permanent after that.
     mapping(address => bool) public hasVoterPass;
+    /// @notice The wallet each voting address granted its pass to (itself if it played directly). One per voter.
+    mapping(address => address) public voterUsed;
+    /// @notice EIP-712 nonce for each voting address's LinkVoterPass signature.
+    mapping(address => uint256) public voterNonce;
+    bytes32 internal constant LINK_VOTER_PASS_TYPEHASH = keccak256("LinkVoterPass(address gameWallet,uint256 nonce)");
 
     // ================================================================== events
 
@@ -278,6 +285,7 @@ contract ColonyGame is ERC721, Ownable, ReentrancyGuard, IColonyGameView {
     event VoterRootUpdated(bytes32 root, string listURI);
     event VoterRootSetterUpdated(address setter);
     event VoterPassGranted(address indexed player);
+    event VoterPassLinked(address indexed voter, address indexed gameWallet);
 
     // ================================================================== errors
 
@@ -313,11 +321,16 @@ contract ColonyGame is ERC721, Ownable, ReentrancyGuard, IColonyGameView {
     error BadSignature();
     error NothingToCollect();
     error NotVoterRootSetter();
+    error NotOnVoterList();
+    error VoterAlreadyUsed();
+    error BadVoterSignature();
+    error AlreadyHasPass();
 
     // ================================================================== setup
 
     constructor(IWIF wif_, ISeasonPot pot_, ITreasury treasury_, address owner_)
         ERC721("C0LONY", "C0L")
+        EIP712("C0LONY", "1")
         Ownable(owner_)
     {
         wif = wif_;
@@ -497,15 +510,43 @@ contract ColonyGame is ERC721, Ownable, ReentrancyGuard, IColonyGameView {
 
     /// @dev True if the caller holds a Voter's Pass, granting it first if `proof` is valid.
     ///      An empty or invalid proof simply returns false; it never reverts.
+    /// @dev Direct path: the voting wallet itself plays and passes its proof. This uses up the voter's one grant,
+    ///      so a voter who already linked the pass to another wallet gets no discount here (and never a revert).
     function _voterPass(bytes32[] calldata proof) internal returns (bool) {
         if (hasVoterPass[msg.sender]) return true;
         bytes32 root = voterRoot;
-        if (proof.length == 0 || root == bytes32(0)) return false;
-        bytes32 leaf = keccak256(bytes.concat(keccak256(abi.encode(msg.sender))));
-        if (!MerkleProof.verifyCalldata(proof, root, leaf)) return false;
+        if (proof.length == 0 || root == bytes32(0) || voterUsed[msg.sender] != address(0)) return false;
+        if (!MerkleProof.verifyCalldata(proof, root, _voterLeaf(msg.sender))) return false;
+        voterUsed[msg.sender] = msg.sender;
         hasVoterPass[msg.sender] = true;
         emit VoterPassGranted(msg.sender);
         return true;
+    }
+
+    /// @dev OpenZeppelin StandardMerkleTree leaf for a single `address` value.
+    function _voterLeaf(address voter) internal pure returns (bytes32) {
+        return keccak256(bytes.concat(keccak256(abi.encode(voter))));
+    }
+
+    /// @notice Link a Voter's Pass from the wallet that voted to the wallet calling this (e.g. an embedded game
+    ///         wallet). `signature` is the voting wallet's EIP-712 LinkVoterPass(gameWallet = caller, nonce) signature;
+    ///         smart-contract wallets are supported through ERC-1271. Each voting address can grant the pass once.
+    function claimVoterPass(address voterAddress, bytes32[] calldata proof, bytes calldata signature) external {
+        if (voterUsed[voterAddress] != address(0)) revert VoterAlreadyUsed();
+        if (hasVoterPass[msg.sender]) revert AlreadyHasPass();
+        bytes32 root = voterRoot;
+        if (root == bytes32(0) || !MerkleProof.verifyCalldata(proof, root, _voterLeaf(voterAddress))) {
+            revert NotOnVoterList();
+        }
+        uint256 nonce = voterNonce[voterAddress];
+        bytes32 digest = _hashTypedDataV4(keccak256(abi.encode(LINK_VOTER_PASS_TYPEHASH, msg.sender, nonce)));
+        if (!SignatureChecker.isValidSignatureNow(voterAddress, digest, signature)) revert BadVoterSignature();
+
+        voterUsed[voterAddress] = msg.sender;
+        voterNonce[voterAddress] = nonce + 1;
+        hasVoterPass[msg.sender] = true;
+        emit VoterPassLinked(voterAddress, msg.sender);
+        emit VoterPassGranted(msg.sender);
     }
 
     function _discounted(uint256 price, bool pass) internal view returns (uint256) {

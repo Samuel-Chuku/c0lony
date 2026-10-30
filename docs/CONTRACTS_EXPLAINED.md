@@ -52,8 +52,15 @@ Prices are set in WIF and the owner can tune them within the caps below, so they
 **Voter's Pass.** A wallet that has voted in a World is Fair event gets a discount on founding and feeding: 20% at launch, adjustable from 0 to 30%. Nothing else is discounted, and the pass doesn't affect score or pot share. The 70/20/10 split applies to the discounted amount.
 
 - **The voter list.** The keeper indexes every address that sent at least 1 WIF to a candidate's vote wallet, publishes the full list at [keeper.c0lony.xyz/voters/voters.json](https://keeper.c0lony.xyz/voters/voters.json), and posts its Merkle root onchain (`setVoterRoot`).
-- **Proving you're on it.** A player passes their Merkle proof once, with `foundColony` or `feedQueen`. The contract checks it against the root using the caller's own address, sets `hasVoterPass` permanently, and never needs a proof again.
-- **No proof, or a wrong one,** just means full price. It never reverts.
+- **Playing from the wallet that voted.** The player passes their Merkle proof once, with `foundColony` or `feedQueen`. The contract checks it against the root using the caller's own address, sets `hasVoterPass` permanently, and never needs a proof again. No proof, or a wrong one, just means full price; it never reverts.
+- **Playing from a different wallet** (for example, a game wallet created in the app). The player signs a message with the wallet that voted, saying "give my pass to this game wallet", and the game wallet calls `claimVoterPass(voterAddress, proof, signature)`. The contract checks:
+  1. the voting address is on the list (Merkle proof);
+  2. the signature really comes from the voting address (EIP-712 typed data: domain "C0LONY", version 1, this chain and this contract; message `LinkVoterPass(gameWallet, nonce)`). Smart-contract wallets can sign too (ERC-1271);
+  3. the signature names the wallet that is calling;
+  4. this voting address hasn't granted its pass before.
+
+  If all pass, the game wallet gets the pass permanently and `VoterPassLinked(voter, gameWallet)` is emitted. Anything wrong reverts with a clear error.
+- **One pass per vote.** Each voting address can grant the pass to exactly one wallet, either itself (by playing directly) or one game wallet. `voterUsed(voter)` shows which.
 
 **Raids, step by step.
 1. **Seal.** `launchRaid`: the raider picks a target colony and up to 30% of their idle workers as soldiers, and submits a hash of the secret target resource. Nobody can read the target from the hash.
@@ -72,6 +79,7 @@ Prices are set in WIF and the owner can tune them within the caps below, so they
 | `settle`, `collect`, `pokeCollapse` | Anyone (the outcome can't be influenced) |
 | `setConfig`, `setCurrentSeasonEnd`, `setVoterRootSetter` | Owner only, within hard caps |
 | `setVoterRoot` | The owner, or the voter-root setter (the keeper) |
+| `claimVoterPass` | Any wallet, with a signature from a voting address naming that wallet |
 
 **What the owner can change, and the limits.**
 - **Prices and cooldowns:** between ¼ and 4× their launch values.
@@ -83,7 +91,9 @@ Prices are set in WIF and the owner can tune them within the caps below, so they
 Every change emits an event (`ConfigUpdated`, `SeasonEndChanged`) that anyone can watch.
 
 **What an attacker would try, and why it fails.**
-- **Use someone else's Voter's Pass proof.** The leaf is built from the caller's own address, so another wallet's proof doesn't verify.
+- **Use someone else's Voter's Pass proof.** On the direct path the leaf is built from the caller's own address, so another wallet's proof doesn't verify. On the linking path, the proof alone isn't enough: the voting wallet must also sign, and only its owner can.
+- **Copy a voter's link signature for another wallet.** The signature names the game wallet; any other caller fails the check.
+- **Replay a link signature, or spread one vote across several wallets.** After a voting address grants its pass once (by linking or by playing directly) it is marked as used, and every further claim with it reverts. The signature also includes a nonce and is tied to this contract on this chain, so it can't be reused elsewhere.
 - **Post a fake voter root.** Only the owner or the voter-root setter can change it, every change emits `VoterRootUpdated`, and the published list lets anyone rebuild and check the root. At worst, a bad root hands out a discount of up to 30% on two actions; it can never move pot money.
 - **Predict or grind a raid's outcome.** The roll comes from a drand round that's fixed at reveal and lies in the future, so nobody knows its signature in advance. Each round has exactly one valid signature, so a settler can't pick between outcomes.
 - **Submit a fake or recycled signature.** `settle` verifies the BLS signature against drand's public key for exactly the assigned round. A wrong signature, or a real one from a different round, reverts.

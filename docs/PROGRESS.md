@@ -20,19 +20,22 @@
 - [x] Deploy script (simulated on testnet and mainnet, nothing sent)
 - [ ] Testnet deploy with MockWIF; full loop played (needs testnet ETH in the deployer)
 - [x] Full testnet season played with a real drand round (docs/TESTNET_RUN.md); found the settle refund was 106% of real cost and fixed it to ~90%
-- [ ] Redeploy testnet with the refund fix and recheck one real settle
+- [x] Redeployed testnet with the refund fix and Voter's Pass linking; all contracts verified
+- [ ] Recheck one real settle refund on the new testnet contracts
 - [x] CONTRACTS_EXPLAINED.md, SECURITY_REVIEW.md
 
 ## Voter's Pass (added on top of Phase 1)
 - [x] Contract: voter root + setter role, optional proof on found/feed, permanent pass, discount 20% (cap 30%)
+- [x] Linking: `claimVoterPass` moves a pass from the voting wallet to a game wallet with an EIP-712 signature (ERC-1271 too); one wallet per voter; 13 tests
 - [x] Founding price raised to 1,500 WIF; feeding stays 100
 - [x] Tests: valid/empty/invalid/foreign proofs, persistence, setter access, cap, split on discounted amount
 - [x] Confirmed vote transfers (1 WIF to candidate wallets) are visible via eth_getLogs on mainnet
-- [x] Keeper: vote indexer (Streams or polling), Merkle builder script, docs/voters.json writer, proof endpoint
-- [ ] Run the one-time Streams backfill and build docs/voters.json (needs Quicknode keys)
+- [x] Keeper: vote indexer (Streams or polling), Merkle builder script, voters.json and per-address proof files
+- [ ] Run the one-time Streams backfill and publish voters.json (needs Quicknode keys)
 - [ ] Post the root onchain at most once a day, only when the list changes (with the Phase 2 settlement wallet)
-- [ ] Cross-check the leaf encoding against @openzeppelin/merkle-tree output
+- [x] Cross-check the leaf encoding against @openzeppelin/merkle-tree output (VoterTreeCompat test)
 - [ ] Frontend: Voter's Pass badge, discounted prices, World is Fair card in the Season tab
+- [ ] Frontend: "link my voting wallet" flow (sign LinkVoterPass with the voting wallet, submit from the game wallet)
 
 ## Quicknode
 - [x] RPC from env (ROBINHOOD_RPC_URL, ROBINHOOD_TESTNET_RPC_URL) in Foundry, keeper and web examples
