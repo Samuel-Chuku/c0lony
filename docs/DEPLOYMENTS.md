@@ -13,7 +13,7 @@ Checks were run on **2026-10-30** (UTC).
 | Keeper and Voter's Pass files | VPS, Docker behind Caddy (automatic HTTPS) | https://keeper.c0lony.xyz |
 
 - **No Node server for the site.** Server code exists only as Cloudflare Pages Functions in `web/functions`. Their secrets, such as the Quicknode URL, are encrypted runtime variables, never build variables.
-- **Build variables are public.** Every `NEXT_PUBLIC_` value is baked into the static files; `web/.env.example` lists them.
+- **Public site config is in the repo.** Contract addresses, RPC and explorer URLs, and the drand, KyberSwap and keeper settings for both networks live in `web/src/config.ts`. Each Pages project sets only `NEXT_PUBLIC_SITE` (`landing` or `app`), `NEXT_PUBLIC_NETWORK` (`testnet` or `mainnet`), `NODE_VERSION` and `PNPM_VERSION`.
 - **Voter's Pass files** are served from the VPS, not the site, so daily list updates need no redeploy:
   - `https://keeper.c0lony.xyz/voters/voters.json`: the full list and root.
   - `https://keeper.c0lony.xyz/voters/proofs/<address>.json`: `{ address, root, proof }`.

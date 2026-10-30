@@ -2,7 +2,7 @@
 
 ## Phase 0: setup and checks
 - [x] Repo layout: `contracts/` (Foundry), `keeper/`, `web/`, `docs/`
-- [x] `.gitignore`, `.env.example` for contracts, keeper and web
+- [x] `.gitignore`, `.env.example` for contracts and keeper (the web app needs no secrets; its public config is `web/src/config.ts`)
 - [x] WIF `burn(uint256)` confirmed onchain → burn directly
 - [x] drand evmnet `/info` and sample rounds recorded; 3 s period confirmed
 - [x] BN254 + modexp precompiles and Cancun opcodes confirmed on mainnet and testnet
