@@ -19,7 +19,8 @@
 - [x] Gas snapshot for `settle` (~269k execution, ~306k per tx)
 - [x] Deploy script (simulated on testnet and mainnet, nothing sent)
 - [ ] Testnet deploy with MockWIF; full loop played (needs testnet ETH in the deployer)
-- [ ] Recheck settle refund against real testnet receipts
+- [x] Full testnet season played with a real drand round (docs/TESTNET_RUN.md); found the settle refund was 106% of real cost and fixed it to ~90%
+- [ ] Redeploy testnet with the refund fix and recheck one real settle
 - [x] CONTRACTS_EXPLAINED.md, SECURITY_REVIEW.md
 
 ## Voter's Pass (added on top of Phase 1)

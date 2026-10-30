@@ -135,7 +135,7 @@ There is no owner.
 | Sponsorship | Amount | Limits |
 | --- | --- | --- |
 | Founder's gas drip | 0.00005 ETH, sent when a wallet founds its first colony | Once per wallet ever; at most 25 per day |
-| Settlement refund | The settler's gas (execution gas × gas price, plus the L1 data fee read from Arbitrum's ArbGasInfo) | At most 0.00005 ETH per raid |
+| Settlement refund | Most of the settler's gas: 90% of the execution gas the contract measures × gas price, plus the exact L1 data fee read from Arbitrum's ArbGasInfo. Always a little under the real cost, never over. | At most 0.00005 ETH per raid |
 
 Both pause automatically if paying would leave less than **0.0003 ETH** in the treasury, so the pool can't be drained. Founding, feeding, speed-ups, shields and revives are never sponsored.
 

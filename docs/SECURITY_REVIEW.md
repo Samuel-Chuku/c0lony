@@ -65,7 +65,7 @@ An honest self-audit of the C0LONY contracts written during the build. It is not
 | --- | --- | --- |
 | Draining the ETH pool | Drips and refunds both stop when paying would leave less than 0.0003 ETH. | Closed |
 | Drip farming | Once per wallet ever, 25 per day, and each requires a founding fee of at least 1,200 WIF, worth more than the 0.00005 ETH drip. | Closed |
-| Refund exceeds gas paid | The refund is measured gas × `tx.gasprice` + L1 fee from ArbGasInfo, capped at 0.00005 ETH. On Robinhood Chain `tx.gasprice` returns the base fee, not the sender's bid (checked live), so bidding high doesn't raise the refund. A test confirms the refund stays below actual gas, at about 93%. To be rechecked against real testnet receipts. | Closed (recheck on testnet) |
+| Refund exceeds gas paid | The refund is 90% of settle's own measured execution gas × `tx.gasprice`, plus the exact L1 fee from ArbGasInfo, capped at 0.00005 ETH. On Robinhood Chain `tx.gasprice` returns the base fee, not the sender's bid (checked live), so bidding high doesn't raise the refund. The first testnet run used a fixed overhead allowance instead and refunded 106% of the real cost; that was fixed (see [TESTNET_RUN.md](TESTNET_RUN.md)). On that real receipt the new formula pays about 90%. | Closed (recheck after the next testnet deploy) |
 | Treasury reverts break gameplay | ColonyGame calls the treasury in `try/catch`, and the treasury skips instead of reverting, so founding and settling always work. | Closed |
 | ArbGasInfo missing or failing | Read with a low-level call; if it fails, the L1 fee counts as 0 (under-refund, never over). | Closed |
 
@@ -81,4 +81,4 @@ An honest self-audit of the C0LONY contracts written during the build. It is not
 
 - No external audit.
 - Ranking gas grows linearly with the number of colonies that were fed twice. That's fine for hundreds of colonies, but would need batching across several transactions for many thousands.
-- The settle refund overhead constant should be rechecked against real testnet receipts.
+- The corrected settle refund should be rechecked against a real receipt after the next testnet deploy.

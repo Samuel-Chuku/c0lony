@@ -60,8 +60,10 @@ contract ColonyGame is ERC721, Ownable, ReentrancyGuard, IColonyGameView {
     uint256 internal constant LOOT_CAP_PER_SOLDIER = 5;
     uint256 public constant ROUND_DELAY = 30 seconds;
     uint256 public constant SETTLE_TIMEOUT = 48 hours;
-    /// @dev Gas spent outside the measured part of settle (intrinsic tx gas plus the refund call).
-    uint256 internal constant SETTLE_GAS_OVERHEAD = 21_000 + 30_000;
+    /// @dev Share of settle's measured execution gas that is refunded, in percent. Only the measured part counts
+    ///      (no allowance for intrinsic or calldata gas), and it is scaled down, so storage-clearing gas refunds can
+    ///      never push the refund above what the settler actually paid. Checked against a real testnet receipt.
+    uint256 internal constant SETTLE_REFUND_PCT = 90;
 
     // Seasons
     uint256 public constant MAX_SEASON_LENGTH = 21 days;
@@ -842,7 +844,7 @@ contract ColonyGame is ERC721, Ownable, ReentrancyGuard, IColonyGameView {
         _removeActive(r.raider, raidId);
         _removeActive(r.defender, raidId);
 
-        uint256 gasUsed = gasStart - gasleft() + SETTLE_GAS_OVERHEAD + 16 * msg.data.length;
+        uint256 gasUsed = (gasStart - gasleft()) * SETTLE_REFUND_PCT / 100;
         uint256 refund;
         try treasury.refundSettle(msg.sender, gasUsed) returns (uint256 amt) {
             refund = amt;
