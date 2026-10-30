@@ -16,6 +16,8 @@ Checks were run on **2026-10-30** (UTC).
 | Faucet | n/a | `https://faucet.testnet.chain.robinhood.com` |
 | Gas price observed | 0.02 gwei (`cast gas-price`) | 0.01 gwei (`cast gas-price`) |
 
+**Colony's RPC provider is [Quicknode](https://www.quicknode.com/chains/robinhood)** (mainnet and testnet, HTTPS and WSS, Streams). The endpoint URLs contain an API key, so they live only in env vars (`ROBINHOOD_RPC_URL`, `ROBINHOOD_TESTNET_RPC_URL`) and are never committed. The checks on this page were run against the public endpoints before Quicknode was set up.
+
 Sources: [Robinhood Chain: connecting](https://docs.robinhood.com/chain/connecting), [add network to wallet](https://docs.robinhood.com/chain/add-network-to-wallet), [BitGo: Robinhood Chain](https://developers.bitgo.com/docs/robinhood-chain.md) (faucet URL), [Alchemy: Robinhood testnet](https://www.alchemy.com/rpc/robinhood-testnet.md).
 
 Note: the faucet returns HTTP 429 to scripted requests, so it has to be opened in a browser. Testnet ETH can also be bridged from Sepolia.
@@ -110,6 +112,16 @@ Quote request: `GET https://aggregator-api.kyberswap.com/robinhood/api/v1/routes
 - Still open (mainnet, needs approval): one small real swap to confirm the fee arrives at the treasury contract. This waits until the Treasury is deployed.
 
 Source: [KyberSwap Aggregator API: EVM swaps](https://docs.kyberswap.com/kyberswap-solutions/kyberswap-aggregator/aggregator-api-specification/evm-swaps).
+
+## World is Fair votes (Voter's Pass source data)
+
+Candidate vote wallets for event #1 ("Who is the G.O.A.T.?", closed at 1,454 votes) are in `data/world-is-fair-vote-wallets.json`, read from [worldisflat.fun/fair](https://worldisflat.fun/fair/) on 2026-10-30. A vote is a transfer of 1 WIF to a candidate wallet.
+
+Checked with `eth_getLogs` on mainnet (2026-10-30):
+
+- **Candidate wallet `0xFCA4…6295`:** 336 incoming WIF transfers from 305 senders, between blocks 50,943,889 and 83,943,728 (31 Aug to 9 Oct 2026). 330 of them are exactly 1 WIF; the rest are 10, 10, 20, 586.68, 2,455.22 and 1,641.59 WIF. On 15 Sep the wallet sent 5,052.48 WIF to `0x…dEaD` (votes burned).
+- **Blocks 50,900,000–50,999,999, all 78 wallets:** 87 transfers (81 of exactly 1 WIF) from 76 voters. This was the keeper's poller smoke test.
+- **Public RPC `eth_getLogs` limits:** 100,000 blocks with several `to` topics, or 10,000,000 blocks with one.
 
 ## Deployment gas (simulated, nothing sent)
 

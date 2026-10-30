@@ -23,8 +23,9 @@ fs_permissions = [{ access = "read", path = "./test/fixtures" }]
 runs = 1000
 
 [rpc_endpoints]
+# Quicknode endpoints, read from contracts/.env
 robinhood_testnet = "${ROBINHOOD_TESTNET_RPC_URL}"
-robinhood = "${ROBINHOOD_MAINNET_RPC_URL}"
+robinhood = "${ROBINHOOD_RPC_URL}"
 
 [etherscan]
 robinhood_testnet = { key = "blockscout", chain = 46630, url = "https://explorer.testnet.chain.robinhood.com/api/" }
