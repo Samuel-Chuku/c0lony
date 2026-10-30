@@ -12,6 +12,11 @@ solc_version = "0.8.28"
 evm_version = "cancun"
 optimizer = true
 optimizer_runs = 200
+via_ir = true
+# Robinhood Chain accepts contracts above the 24 KB EIP-170 limit (checked live up to 64 KB, see
+# docs/DEPLOYMENTS.md). Deployed contracts are ColonyGame ~26 KB and DrandVerifier ~18.5 KB; the local
+# limit is higher only because test contracts embed the game's bytecode.
+code_size_limit = 131072
 fs_permissions = [{ access = "read", path = "./test/fixtures" }]
 
 [profile.default.fuzz]
@@ -24,3 +29,7 @@ robinhood = "${ROBINHOOD_MAINNET_RPC_URL}"
 [etherscan]
 robinhood_testnet = { key = "blockscout", chain = 46630, url = "https://explorer.testnet.chain.robinhood.com/api/" }
 robinhood = { key = "blockscout", chain = 4663, url = "https://robinhoodchain.blockscout.com/api/" }
+
+[fmt]
+line_length = 120
+ignore = ["src/vendor/**"]

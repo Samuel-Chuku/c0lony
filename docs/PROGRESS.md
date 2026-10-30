@@ -14,11 +14,13 @@
 - [ ] One small real swap confirming the fee reaches the treasury (after mainnet deploy, needs approval)
 
 ## Phase 1: contracts
-- [ ] DrandVerifier + tests against real evmnet rounds
-- [ ] ColonyGame, SeasonPot, Treasury + full test suite
-- [ ] Gas snapshot for `settle`
-- [ ] Testnet deploy with MockWIF; full loop played
-- [ ] CONTRACTS_EXPLAINED.md, SECURITY_REVIEW.md
+- [x] DrandVerifier + tests against real evmnet rounds (5 rounds verify; wrong/tampered/fuzzed signatures fail)
+- [x] ColonyGame, SeasonPot, Treasury + full test suite (75 tests incl. fuzzing and a simulated week)
+- [x] Gas snapshot for `settle` (~269k execution, ~306k per tx)
+- [x] Deploy script (simulated on testnet and mainnet, nothing sent)
+- [ ] Testnet deploy with MockWIF; full loop played (needs testnet ETH in the deployer)
+- [ ] Recheck settle refund against real testnet receipts
+- [x] CONTRACTS_EXPLAINED.md, SECURITY_REVIEW.md
 
 ## Phase 2: keeper
 - [ ] Event watcher, drand fetch, auto-settle, balance alert, pm2 config

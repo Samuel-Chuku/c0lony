@@ -29,9 +29,11 @@ Note: the faucet returns HTTP 429 to scripted requests, so it has to be opened i
 | BN254 `ecPairing` (0x08) | works | empty input returns `1` (mainnet and testnet) |
 | `modexp` (0x05) | works | 3² mod 5 returns `4` |
 | ArbGasInfo (0x6c) `getCurrentTxL1GasFees()` | works | mainnet returned 1,363,128,000 wei (≈0.0000000014 ETH); testnet returns 0 because it charges no L1 fee |
+| Contract size limit | above 24 KB accepted | `eth_estimateGas` for creating contracts of 24,577, 30,000, 49,153 and 65,535 bytes all succeed on both networks |
+| `tx.gasprice` | returns the base fee, not the sender's bid | `eth_call` with a 1 gwei bid returns ≈0.02 gwei (mainnet) / 0.01 gwei (testnet) |
 | PUSH0 / MCOPY / TSTORE (Cancun) | supported | `eth_call` of raw creation code returns success; an `INVALID` opcode control returns an error |
 
-So the contracts compile with `evm_version = "cancun"`, and BLS verification on BN254 can run natively.
+So the contracts compile with `evm_version = "cancun"`, and BLS verification on BN254 can run natively. ColonyGame (~26 KB) is above Ethereum's 24 KB limit but well within what Robinhood Chain accepts, so deploy scripts run with `--disable-code-size-limit`. Because `tx.gasprice` is the base fee, a settler can't inflate their gas refund by bidding high.
 
 From [Differences from Ethereum](https://docs.robinhood.com/chain/differences-from-ethereum/):
 - `block.prevrandao` / `block.difficulty` "return a constant value on Robinhood Chain and are not a source of randomness."
@@ -108,6 +110,17 @@ Quote request: `GET https://aggregator-api.kyberswap.com/robinhood/api/v1/routes
 - Still open (mainnet, needs approval): one small real swap to confirm the fee arrives at the treasury contract. This waits until the Treasury is deployed.
 
 Source: [KyberSwap Aggregator API: EVM swaps](https://docs.kyberswap.com/kyberswap-solutions/kyberswap-aggregator/aggregator-api-specification/evm-swaps).
+
+## Deployment gas (simulated, nothing sent)
+
+`forge script script/Deploy.s.sol` simulated against each network's RPC on 2026-10-30:
+
+| Network | Gas | Gas price | Cost |
+| --- | --- | --- | --- |
+| Testnet (46630), incl. MockWIF | 17,335,197 | 0.02 gwei | ≈0.00035 ETH |
+| Mainnet (4663) | 16,633,817 | 0.04 gwei | ≈0.00067 ETH (≈0.0083 ETH if gas spiked to 0.5 gwei) |
+
+Measured gas per call (`forge snapshot`, see `contracts/.gas-snapshot`): `settle` ≈ 269k execution gas (≈306k for the whole transaction), of which drand signature verification ≈ 222k.
 
 ## Deployed contracts
 
