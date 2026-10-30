@@ -4,6 +4,10 @@ test = "test"
 script = "script"
 out = "out"
 libs = ["lib"]
+remappings = [
+  "forge-std/=lib/forge-std/src/",
+  "@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/",
+]
 solc_version = "0.8.28"
 evm_version = "cancun"
 optimizer = true
