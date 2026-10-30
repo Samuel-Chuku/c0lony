@@ -136,9 +136,22 @@ Measured gas per call (`forge snapshot`, see `contracts/.gas-snapshot`): `settle
 
 ## Deployed contracts
 
-| Contract | Testnet (46630) | Mainnet (4663) |
-| --- | --- | --- |
-| MockWIF | — | n/a |
-| ColonyGame | — | — |
-| SeasonPot | — | — |
-| Treasury | — | — |
+### Robinhood Chain testnet (46630), deployed 2026-10-30
+
+Deployed in blocks 145,287,070–145,287,216 by `script/Deploy.s.sol` (13,342,600 gas in total). All five contracts are verified on Blockscout.
+
+| Contract | Address |
+| --- | --- |
+| ColonyGame | [`0x76131b6547b584e9f101618239A26B2aCCd8aA43`](https://explorer.testnet.chain.robinhood.com/address/0x76131b6547b584e9f101618239A26B2aCCd8aA43) |
+| SeasonPot | [`0x403988c9cAdE46293a4561ADC6fbb0BDA02647FF`](https://explorer.testnet.chain.robinhood.com/address/0x403988c9cAdE46293a4561ADC6fbb0BDA02647FF) |
+| Treasury | [`0x74f955C7b01Ad3649d50a93149b9ad9C5594c8b9`](https://explorer.testnet.chain.robinhood.com/address/0x74f955C7b01Ad3649d50a93149b9ad9C5594c8b9) |
+| DrandVerifier (linked library) | [`0x2513832059bac29e5a5115634694F22B6B302Ae1`](https://explorer.testnet.chain.robinhood.com/address/0x2513832059bac29e5a5115634694F22B6B302Ae1) |
+| MockWIF (testnet only) | [`0x653a93f2018DfcCf6bE8b70d7cA227b27ADE6037`](https://explorer.testnet.chain.robinhood.com/address/0x653a93f2018DfcCf6bE8b70d7cA227b27ADE6037) |
+
+Owner: `0x4B11611CF7C90aEc2003721d71107d7E1cBf37c2`. Treasury funded with 0.002 testnet ETH.
+
+**Testnet-only settings** (set with `setConfig`, both within the hard caps): guard window 1 h and feed interval 6 h, so a full loop fits in an afternoon. Mainnet launches with 4 h and 24 h.
+
+### Robinhood Chain mainnet (4663)
+
+Not deployed yet.

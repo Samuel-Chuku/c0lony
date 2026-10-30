@@ -1,0 +1,16 @@
+{
+  "generator": "@openzeppelin/merkle-tree StandardMerkleTree ['address']",
+  "root": "0xc95dc8027ffbf2a78bb25357ab8b7178e4f4f2a174634d53da688994333b41ef",
+  "voters": [
+    "0x1d96f2f6bef1202e4ce1ff6dad0c2cb002861d3e",
+    "0x328809bc894f92807417d2dad6b7c998c1afdac6",
+    "0x36ef4f31f72d1de7b495f4944ae6f84c3754941e",
+    "0x7e09429585169aba1759346eb6b94c91f3c7203b",
+    "0x937ef51f9702747129f7164bb1027b5ab2a93f4e"
+  ],
+  "alice": "0x328809bc894f92807417d2dad6b7c998c1afdac6",
+  "aliceProof": [
+    "0x431d328b2304c5c9905d3dc3b8d196c596dfc2444c6a0fd8aaa69b22804c3f91",
+    "0x380890c7d32aee6937ee14bdd6485be81b6e1f8f6a66dc7267352a412195814a"
+  ]
+}
