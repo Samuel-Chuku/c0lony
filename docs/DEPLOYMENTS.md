@@ -8,7 +8,8 @@ Checks were run on **2026-10-30** (UTC).
 
 | Piece | Where | Address |
 | --- | --- | --- |
-| Website | Cloudflare Pages: static Next.js export from `web/`, output `web/out` | https://c0lony.xyz |
+| Landing page | Cloudflare Pages: static Next.js export from `web/` with `NEXT_PUBLIC_SITE=landing`, output `web/out` | https://c0lony.xyz |
+| Game app | Cloudflare Pages: the same `web/` built with `NEXT_PUBLIC_SITE=app`, output `web/out` | https://app.c0lony.xyz |
 | Keeper and Voter's Pass files | VPS, Docker behind Caddy (automatic HTTPS) | https://keeper.c0lony.xyz |
 
 - **No Node server for the site.** Server code exists only as Cloudflare Pages Functions in `web/functions`. Their secrets, such as the Quicknode URL, are encrypted runtime variables, never build variables.

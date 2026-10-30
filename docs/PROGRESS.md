@@ -46,7 +46,8 @@
 - [x] Web is a Next.js static export (`web/out`) for Cloudflare Pages; `_headers` sets caching and security headers; clean build confirmed
 - [x] Voter's Pass published as static files (`voters.json`, `proofs/<address>.json`) for Caddy to serve from the VPS
 - [ ] Keeper on the VPS in Docker behind Caddy at keeper.c0lony.xyz
-- [ ] Cloudflare Pages project connected, c0lony.xyz attached
+- [x] Landing (c0lony.xyz) and app (app.c0lony.xyz) split: one `web/` codebase, built per site by `NEXT_PUBLIC_SITE`, linked to each other
+- [ ] Two Cloudflare Pages projects connected, c0lony.xyz and app.c0lony.xyz attached
 
 ## Phase 3: frontend
 - [ ] Colony tab (approval checkpoint), Raids, Season, Activity, Get WIF sheet

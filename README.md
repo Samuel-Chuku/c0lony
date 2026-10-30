@@ -10,7 +10,7 @@ _Full README, contract addresses and how to play coming at launch._
 
 RPC and event indexing run on [Quicknode](https://www.quicknode.com/chains/robinhood): Robinhood Chain RPC for the app, keeper and contract deploys, and Quicknode Streams for event indexing.
 
-The site is a static Next.js export hosted on [Cloudflare Pages](https://pages.cloudflare.com) at [c0lony.xyz](https://c0lony.xyz). The keeper and the published Voter's Pass list run on a small VPS behind Caddy at `keeper.c0lony.xyz`.
+The site is a static Next.js export hosted on [Cloudflare Pages](https://pages.cloudflare.com) as two sites: the landing page at [c0lony.xyz](https://c0lony.xyz) and the game at [app.c0lony.xyz](https://app.c0lony.xyz). The keeper and the published Voter's Pass list run on a small VPS behind Caddy at `keeper.c0lony.xyz`.
 
 ## Layout
 

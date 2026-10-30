@@ -7,8 +7,12 @@
     "node": ">=22"
   },
   "scripts": {
-    "dev": "next dev",
+    "dev": "pnpm dev:landing",
+    "dev:landing": "NEXT_PUBLIC_SITE=landing NEXT_DIST_DIR=.next-landing NEXT_PUBLIC_APP_URL=http://localhost:3001 NEXT_PUBLIC_LANDING_URL=http://localhost:3000 next dev -p 3000",
+    "dev:app": "NEXT_PUBLIC_SITE=app NEXT_DIST_DIR=.next-app NEXT_PUBLIC_APP_URL=http://localhost:3001 NEXT_PUBLIC_LANDING_URL=http://localhost:3000 next dev -p 3001",
     "build": "next build",
+    "build:landing": "NEXT_PUBLIC_SITE=landing next build",
+    "build:app": "NEXT_PUBLIC_SITE=app next build",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

@@ -1,11 +1,8 @@
-import { BRAND } from "../brand";
+import { SITE } from "../brand";
+import { Landing } from "../landing/Landing";
+import { Game } from "../game/Game";
 
-// Placeholder until the game screens are built.
+// SITE is fixed at build time, so each static site only renders its own half.
 export default function Home() {
-  return (
-    <main>
-      <h1>{BRAND.name}</h1>
-      <p>{BRAND.tagline}</p>
-    </main>
-  );
+  return SITE === "app" ? <Game /> : <Landing />;
 }

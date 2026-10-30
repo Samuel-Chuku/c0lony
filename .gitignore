@@ -22,6 +22,7 @@ yarn-error.log*
 
 # Next.js (static export, Cloudflare Pages)
 web/.next/
+web/.next-*/
 web/out/
 web/next-env.d.ts
 *.tsbuildinfo
@@ -46,3 +47,6 @@ coverage/
 
 # keeper: published Voter's Pass files (served from the VPS)
 keeper/public/
+
+# web: Cloudflare Pages variable files (filled in locally, imported in the dashboard)
+web/cloudflare/*.env
