@@ -41,9 +41,9 @@ export const CONFIG = {
   proofsBaseUrl: "https://keeper.c0lony.xyz/voters", // <base>/proofs/<address>.json
   walletConnectProjectId: "6211841b582ba25061a906fad00dd9f8", // public by design (cloud.reown.com)
   // Privy app ID (dashboard.privy.io > App settings). Public by design; empty until the app is created.
-  privyAppId: "",
+  privyAppId: "cmvwkvslr010a0gl2xf09usrq",
   // Web Push VAPID public key (base64url). The private half lives only in the keeper env.
-  vapidPublicKey: "",
+  vapidPublicKey: "BPnqEZ4l0ptYz8W5DVCCIsI-gajTI2iO6DlOitM49eM-cXuS5_JTodjBhQkUy_XfqDNvzCOZXjVxDcJmNG3gIhg",
   drand: {
     apiUrl: "https://api.drand.sh",
     chainHash: "04f1e9062b8a81f848fded9c12306733282b2727ecced50032187751166ec8c3",
