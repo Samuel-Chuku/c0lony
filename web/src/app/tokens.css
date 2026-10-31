@@ -1,0 +1,92 @@
+/* C0LONY tokens. The only source of colour, type, shape, spacing and motion values.
+   Never hardcode a value that exists here. Never add a token in a component file.
+   If a value is missing, add it here first, in this namespace. */
+
+:root {
+  /* Ground and surfaces */
+  --c0-soil: #24180F;       /* app background, every screen */
+  --c0-soil-deep: #1C140D;  /* world sky, wells */
+  --c0-loam: #4A3020;       /* raised panels, inactive chips, meter tracks */
+  --c0-clay: #8A5A3B;       /* inner panel rule, own-row shadow, avatar fallback */
+  --c0-ink: #1A110A;        /* every outline; text on paper and gold */
+  --c0-shadow: #0E0905;     /* hard offset shadows */
+  --c0-paper: #E9D8B4;      /* cards and sheets; text on soil */
+  --c0-paper-hi: #FBF3DE;   /* secondary buttons on paper; text on red */
+  --c0-muted: #CDB78F;      /* secondary text on soil and loam */
+  --c0-rule: #C9B184;       /* dashed dividers, ruled lines on paper */
+  --c0-sub: #4A3020;        /* secondary text on paper (8.62:1) */
+
+  /* The one idea: WIF. Fill with ink on top, or text on soil/loam. Never text on paper. */
+  --c0-gold: #E7B13C;
+
+  /* Raids only */
+  --c0-red: #B4473A;        /* fills: banner, Raid/Avenge buttons, stamps' border */
+  --c0-red-text: #8E3529;   /* red text on paper (5.55:1) */
+  --c0-red-on-dark: #E58A7C;/* red text on soil/loam (6.81:1) */
+
+  /* State textures (the five burrow states) */
+  --c0-dither: repeating-conic-gradient(#4A3020 0 25%, #24180F 0 50%) 0 0 / 4px 4px;          /* Underway */
+  --c0-hatch: repeating-linear-gradient(45deg, #1A110A 0 4px, #33231A 4px 8px);              /* Blocked */
+
+  /* Type */
+  --c0-f-display: 'Jersey 10', 'DotGothic16', monospace;
+  --c0-f-body: 'DotGothic16', ui-monospace, monospace;
+  --c0-f-hand: 'Gaegu', 'DotGothic16', cursive;   /* always weight 700 */
+
+  --c0-fs-caption: 11px;   /* body face */
+  --c0-fs-body: 13px;      /* body face */
+  --c0-fs-body-lg: 14px;   /* body face */
+  --c0-fs-hand: 16px;      /* hand face; 15-19 allowed in steps of 1 */
+  --c0-fs-label: 20px;     /* display face */
+  --c0-fs-button: 24px;    /* display face; 22 compact, 28-30 hero */
+  --c0-fs-title: 24px;     /* display face */
+  --c0-fs-h1: 32px;        /* display face */
+  --c0-fs-hero: 52px;      /* display face, rank number */
+  --c0-lh-tight: 1;
+  --c0-lh-body: 1.3;
+  --c0-track-label: 2px;   /* letter-spacing on caps labels */
+
+  /* Shape */
+  --c0-radius: 0;          /* everywhere; avatars use 50% and nothing else does */
+  --c0-bw: 3px;
+  --c0-bw-thin: 2px;
+  --c0-shadow-card: 3px 3px 0 var(--c0-shadow);
+  --c0-shadow-modal: 5px 5px 0 var(--c0-shadow);
+  --c0-shadow-raider: 3px 3px 0 var(--c0-red);   /* the raider's neighbour row only */
+  --c0-shadow-own: 3px 3px 0 var(--c0-clay);     /* your own feed rows */
+  --c0-dim: rgba(14, 9, 5, .75);                 /* layer behind sheets, drawers and modals */
+  --c0-bevel: inset -3px -3px 0 rgba(0,0,0,.22), inset 3px 3px 0 rgba(255,255,255,.3);
+  --c0-focus: 3px solid var(--c0-paper);
+  --c0-focus-offset: 2px;
+
+  /* Spacing: multiples of 4 */
+  --c0-s1: 4px; --c0-s2: 8px; --c0-s3: 12px; --c0-s4: 16px; --c0-s5: 20px; --c0-s6: 24px; --c0-s8: 32px;
+  --c0-tap: 44px;
+  --c0-btn-h: 48px;
+  --c0-btn-h-compact: 44px;
+  --c0-btn-h-hero: 56px;
+  --c0-header-h: 56px;
+  --c0-nav-h: 76px;
+  --c0-avatar-sm: 40px;
+  --c0-avatar-md: 64px;
+  --c0-col-max: 480px;
+
+  /* Pixel art */
+  --c0-px-world: 6px;      /* colony world cell */
+  --c0-px-icon: 2px;       /* 10x10 icon cell (20px); 3px for nav (30px) */
+
+  /* Motion: stepped, never eased fades */
+  --c0-step: steps(2, end);
+  --c0-ant-tick: 600ms;
+  --c0-queen-pulse: 1600ms;
+  --c0-press: translate(2px, 2px);
+}
+
+html, body { background: var(--c0-soil); color: var(--c0-paper); font-family: var(--c0-f-body); }
+* { border-radius: 0; }
+.c0-pixel { image-rendering: pixelated; shape-rendering: crispEdges; }
+:focus-visible { outline: var(--c0-focus); outline-offset: var(--c0-focus-offset); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}

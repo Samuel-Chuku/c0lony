@@ -1,9 +1,12 @@
-// Brand values in one place. The logo and favicon are files under public/brand/, so swapping them needs no code change.
+// Brand values in one place. The logo, icons and favicon are files under public/, so swapping them needs no code change.
 export const BRAND = {
   name: "C0LONY", // display text; the "0" is a zero
   slug: "c0lony", // lowercase contexts
   tagline: "An onchain ant-colony strategy game. Feed the queen, raid rivals, win the $WIF season pot.",
-  favicon: "/brand/favicon.svg",
+  favicon: "/icon-32.png",
+  appleTouchIcon: "/icon-180.png",
+  logo: "/logo.svg",
+  logoCompact: "/logo-compact.svg",
 } as const;
 
 // One codebase, two static sites, picked at build time by NEXT_PUBLIC_SITE:
