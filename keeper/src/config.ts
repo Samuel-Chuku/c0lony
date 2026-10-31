@@ -47,6 +47,21 @@ export function loadConfig() {
     votersListUri: env("VOTERS_LIST_URI", "https://keeper.c0lony.xyz/voters/voters.json"),
     // Served as static files by Caddy at https://keeper.c0lony.xyz/voters/ (voters.json, proofs/<address>.json)
     votersPublicDir: resolve(env("VOTERS_PUBLIC_DIR", "public/voters")),
+    // Signed delivery to the app's Pages Functions (feed ingest, push targets). Empty = feed and push are off.
+    feedApiBase: env("FEED_API_BASE", "").replace(/\/+$/, ""),
+    feedIngestSecret: env("FEED_INGEST_SECRET", ""),
+    // Web Push (VAPID). PUSH_ENABLED defaults to on when both keys are present.
+    vapidPublicKey: env("VAPID_PUBLIC_KEY", ""),
+    vapidPrivateKey: env("VAPID_PRIVATE_KEY", ""),
+    vapidSubject: env("VAPID_SUBJECT", ""),
+    pushEnabled: env("PUSH_ENABLED", env("VAPID_PUBLIC_KEY", "") && env("VAPID_PRIVATE_KEY", "") ? "true" : "false") === "true",
+    // Settlement wallet; empty = settling is off
+    keeperPrivateKey: env("KEEPER_PRIVATE_KEY", ""),
+    minBalanceEth: env("MIN_BALANCE_ETH", "0.0002"),
+    drandApiUrl: env("DRAND_API_URL", "https://api.drand.sh").replace(/\/+$/, ""),
+    drandChainHash: env("DRAND_CHAIN_HASH", "04f1e9062b8a81f848fded9c12306733282b2727ecced50032187751166ec8c3"),
+    colonyGameAddress: env("COLONY_GAME_ADDRESS", ""),
+    seasonPotAddress: env("SEASON_POT_ADDRESS", ""),
     stateDir,
   };
 }

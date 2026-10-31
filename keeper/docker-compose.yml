@@ -1,0 +1,15 @@
+# Runs the keeper on the VPS. State and the published voter files live on the host, so rebuilds and restarts
+# keep them. The webhook only listens on localhost; the reverse proxy forwards to it.
+services:
+  keeper:
+    build:
+      context: ..
+      dockerfile: keeper/Dockerfile
+    container_name: c0lony-keeper
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "127.0.0.1:8790:8787"
+    volumes:
+      - ./state:/app/keeper/state
+      - ./public/voters:/app/keeper/public/voters

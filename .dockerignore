@@ -1,0 +1,15 @@
+**/node_modules
+**/.env
+**/.env.*
+!**/.env.example
+keeper/state
+keeper/public
+contracts
+web
+docs
+.git
+.claude
+BUILD_SPEC.md
+CLAUDE.md
+PREREQUISITES.md
+NEXT_STEPS.md

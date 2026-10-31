@@ -3,21 +3,26 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "engines": { "node": ">=22.18" },
+  "engines": {
+    "node": ">=22.18"
+  },
   "scripts": {
     "start": "node src/main.ts",
     "test": "node --test test/*.test.ts",
     "typecheck": "tsc --noEmit",
+    "abi": "node scripts/gen-abi.ts",
     "filters": "node scripts/gen-filters.ts",
     "voters:backfill": "node scripts/backfill-votes-poll.ts",
     "voters:build": "node scripts/build-voters.ts"
   },
   "dependencies": {
     "@openzeppelin/merkle-tree": "^1.0.8",
-    "viem": "^2.21.0"
+    "viem": "^2.21.0",
+    "web-push": "^3.6.7"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
+    "@types/web-push": "^3.6.4",
     "typescript": "^5.7.0"
   }
 }
