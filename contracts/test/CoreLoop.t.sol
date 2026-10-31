@@ -264,7 +264,7 @@ contract CoreLoopTest is Base {
         game.revive();
 
         vm.expectEmit(address(game));
-        emit ColonyGame.ColonyCollapsed(id);
+        emit ColonyGame.ColonyCollapsed(id, alice);
         uint64 id2 = _found(alice);
         assertGt(id2, id);
         assertEq(_workers(id), 0, "collapsed colony zeroed");

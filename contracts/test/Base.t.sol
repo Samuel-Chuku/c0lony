@@ -34,7 +34,7 @@ contract ColonyGameHarness is ColonyGame {
     function resolveWith(uint256 raidId, uint256 rand) external returns (Result memory) {
         Raid storage r = raids[raidId];
         r.status = RaidStatus.Settled;
-        Result memory res = _resolve(r, rand);
+        Result memory res = _resolve(raidId, r, rand);
         _removeActive(r.raider, raidId);
         _removeActive(r.defender, raidId);
         return res;

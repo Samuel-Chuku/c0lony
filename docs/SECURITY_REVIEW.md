@@ -46,7 +46,13 @@ An honest self-audit of the C0LONY contracts written during the build. It is not
 | Farming score with a second colony | Each guarded raid costs the attacking colony half its soldiers and 10–15% of a resource. A farming colony shrinks out of raid range quickly, and every colony costs 1,500 WIF to found (1,200 with a Voter's Pass). | Mitigated |
 | Owner starves colonies by changing timers | The starvation timer (72 h), revive window (24 h), settle timeout (48 h) and randomness delay (30 s) are constants. The feed interval can't reach 72 h. | Closed |
 | Owner ends a season early | Allowed only to a future time within 21 days of the season start, and emits `SeasonEndChanged`. Ending very early could stop colonies reaching two feedings. | Accepted, disclosed |
-| Colony transfer to dodge one-per-wallet | Colony NFTs revert on any transfer. | Closed |
+| Colony transfer to dodge one-per-wallet | Colony NFTs revert on any transfer between wallets. Mint and burn are allowed, and the contract never burns. | Closed |
+| Selling pot entries by moving colony NFTs | Same transfer block. `unlockSeasonNfts` is an owner-only placeholder for the post-hackathon Season NFTs ([ROADMAP.md](ROADMAP.md)). It always reverts with `NotYetAvailable`, so it cannot unlock anything. Real unlocking would need a new, reviewed contract. | Closed (placeholder only, nothing to exploit) |
+| Avenge bypasses the raid cooldown | Scope is narrow. `avenge` skips only the caller's cooldown check and does not touch `lastRaidLaunch`, so the normal cooldown for `launchRaid` is unchanged. Everything else is shared with `launchRaid` (one internal function): soldier limit, range, shield, open-incoming limit, collect-first, guard window, reveal and drand settle. There is no bonus. | Closed |
+| Avenge used against the wrong wallet or twice | The grant is keyed by (defender wallet, raider wallet). It is deleted before the raid is created, so it can't be reused, and it expires after 24 h. A reverted attempt rolls the delete back, so the grant is kept. | Closed |
+| Avenge grant across refounding or a season boundary | The grant belongs to wallets, not colonies. `avenge` targets the raider's colony in the current season at call time, so a refounded or new-season colony can be avenged within the 24 h. The cost is at most 24 h of exposure, and the target still needs to be in range and unshielded. | Accepted (bounded to 24 h) |
+| Collusion: two friends trading avenge raids to farm score | Every avenge raid still needs a guard window (4 h), a reveal, a drand roll and a settle, within soldier limits and the collect-first rule, and the colonies must stay in range. Each grant needs a fresh raider win. A win scores the same +25 as any raid. The only saving is skipping the 6 h launch cooldown. | Mitigated, not removed |
+| Avenge changes raid outcomes or WIF | The roll and loot code are unchanged. Avenge adds only a grant record and counters, and never moves WIF. | Closed |
 
 ## Voter's Pass
 
@@ -81,8 +87,15 @@ An honest self-audit of the C0LONY contracts written during the build. It is not
 | Contract size above 24 KB | ColonyGame is about 26 KB. Robinhood Chain accepts contracts up to at least 64 KB (checked live with `eth_estimateGas` on both networks). | Accepted, documented |
 | Long idle period makes the next transaction expensive | Seasons are created lazily, one loop iteration per missed season. Even a year of 1-day seasons stays within block limits. | Accepted |
 
+## Settle gas
+
+`settle` now costs about 512k gas in Foundry (up from about 468k). The extra comes from writing the avenge grant and the raid-record counters. The refund cap of 0.00005 ETH is unchanged and the refund is still computed from measured gas, so it can't exceed the real cost. If the cap is below the real cost of a settle, the settler covers the difference.
+
 ## Left open
 
 - No external audit.
 - Ranking gas grows linearly with the number of colonies that were fed twice. That's fine for hundreds of colonies, but would need batching across several transactions for many thousands.
-- The corrected settle refund should be rechecked against a real receipt after the next testnet deploy.
+- The corrected settle refund should be rechecked against a real receipt after the next testnet deploy, now with the higher settle gas.
+- Avenge collusion is slowed, not prevented. Two coordinated wallets can still trade raids. The score value of a win is the same as a normal raid.
+- Avenge grants survive refounding and season boundaries for up to 24 h.
+- The Season NFT unlock is not built. When it is, it needs its own design and review.

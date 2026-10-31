@@ -24,7 +24,7 @@ contract RaidsTest is Base {
         uint256 raidId = game.nextRaidId(a);
         bytes32 c = game.commitmentFor(ColonyGame.Resource.Sugar, _salt(alice, raidId), raidId);
         vm.expectEmit(address(game));
-        emit ColonyGame.RaidLaunched(raidId, a, b, 3, uint64(vm.getBlockTimestamp() + 4 hours));
+        emit ColonyGame.RaidLaunched(raidId, a, b, alice, bob, 3, uint64(vm.getBlockTimestamp() + 4 hours), false);
         vm.prank(alice);
         game.launchRaid(b, 3, c);
         assertEq(_colony(a).data.soldiersOut, 3);

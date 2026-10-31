@@ -33,7 +33,7 @@ sponsors ──sponsor()──▶ SeasonPot (100% to the chosen season)
 
 ## ColonyGame
 
-**What it does.** It keeps every colony's state: workers, nest chambers, leaves, sugar, trails, farms, score and timers. It also runs raids. A colony is a non-transferable NFT, so it can't be sold or moved to another wallet.
+**What it does.** It keeps every colony's state: workers, nest chambers, leaves, sugar, trails, farms, score and timers. It also runs raids. A colony is a locked NFT: it can't be sold or moved to another wallet during a season. Minting at founding is allowed, and the contract never burns. Avenge lets a raided defender raid the winner back (see below).
 
 **Paid actions.** Each one costs WIF, split 70% pot / 20% burned / 10% treasury.
 
@@ -62,24 +62,38 @@ Prices are set in WIF and the owner can tune them within the caps below, so they
   If all pass, the game wallet gets the pass permanently and `VoterPassLinked(voter, gameWallet)` is emitted. Anything wrong reverts with a clear error.
 - **One pass per vote.** Each voting address can grant the pass to exactly one wallet, either itself (by playing directly) or one game wallet. `voterUsed(voter)` shows which.
 
-**Raids, step by step.
+**Raids, step by step.**
+
 1. **Seal.** `launchRaid`: the raider picks a target colony and up to 30% of their idle workers as soldiers, and submits a hash of the secret target resource. Nobody can read the target from the hash.
 2. **Guard.** `guard`: within 4 h, the defender may guess and guard one resource.
 3. **Reveal.** `reveal`: within the next 24 h, the raider reveals the target. The contract checks it matches the hash, then fixes a future drand round, the first one at least 30 s later.
 4. **Settle.** `settle`: once that round is published, anyone submits its signature. The contract checks the signature is genuine for exactly that round, then derives the outcome from it.
 5. **Collect.** `collect`: anyone can close a raid that ended without a roll. If the raider never revealed, the soldiers are lost. If nobody settled within 48 h of the round, the soldiers come home.
 
+**Avenge.** When a raid settles with the raider winning, the defender's wallet gets one free raid back at the raider's wallet for 24 h (`AvengeGranted` is emitted). It is not granted if the raider loses or the raid was guarded.
+- `avenge(raider, soldiers, commitment)` works exactly like `launchRaid` against the raider's current colony: same soldier limit, range, shield, guard window, reveal and drand settle, and no bonus. The one difference is that it neither needs nor restarts the caller's raid cooldown.
+- The grant is used once. It is deleted when `avenge` is called, so a second call reverts with `NoAvenge`.
+- A new win by the same raider over the same defender refreshes the expiry to 24 h from that settle.
+- If an `avenge` attempt reverts (for example the target is shielded), the grant is kept.
+- `avengeAvailable(defender, raider)` shows whether a grant is live and when it ends. `RaidLaunched` has an `isAvenge` flag.
+- Avenge never moves WIF. Like any raid, it only moves leaves, sugar and soldiers.
+
+**Events and profiles.** Player events now name the colony owner's wallet (for example `Paid`, `ColonyFounded`, `QueenFed`, `Built`, `RaidLaunched`, `RaidSettled`), so the live feed needs no extra reads. `RaidLaunched` still keeps the target resource sealed. `getProfile(address)` returns a whole profile in one call: ants, capacity, buildings, assignments, free ants, leaves and sugar (including trail and farm output not yet collected), score, founding time and day, raid record, fed-until time, shield time and Voter's Pass. Each colony counts `raidsWon` and `raidsLost` (as raider) and `raidsFaced` and `raidsDefended` (as defender), only for settled raids. `seasonDay(season, timestamp)` gives the day of the season.
+
 **Who can call what.**
 
 | Function | Who |
 | --- | --- |
 | `foundColony`, `tend`, `feedQueen`, building, `assignWorkers`, `speedUp`, `revive`, `shield`, `launchRaid` | Any wallet, acting on its own colony |
+| `avenge` | Only a wallet holding a live grant against that exact raider, acting on its own colony |
 | `guard` | Only the defending colony's owner |
 | `reveal` | Only the raiding colony's owner |
 | `settle`, `collect`, `pokeCollapse` | Anyone (the outcome can't be influenced) |
 | `setConfig`, `setCurrentSeasonEnd`, `setVoterRootSetter` | Owner only, within hard caps |
 | `setVoterRoot` | The owner, or the voter-root setter (the keeper) |
 | `claimVoterPass` | Any wallet, with a signature from a voting address naming that wallet |
+| `avengeAvailable`, `getProfile`, `seasonDay` | Anyone (read-only views) |
+| `unlockSeasonNfts` | Owner only, and it always reverts (`NotYetAvailable`). A placeholder for the post-hackathon Season NFTs in [ROADMAP.md](ROADMAP.md). It cannot unlock anything. |
 
 **What the owner can change, and the limits.**
 - **Prices and cooldowns:** between ¼ and 4× their launch values.
@@ -99,8 +113,11 @@ Every change emits an event (`ConfigUpdated`, `SeasonEndChanged`) that anyone ca
 - **Submit a fake or recycled signature.** `settle` verifies the BLS signature against drand's public key for exactly the assigned round. A wrong signature, or a real one from a different round, reverts.
 - **Read the target and guard it perfectly.** The target is only a hash until the guard window closes.
 - **Back out of a bad raid.** Not revealing loses every soldier sent, which is worse than losing.
-- **Spam raids.** Each colony can launch one raid per 6 h, a target can face at most 2 open raids, and you must close your finished raids before launching another.
-- **Transfer a colony to dodge the one-per-wallet rule.** Colony NFTs can't be transferred.
+- **Spam raids.** Each colony can launch one normal raid per 6 h (avenge raids skip this cooldown, but each needs a live grant from a raid you lost), a target can face at most 2 open raids, and you must close your finished raids before launching another.
+- **Transfer a colony to dodge the one-per-wallet rule.** Colony NFTs can't be transferred between wallets.
+- **Use avenge against someone else.** It fails. The grant is stored for the exact pair of wallets (defender, raider), so `avenge` against any other wallet reverts with `NoAvenge`.
+- **Farm score by trading avenge raids with a friend.** Each avenge raid still needs the 4 h guard window, a reveal, a drand roll, the soldier limits and the collect-first rule. It is slower than normal raiding, and a raid win is worth the same +25 as any other. Each avenge also needs a fresh win by the other side, and expires after 24 h.
+- **Unlock NFTs mid-season to sell pot entries.** `unlockSeasonNfts` is a placeholder that always reverts, and transfers between wallets revert in the token code itself. No call can change that.
 
 ---
 

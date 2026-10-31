@@ -10,9 +10,9 @@ const NETWORKS = {
     rpcUrl: "https://rpc.testnet.chain.robinhood.com",
     explorerUrl: "https://explorer.testnet.chain.robinhood.com",
     contracts: {
-      colonyGame: "0xE186253067C229CC1774830C09Be901ee16B26c8",
-      seasonPot: "0x2B10C87A6A9bbAE418878FdCDE66F1C34f4F6128",
-      treasury: "0x5d7B210326435e1bDbC39AeFDD6E0969843183e4", // also receives the 0.5% swap fee
+      colonyGame: "0x6E9a1547eA9981428e1de95A00C9a4D6224a949B",
+      seasonPot: "0x70dDd0057b0E41A30F96690eeDFc4F35A9e10A14",
+      treasury: "0xB39eA612B09bc6DEdCE717E7e199D4a0bDD0A2C4", // also receives the 0.5% swap fee
       wif: "0xC7524F3D78E5f6150aff0Eac811e9Bd0D0Fd9B68", // MockWIF
     },
   },

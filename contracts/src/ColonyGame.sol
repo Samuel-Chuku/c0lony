@@ -18,7 +18,7 @@ import {DrandVerifier} from "./DrandVerifier.sol";
 /// @notice Onchain ant-colony strategy game. Holds all game state. Every WIF payment is split
 ///         70% season pot / 20% burned / 10% treasury. Raid rolls come only from drand evmnet rounds
 ///         verified onchain, and rolls only ever move leaves, sugar and soldiers, never WIF.
-/// @dev Colony NFTs are non-transferable. Timers use block.timestamp only.
+/// @dev Colony NFTs cannot be transferred during a season (mint only). Timers use block.timestamp only.
 contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView {
     using SafeERC20 for IWIF;
 
@@ -54,6 +54,9 @@ contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView
     // Score
     uint256 internal constant SCORE_PER_RAID_WIN = 25;
     uint256 internal constant SCORE_PER_GUARD_WIN = 10;
+
+    // Avenge: a raided defender may raid the winner back once, free of their own raid cooldown, within this window
+    uint256 public constant AVENGE_WINDOW = 24 hours;
 
     // Raids
     uint32 internal constant MIN_RAID_WORKERS = 10;
@@ -179,6 +182,10 @@ contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView
         uint32 raidWinsPending;
         uint32 guardWinsPending;
         uint32 raidNonce;
+        uint32 raidsWon; // settled raids won as raider
+        uint32 raidsLost; // settled raids not won as raider
+        uint32 raidsFaced; // settled raids against this colony
+        uint32 raidsDefended; // settled raids against this colony that the raider did not win
         uint8 openIncoming;
         bool collapseMarked;
         uint128 leaves; // RES units
@@ -238,6 +245,9 @@ contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView
     mapping(address => address) public voterUsed;
     /// @notice EIP-712 nonce for each voting address's LinkVoterPass signature.
     mapping(address => uint256) public voterNonce;
+    /// @notice avengeUntil[defender][raider]: until when `defender` may avenge a raid that `raider` won (0 = none).
+    mapping(address => mapping(address => uint64)) public avengeUntil;
+
     bytes32 internal constant LINK_VOTER_PASS_TYPEHASH = keccak256("LinkVoterPass(address gameWallet,uint256 nonce)");
 
     // ================================================================== events
@@ -247,41 +257,73 @@ contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView
     event SeasonEndChanged(uint32 indexed season, uint64 oldEnd, uint64 newEnd);
     event Paid(
         uint64 indexed colonyId,
+        address indexed player,
         bytes32 indexed action,
         uint256 amount,
         uint256 toPot,
         uint256 burned,
         uint256 toTreasury
     );
-    event ColonyFounded(uint64 indexed colonyId, address indexed owner, uint32 indexed season);
-    event Tended(uint64 indexed colonyId, uint256 leavesGained, uint256 sugarGained);
+    // Every player-facing event names the colony owner's wallet, so the live feed and profiles need no extra reads.
+    event ColonyFounded(
+        uint64 indexed colonyId, address indexed owner, uint32 indexed season, uint64 foundedAt, uint32 seasonDay
+    );
+    event Tended(uint64 indexed colonyId, address indexed owner, uint256 leavesGained, uint256 sugarGained);
     event QueenFed(
-        uint64 indexed colonyId, uint32 workersAfter, uint32 born, uint32 died, uint256 scoreAdded, uint256 totalScore
+        uint64 indexed colonyId,
+        address indexed owner,
+        uint32 workersAfter,
+        uint32 born,
+        uint32 died,
+        uint256 scoreAdded,
+        uint256 totalScore,
+        uint64 fedUntil
     );
-    event Built(uint64 indexed colonyId, bytes32 indexed building, uint256 leavesCost, uint256 sugarCost);
-    event WorkersAssigned(uint64 indexed colonyId, uint32 trailWorkers, uint32 farmWorkers);
-    event SpedUp(uint64 indexed colonyId, Resource forage);
-    event Revived(uint64 indexed colonyId);
-    event Shielded(uint64 indexed colonyId, uint64 until);
-    event ColonyCollapsed(uint64 indexed colonyId);
+    event Built(
+        uint64 indexed colonyId,
+        address indexed owner,
+        bytes32 indexed building,
+        uint256 leavesCost,
+        uint256 sugarCost,
+        uint32 newCount
+    );
+    event WorkersAssigned(
+        uint64 indexed colonyId, address indexed owner, uint32 trailWorkers, uint32 farmWorkers, uint32 idle
+    );
+    event SpedUp(uint64 indexed colonyId, address indexed owner, Resource forage);
+    event Revived(uint64 indexed colonyId, address indexed owner);
+    event Shielded(uint64 indexed colonyId, address indexed owner, uint64 until);
+    event ColonyCollapsed(uint64 indexed colonyId, address indexed owner);
+    /// @dev The target resource stays sealed until Revealed.
     event RaidLaunched(
-        uint256 indexed raidId, uint64 indexed raider, uint64 indexed defender, uint32 soldiers, uint64 guardDeadline
+        uint256 indexed raidId,
+        uint64 indexed raider,
+        uint64 indexed defender,
+        address raiderOwner,
+        address defenderOwner,
+        uint32 soldiers,
+        uint64 guardDeadline,
+        bool isAvenge
     );
-    event Guarded(uint256 indexed raidId, uint64 indexed defender, Resource resource);
+    event Guarded(uint256 indexed raidId, uint64 indexed defender, address indexed owner, Resource resource);
     event Revealed(uint256 indexed raidId, Resource target, uint64 round, uint64 roundTime);
     event RaidSettled(
         uint256 indexed raidId,
         uint64 indexed raider,
         uint64 indexed defender,
+        address raiderOwner,
+        address defenderOwner,
         Outcome outcome,
         uint256 roll,
         Resource lootResource,
         uint256 lootAmount,
         uint32 soldiersLost,
+        uint64 round,
         address settler,
         uint256 refund
     );
     event RaidCollected(uint256 indexed raidId, RaidStatus status, uint32 soldiersLost);
+    event AvengeGranted(address indexed defender, address indexed raider, uint256 indexed raidId, uint64 expiresAt);
     event VoterRootUpdated(bytes32 root, string listURI);
     event VoterRootSetterUpdated(address setter);
     event VoterPassGranted(address indexed player);
@@ -325,6 +367,8 @@ contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView
     error VoterAlreadyUsed();
     error BadVoterSignature();
     error AlreadyHasPass();
+    error NoAvenge();
+    error NotYetAvailable();
 
     // ================================================================== setup
 
@@ -503,7 +547,7 @@ contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView
         wif.safeTransfer(address(treasury), toTreasury);
         wif.safeTransfer(address(pot), toPot);
         pot.addFromGame(seasonNumber, toPot);
-        emit Paid(colonyId, action, amount, toPot, burned, toTreasury);
+        emit Paid(colonyId, msg.sender, action, amount, toPot, burned, toTreasury);
     }
 
     // ================================================================== voter's pass
@@ -589,7 +633,7 @@ contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView
 
         _pay(id, "found", _discounted(config.foundPrice, _voterPass(voterProof)));
         _mint(msg.sender, id);
-        emit ColonyFounded(id, msg.sender, s);
+        emit ColonyFounded(id, msg.sender, s, c.foundedAt, seasonDay(s, c.foundedAt));
 
         try treasury.drip(msg.sender) {} catch {}
     }
@@ -603,7 +647,7 @@ contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView
         Config storage cfg = config;
         if (_ready(c.lastLeafForage, cfg.leafForageCooldown)) _collectLeafForage(c);
         if (_ready(c.lastSugarForage, cfg.sugarForageCooldown)) _collectSugarForage(c);
-        emit Tended(id, c.leaves - leavesBefore, c.sugar - sugarBefore);
+        emit Tended(id, msg.sender, c.leaves - leavesBefore, c.sugar - sugarBefore);
     }
 
     function _collectLeafForage(Colony storage c) internal {
@@ -656,7 +700,7 @@ contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView
         if (c.feedCount == 2) fedTwiceCount[c.season] += 1;
 
         _pay(id, "feed", _discounted(config.feedPrice, _voterPass(voterProof)));
-        emit QueenFed(id, c.workers, born, died, added, c.score);
+        emit QueenFed(id, msg.sender, c.workers, born, died, added, c.score, c.lastFed + uint64(STARVE_AFTER));
     }
 
     function _max3(uint256 a, uint256 b, uint256 c) internal pure returns (uint256 m) {
@@ -688,7 +732,7 @@ contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView
         uint256 cost = chamberCost(id);
         _spend(c, cost * RES, 0);
         c.chambers += 1;
-        emit Built(id, "chamber", cost, 0);
+        emit Built(id, msg.sender, "chamber", cost, 0, c.chambers);
     }
 
     function buildTrail() external {
@@ -697,7 +741,7 @@ contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView
         uint256 cost = trailCost(id);
         _spend(c, cost * RES, 0);
         c.trails += 1;
-        emit Built(id, "trail", cost, 0);
+        emit Built(id, msg.sender, "trail", cost, 0, c.trails);
     }
 
     function buildFarm() external {
@@ -706,7 +750,7 @@ contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView
         uint256 cost = farmCost(id);
         _spend(c, cost * RES, cost * RES);
         c.farms += 1;
-        emit Built(id, "farm", cost, cost);
+        emit Built(id, msg.sender, "farm", cost, cost, c.farms);
     }
 
     /// @notice Set how many workers run trails and farms. Free; collects accrued output first.
@@ -719,7 +763,7 @@ contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView
         if (uint256(trailWorkers) + farmWorkers + c.soldiersOut > c.workers) revert TooManyWorkers();
         c.trailWorkers = trailWorkers;
         c.farmWorkers = farmWorkers;
-        emit WorkersAssigned(id, trailWorkers, farmWorkers);
+        emit WorkersAssigned(id, msg.sender, trailWorkers, farmWorkers, _idle(c));
     }
 
     /// @notice Pay to finish a hand forage now and collect it. Once per 24 h per forage type.
@@ -739,7 +783,7 @@ contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView
             revert BadResource();
         }
         _pay(id, "speedUp", cfg.speedUpPrice);
-        emit SpedUp(id, forage);
+        emit SpedUp(id, msg.sender, forage);
     }
 
     /// @notice Revive a queen that has gone 72 h unfed, within the following 24 h. The colony is restored as it was.
@@ -751,7 +795,7 @@ contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView
         if (_status(c, s) != Status.Starving) revert NotStarving();
         c.lastFed = uint64(block.timestamp);
         _pay(id, "revive", config.reviveBasePrice + uint256(c.workers) * config.revivePerWorkerPrice);
-        emit Revived(id);
+        emit Revived(id, msg.sender);
     }
 
     /// @notice Make the colony unraidable for the shield duration. Raids already sealed still resolve.
@@ -762,7 +806,7 @@ contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView
         c.lastShield = uint64(block.timestamp);
         c.shieldUntil = uint64(block.timestamp + cfg.shieldDuration);
         _pay(id, "shield", cfg.shieldPrice);
-        emit Shielded(id, c.shieldUntil);
+        emit Shielded(id, msg.sender, c.shieldUntil);
     }
 
     /// @notice Anyone can record a collapse (emits ColonyCollapsed and zeroes the colony).
@@ -788,7 +832,7 @@ contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView
         c.score = 0;
         c.raidWinsPending = 0;
         c.guardWinsPending = 0;
-        emit ColonyCollapsed(id);
+        emit ColonyCollapsed(id, c.owner);
     }
 
     // ================================================================== raids
@@ -805,6 +849,30 @@ contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView
 
     /// @notice Seal a raid. Soldiers (up to 30% of idle workers) are locked until it resolves.
     function launchRaid(uint64 defenderId, uint32 soldiers, bytes32 commitment) external returns (uint256 raidId) {
+        return _launchRaid(defenderId, soldiers, commitment, false);
+    }
+
+    /// @notice Avenge: raid back the wallet that won a raid against you, within 24 h of that settle.
+    ///         Exactly like launchRaid against the raider's current colony (same soldier limits, range, shield,
+    ///         guard window, reveal and drand settle, no bonus), except it neither needs nor restarts your own raid
+    ///         cooldown. Usable once per grant.
+    function avenge(address raider, uint32 soldiers, bytes32 commitment) external returns (uint256 raidId) {
+        uint64 expires = avengeUntil[msg.sender][raider];
+        if (expires == 0 || block.timestamp > expires) revert NoAvenge();
+        delete avengeUntil[msg.sender][raider];
+        return _launchRaid(colonyOf[_syncSeason()][raider], soldiers, commitment, true);
+    }
+
+    /// @notice Whether `defender` can still avenge a raid won by `raider`, and until when.
+    function avengeAvailable(address defender, address raider) external view returns (bool, uint64 expiresAt) {
+        expiresAt = avengeUntil[defender][raider];
+        return (expiresAt != 0 && block.timestamp <= expiresAt, expiresAt);
+    }
+
+    function _launchRaid(uint64 defenderId, uint32 soldiers, bytes32 commitment, bool isAvenge)
+        internal
+        returns (uint256 raidId)
+    {
         (uint64 id, Colony storage c) = _myAliveColony();
         if (defenderId == id) revert CannotRaidSelf();
         Colony storage d = colonies[defenderId];
@@ -813,13 +881,13 @@ contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView
         if (uint256(d.workers) * 2 < c.workers || d.workers > uint256(c.workers) * 2) revert OutOfRange();
         if (block.timestamp < d.shieldUntil) revert TargetShielded();
         if (d.openIncoming >= MAX_OPEN_INCOMING) revert TargetBusy();
-        if (!_ready(c.lastRaidLaunch, config.raidCooldown)) revert NotReady();
+        if (!isAvenge && !_ready(c.lastRaidLaunch, config.raidCooldown)) revert NotReady();
         if (soldiers == 0 || uint256(soldiers) * 100 > uint256(_idle(c)) * MAX_SOLDIER_PCT) revert BadSoldiers();
         if (_hasUncollected(id)) revert CollectFirst();
 
         raidId = nextRaidId(id);
         c.raidNonce += 1;
-        c.lastRaidLaunch = uint64(block.timestamp);
+        if (!isAvenge) c.lastRaidLaunch = uint64(block.timestamp);
         c.soldiersOut += soldiers;
         d.openIncoming += 1;
 
@@ -833,7 +901,9 @@ contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView
 
         _addActive(id, raidId);
         _addActive(defenderId, raidId);
-        emit RaidLaunched(raidId, id, defenderId, soldiers, uint64(block.timestamp + config.guardWindow));
+        emit RaidLaunched(
+            raidId, id, defenderId, c.owner, d.owner, soldiers, uint64(block.timestamp + config.guardWindow), isAvenge
+        );
     }
 
     /// @notice The defender may guard one resource once, during the guard window.
@@ -845,7 +915,7 @@ contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView
         if (r.guard != Resource.None) revert AlreadyGuarded();
         if (resource != Resource.Leaves && resource != Resource.Sugar) revert BadResource();
         r.guard = resource;
-        emit Guarded(raidId, r.defender, resource);
+        emit Guarded(raidId, r.defender, msg.sender, resource);
     }
 
     /// @notice After the guard window, the raider reveals the target. The raid is assigned the first
@@ -880,7 +950,7 @@ contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView
 
         uint256 rand = uint256(keccak256(abi.encodePacked(signature, raidId)));
         r.status = RaidStatus.Settled;
-        Result memory res = _resolve(r, rand);
+        Result memory res = _resolve(raidId, r, rand);
         r.outcome = res.outcome;
         _removeActive(r.raider, raidId);
         _removeActive(r.defender, raidId);
@@ -891,7 +961,19 @@ contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView
             refund = amt;
         } catch {}
         emit RaidSettled(
-            raidId, r.raider, r.defender, res.outcome, res.roll, res.lootRes, res.loot, res.lost, msg.sender, refund
+            raidId,
+            r.raider,
+            r.defender,
+            colonies[r.raider].owner,
+            colonies[r.defender].owner,
+            res.outcome,
+            res.roll,
+            res.lootRes,
+            res.loot,
+            res.lost,
+            r.round,
+            msg.sender,
+            refund
         );
     }
 
@@ -905,7 +987,7 @@ contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView
         uint32 lost;
     }
 
-    function _resolve(Raid storage r, uint256 rand) internal returns (Result memory res) {
+    function _resolve(uint256 raidId, Raid storage r, uint256 rand) internal returns (Result memory res) {
         Colony storage a = colonies[r.raider];
         Colony storage d = colonies[r.defender];
         bool aLive = !a.collapseMarked && a.owner != address(0);
@@ -916,6 +998,7 @@ contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView
 
         res.roll = rand % 100 + 1;
         uint256 pctRand = (rand / 100) % 1000;
+        d.raidsFaced += 1;
 
         if (r.guard == r.target) {
             res.outcome = Outcome.Guarded;
@@ -936,9 +1019,18 @@ contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView
                     res.loot = _move(d, a, res.lootRes, pct, uint256(r.soldiers) * LOOT_CAP_PER_SOLDIER * RES);
                 }
                 if (aLive) a.raidWinsPending += 1;
+                uint64 expires = uint64(block.timestamp + AVENGE_WINDOW);
+                avengeUntil[d.owner][a.owner] = expires;
+                emit AvengeGranted(d.owner, a.owner, raidId, expires);
             } else {
                 res.outcome = Outcome.RaiderLost;
             }
+        }
+        if (res.outcome == Outcome.RaiderWon) {
+            a.raidsWon += 1;
+        } else {
+            a.raidsLost += 1;
+            d.raidsDefended += 1;
         }
 
         if (aLive) {
@@ -1052,6 +1144,72 @@ contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView
         v.capacity = uint256(c.chambers) * WORKERS_PER_CHAMBER;
     }
 
+    /// @notice Day of the season (1 = first day) on which `at` falls.
+    function seasonDay(uint32 season, uint64 at) public view returns (uint32) {
+        uint64 start = seasonStart[season];
+        return at < start ? 1 : uint32((at - start) / 1 days) + 1;
+    }
+
+    /// @notice Everything the profile screen shows for `player`'s colony this season (all zero if none).
+    struct Profile {
+        uint64 colonyId;
+        Status status;
+        uint32 season;
+        uint32 ants; // all workers, including assigned ones and soldiers out
+        uint256 capacity;
+        uint32 chambers;
+        uint32 trails;
+        uint32 farms;
+        uint32 trailWorkers;
+        uint32 farmWorkers;
+        uint32 soldiersOut;
+        uint32 freeAnts;
+        uint256 leaves; // RES units, including trail output not yet collected
+        uint256 sugar; // RES units, including farm output not yet collected
+        uint256 score;
+        uint64 foundedAt;
+        uint32 foundedDay;
+        uint32 raidsWon;
+        uint32 raidsLost;
+        uint32 raidsDefended;
+        uint32 raidsFaced;
+        uint64 fedUntil; // the queen starves after this
+        uint64 shieldUntil;
+        bool hasVoterPass;
+    }
+
+    function getProfile(address player) external view returns (Profile memory p) {
+        uint32 s = currentSeason();
+        p.season = s;
+        p.hasVoterPass = hasVoterPass[player];
+        uint64 id = colonyOf[s][player];
+        if (id == 0) return p;
+        ColonyView memory v = getColony(id);
+        Colony memory c = v.data;
+        p.colonyId = id;
+        p.status = v.status;
+        p.ants = c.workers;
+        p.capacity = v.capacity;
+        p.chambers = c.chambers;
+        p.trails = c.trails;
+        p.farms = c.farms;
+        p.trailWorkers = c.trailWorkers;
+        p.farmWorkers = c.farmWorkers;
+        p.soldiersOut = c.soldiersOut;
+        p.freeAnts = v.idle;
+        p.leaves = c.leaves + v.pendingLeaves;
+        p.sugar = c.sugar + v.pendingSugar;
+        p.score = c.score;
+        p.foundedAt = c.foundedAt;
+        p.foundedDay = seasonDay(c.season, c.foundedAt);
+        p.raidsWon = c.raidsWon;
+        p.raidsLost = c.raidsLost;
+        p.raidsDefended = c.raidsDefended;
+        p.raidsFaced = c.raidsFaced;
+        p.fedUntil = c.lastFed + uint64(STARVE_AFTER);
+        p.shieldUntil = c.shieldUntil;
+    }
+
     function getActiveRaids(uint64 colonyId) external view returns (uint256[] memory) {
         return activeRaids[colonyId];
     }
@@ -1071,11 +1229,19 @@ contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView
         qualifies = fedTwice && !c.collapseMarked && uint256(c.lastFed) + STARVE_AFTER >= end;
     }
 
-    // ================================================================== soulbound NFT
+    // ================================================================== locked colony NFT
 
+    /// @dev A colony NFT is minted at founding and cannot move between wallets, so nobody can buy their way
+    ///      into a season's pot. Minting (from = 0) and burning (to = 0) are allowed; this contract never burns.
     function _update(address to, uint256 tokenId, address auth) internal override returns (address from) {
         from = _ownerOf(tokenId);
-        if (from != address(0)) revert Soulbound();
+        if (from != address(0) && to != address(0)) revert Soulbound();
         return super._update(to, tokenId, auth);
+    }
+
+    /// @notice Placeholder for the post-hackathon Season NFT unlock (docs/ROADMAP.md, "Season NFTs"): colonies
+    ///         alive at a season's end become tradable. Not built yet, so it always reverts and nothing can unlock.
+    function unlockSeasonNfts(uint32) external view onlyOwner {
+        revert NotYetAvailable();
     }
 }

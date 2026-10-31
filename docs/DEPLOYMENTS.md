@@ -149,11 +149,25 @@ Checked with `eth_getLogs` on mainnet (2026-10-30):
 | Testnet (46630), incl. MockWIF | 17,335,197 | 0.02 gwei | ≈0.00035 ETH |
 | Mainnet (4663) | 16,633,817 | 0.04 gwei | ≈0.00067 ETH (≈0.0083 ETH if gas spiked to 0.5 gwei) |
 
-Measured gas per call (`forge snapshot`, see `contracts/.gas-snapshot`): `settle` ≈ 269k execution gas (≈306k for the whole transaction), of which drand signature verification ≈ 222k.
+Measured gas per call (`forge snapshot`, see `contracts/.gas-snapshot`): `settle` ≈ 269k execution gas (≈306k for the whole transaction), of which drand signature verification ≈ 222k. The Avenge grant and raid record counters added about 44k gas to `settle` on 2026-10-31 (Foundry, `test_gas_settle` 467,768 → 511,644).
 
 ## Deployed contracts
 
-### Robinhood Chain testnet (46630), current deployment (2026-10-30, second)
+### Robinhood Chain testnet (46630), current deployment (2026-10-31, third)
+
+Redeployed with Avenge, the raid record, `getProfile`, owner addresses in every player event and the locked colony NFT. Blocks 145,876,263–145,876,267, 9,853,937 gas in total. ColonyGame, SeasonPot and Treasury are verified on Blockscout; the DrandVerifier library and MockWIF are reused.
+
+| Contract | Address |
+| --- | --- |
+| ColonyGame | [`0x6E9a1547eA9981428e1de95A00C9a4D6224a949B`](https://explorer.testnet.chain.robinhood.com/address/0x6E9a1547eA9981428e1de95A00C9a4D6224a949B) |
+| SeasonPot | [`0x70dDd0057b0E41A30F96690eeDFc4F35A9e10A14`](https://explorer.testnet.chain.robinhood.com/address/0x70dDd0057b0E41A30F96690eeDFc4F35A9e10A14) |
+| Treasury | [`0xB39eA612B09bc6DEdCE717E7e199D4a0bDD0A2C4`](https://explorer.testnet.chain.robinhood.com/address/0xB39eA612B09bc6DEdCE717E7e199D4a0bDD0A2C4) |
+| DrandVerifier (linked library, reused) | [`0x2513832059bac29e5a5115634694F22B6B302Ae1`](https://explorer.testnet.chain.robinhood.com/address/0x2513832059bac29e5a5115634694F22B6B302Ae1) |
+| MockWIF (testnet only, reused) | [`0xC7524F3D78E5f6150aff0Eac811e9Bd0D0Fd9B68`](https://explorer.testnet.chain.robinhood.com/address/0xC7524F3D78E5f6150aff0Eac811e9Bd0D0Fd9B68) |
+
+Owner: `0x4B11611CF7C90aEc2003721d71107d7E1cBf37c2`. Treasury funded with 0.002 testnet ETH. Runs the launch settings (4 h guard window, 24 h feed interval) until changed for testing.
+
+### Robinhood Chain testnet (46630), second deployment (retired)
 
 Redeployed with the settle refund fix and Voter's Pass linking (`claimVoterPass`). Blocks 145,471,559–145,471,563, 9,649,279 gas in total. All contracts are verified on Blockscout; the DrandVerifier library and the MockWIF source are unchanged from the first deployment.
 
@@ -165,7 +179,7 @@ Redeployed with the settle refund fix and Voter's Pass linking (`claimVoterPass`
 | DrandVerifier (linked library, reused) | [`0x2513832059bac29e5a5115634694F22B6B302Ae1`](https://explorer.testnet.chain.robinhood.com/address/0x2513832059bac29e5a5115634694F22B6B302Ae1) |
 | MockWIF (testnet only) | [`0xC7524F3D78E5f6150aff0Eac811e9Bd0D0Fd9B68`](https://explorer.testnet.chain.robinhood.com/address/0xC7524F3D78E5f6150aff0Eac811e9Bd0D0Fd9B68) |
 
-Owner: `0x4B11611CF7C90aEc2003721d71107d7E1cBf37c2`. Treasury funded with 0.002 testnet ETH. Runs the launch settings (4 h guard window, 24 h feed interval) until changed for testing.
+Owner: `0x4B11611CF7C90aEc2003721d71107d7E1cBf37c2`. Treasury funded with 0.002 testnet ETH. Used for run 2 in [TESTNET_RUN.md](TESTNET_RUN.md). It has no Avenge, raid record or owner fields in events.
 
 ### Robinhood Chain testnet (46630), first deployment (retired)
 
