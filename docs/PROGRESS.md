@@ -8,7 +8,7 @@
 - [x] BN254 + modexp precompiles and Cancun opcodes confirmed on mainnet and testnet
 - [x] Testnet faucet located
 - [x] KyberSwap `robinhood` quote with 50 bps fee works; liquidity checked
-- [ ] Testnet ETH in deployer + two player wallets (manual, browser faucet)
+- [x] Testnet ETH in deployer + two player wallets (manual, browser faucet)
 - [ ] Name / X handle / domain availability (manual)
 - [ ] Sponsor outreach to the World is Flat team (manual)
 - [ ] One small real swap confirming the fee reaches the treasury (after mainnet deploy, needs approval)
@@ -18,10 +18,10 @@
 - [x] ColonyGame, SeasonPot, Treasury + full test suite (75 tests incl. fuzzing and a simulated week)
 - [x] Gas snapshot for `settle` (~269k execution, ~306k per tx)
 - [x] Deploy script (simulated on testnet and mainnet, nothing sent)
-- [ ] Testnet deploy with MockWIF; full loop played (needs testnet ETH in the deployer)
+- [x] Testnet deploy with MockWIF; full loop played
 - [x] Full testnet season played with a real drand round (docs/TESTNET_RUN.md); found the settle refund was 106% of real cost and fixed it to ~90%
 - [x] Redeployed testnet with the refund fix and Voter's Pass linking; all contracts verified
-- [ ] Recheck one real settle refund on the new testnet contracts
+- [x] Second full testnet season on the new contracts: settle refund 84.7% of real cost, Voter's Pass linked from a separate wallet (docs/TESTNET_RUN.md)
 - [x] CONTRACTS_EXPLAINED.md, SECURITY_REVIEW.md
 
 ## Voter's Pass (added on top of Phase 1)

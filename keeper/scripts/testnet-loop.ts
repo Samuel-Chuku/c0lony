@@ -1,5 +1,5 @@
 // Plays a full Colony loop on Robinhood Chain TESTNET with two throwaway player wallets and real drand rounds:
-// found (+ drip), tend, feed, build, sponsor, raid (seal → guard → reveal → settle with drand, refund checked
+// Voter's Pass link (a voting wallet signs EIP-712, player2 claims), found (+ drip), tend, feed, build, sponsor, raid (seal → guard → reveal → settle with drand, refund checked
 // against the receipt), second feed, season end, ranking, claims. Progress is saved, so re-running resumes.
 //
 //   node --env-file=../contracts/.env scripts/testnet-loop.ts
@@ -22,6 +22,7 @@ import {
 import { privateKeyToAccount } from "viem/accounts";
 import { JsonStore } from "../src/state.ts";
 import { raidSalt } from "../src/raidSalt.ts";
+import { buildVoterTree } from "../src/voters/tree.ts";
 
 const OUT = join(import.meta.dirname, "../../contracts/out");
 const abi = (name: string) => JSON.parse(readFileSync(join(OUT, `${name}.sol/${name}.json`), "utf8")).abi as Abi;
@@ -53,6 +54,8 @@ const pub = createPublicClient({ chain, transport });
 const owner = privateKeyToAccount(process.env.DEPLOYER_PRIVATE_KEY as Hash);
 const p1 = privateKeyToAccount(process.env.PLAYER1_PRIVATE_KEY as Hash);
 const p2 = privateKeyToAccount(process.env.PLAYER2_PRIVATE_KEY as Hash);
+// A wallet that "voted": it only signs, never sends a transaction
+const voter = privateKeyToAccount(process.env.VOTER_PRIVATE_KEY as Hash);
 const wallet = (a: typeof owner) => createWalletClient({ account: a, chain, transport });
 
 type Step = { at: string; what: string; tx?: Hash; note?: string };
@@ -125,20 +128,45 @@ await once("sponsor", async () => {
   return true;
 });
 
-// 4. Found both colonies (founder drip expected)
+// 3b. Voter's Pass link: the owner posts a tiny voter list; the voting wallet signs LinkVoterPass for player2's
+// game wallet; player2 submits it. Player2 should then found for 1,200 instead of 1,500.
+await once("voterLink", async () => {
+  const { root, proofs } = buildVoterTree([voter.address, owner.address]);
+  const r1 = await send(owner, GAME, gameAbi, "setVoterRoot", [root, "testnet: voter + owner"]);
+  const nonce = await read<bigint>(GAME, gameAbi, "voterNonce", [voter.address]);
+  const signature = await voter.signTypedData({
+    domain: { name: "C0LONY", version: "1", chainId: chain.id, verifyingContract: GAME },
+    types: { LinkVoterPass: [{ name: "gameWallet", type: "address" }, { name: "nonce", type: "uint256" }] },
+    primaryType: "LinkVoterPass",
+    message: { gameWallet: p2.address, nonce },
+  });
+  const r = await send(p2, GAME, gameAbi, "claimVoterPass", [voter.address, proofs[voter.address.toLowerCase()], signature]);
+  const linked = await read<boolean>(GAME, gameAbi, "hasVoterPass", [p2.address]);
+  if (!linked) throw new Error("claimVoterPass did not grant the pass");
+  record("voting wallet signed LinkVoterPass; player2 claimed the Voter's Pass", r.transactionHash, `root posted ${r1.transactionHash}`);
+  return true;
+});
+
+// 4. Found both colonies (founder drip expected; player2 pays the Voter's Pass price)
 const ids: bigint[] = [];
 for (const [i, p] of [p1, p2].entries()) {
   ids[i] = BigInt(
     await once(`found${i}`, async () => {
       const ethBefore = await pub.getBalance({ address: p.address });
+      const wifBefore = await read<bigint>(WIF, wifAbi, "balanceOf", [p.address]);
       const r = await send(p, GAME, gameAbi, "foundColony", [[]]);
+      const paid = wifBefore - (await read<bigint>(WIF, wifAbi, "balanceOf", [p.address]));
       const ev = parseEventLogs({ abi: gameAbi, logs: r.logs, eventName: "ColonyFounded" })[0] as unknown as {
         args: { colonyId: bigint };
       };
       const ethAfter = await pub.getBalance({ address: p.address });
       const gasCost = r.gasUsed * r.effectiveGasPrice;
       const drip = ethAfter - ethBefore + gasCost;
-      record(`player${i + 1} founded colony #${ev.args.colonyId}`, r.transactionHash, `drip received ${formatEther(drip)} ETH`);
+      record(
+        `player${i + 1} founded colony #${ev.args.colonyId} for ${formatEther(paid)} mWIF`,
+        r.transactionHash,
+        `drip received ${formatEther(drip)} ETH`,
+      );
       return ev.args.colonyId.toString();
     }),
   );
