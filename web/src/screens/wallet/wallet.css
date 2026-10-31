@@ -1,0 +1,16 @@
+/* Get WIF sheet and Add funds sheet */
+.c0-wsheet { display: flex; flex-direction: column; gap: var(--c0-s3); padding-top: var(--c0-s2); }
+.c0-wsheet__note { font-size: var(--c0-fs-body); line-height: var(--c0-lh-body); color: var(--c0-sub); margin: 0; }
+.c0-wsheet__presets { display: flex; gap: var(--c0-s2); }
+.c0-wsheet__input { display: flex; align-items: center; gap: var(--c0-s2); height: 48px; padding: 0 var(--c0-s3); border: var(--c0-bw) solid var(--c0-ink); background: var(--c0-paper-hi); }
+.c0-wsheet__input input { flex: 1; min-width: 0; height: 100%; border: 0; background: none; font-family: var(--c0-f-display); font-size: var(--c0-fs-button); color: var(--c0-ink); outline: none; }
+.c0-wsheet__input span { font-family: var(--c0-f-display); font-size: var(--c0-fs-label); color: var(--c0-sub); }
+.c0-wsheet__rows { margin: 0; display: flex; flex-direction: column; border: var(--c0-bw) solid var(--c0-ink); padding: var(--c0-s1) var(--c0-s3); }
+.c0-wsheet__rows div { display: flex; justify-content: space-between; align-items: baseline; gap: var(--c0-s3); min-height: 32px; border-bottom: 2px dashed var(--c0-rule); font-size: var(--c0-fs-body); }
+.c0-wsheet__rows div:last-child { border-bottom: 0; }
+.c0-wsheet__rows dt { color: var(--c0-sub); }
+.c0-wsheet__rows dd { margin: 0; font-family: var(--c0-f-display); font-size: var(--c0-fs-label); }
+.c0-wsheet__wif { align-self: flex-start; background: var(--c0-gold); padding: 0 var(--c0-s2); border: 2px solid var(--c0-ink); }
+.c0-wsheet__links { display: flex; flex-direction: column; gap: var(--c0-s1); font-size: var(--c0-fs-body); }
+.c0-wsheet__links a, .c0-wsheet__note a { color: var(--c0-ink); display: inline-flex; align-items: center; min-height: var(--c0-tap); }
+.c0-wsheet__addr { font-size: var(--c0-fs-body-lg); word-break: break-all; padding: var(--c0-s3); border: var(--c0-bw) solid var(--c0-ink); background: var(--c0-paper-hi); user-select: all; }

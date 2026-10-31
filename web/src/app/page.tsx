@@ -1,8 +1,14 @@
+import { Suspense } from "react";
 import { SITE } from "../brand";
 import { Landing } from "../landing/Landing";
-import { Game } from "../game/Game";
+import { Home } from "../screens/Home";
 
 // SITE is fixed at build time, so each static site only renders its own half.
-export default function Home() {
-  return SITE === "app" ? <Game /> : <Landing />;
+export default function Page() {
+  if (SITE !== "app") return <Landing />;
+  return (
+    <Suspense>
+      <Home />
+    </Suspense>
+  );
 }

@@ -6,6 +6,7 @@ import "@fontsource/gaegu/latin-700.css";
 import "./tokens.css";
 import "../ui/ui.css";
 import { BRAND, SITE, SITE_URL } from "../brand";
+import { Providers } from "../shell/Providers";
 
 const title = SITE === "app" ? `Play · ${BRAND.name}` : BRAND.name;
 
@@ -27,7 +28,7 @@ export const viewport: Viewport = { width: "device-width", initialScale: 1, them
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>{SITE === "app" ? <Providers>{children}</Providers> : children}</body>
     </html>
   );
 }

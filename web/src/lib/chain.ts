@@ -11,7 +11,7 @@ export const chain = defineChain({
   testnet: NETWORK.chainId !== 4663,
 });
 
-export const publicClient = createPublicClient({ chain, transport: http(CONFIG.rpcUrl) });
+export const publicClient = createPublicClient({ chain, transport: http(CONFIG.rpcUrl, { batch: { batchSize: 50 } }) });
 
 export const txUrl = (hash: string) => `${NETWORK.explorerUrl}/tx/${hash}`;
 export const addressUrl = (address: string) => `${NETWORK.explorerUrl}/address/${address}`;
