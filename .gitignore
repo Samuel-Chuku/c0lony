@@ -50,3 +50,6 @@ keeper/public/
 
 # web: Cloudflare Pages variable files (filled in locally, imported in the dashboard)
 web/cloudflare/*.env
+
+# VPS-only compose override (publishes voter files outside the home folder)
+keeper/docker-compose.override.yml
