@@ -10,9 +10,9 @@ Checks were run on **2026-10-30** (UTC).
 | --- | --- | --- |
 | Landing page | Cloudflare Pages: static Next.js export from `web/` with `NEXT_PUBLIC_SITE=landing`, output `web/out` | https://c0lony.xyz |
 | Game app | Cloudflare Pages: the same `web/` built with `NEXT_PUBLIC_SITE=app`, output `web/out` | https://app.c0lony.xyz |
-| Keeper and Voter's Pass files | VPS, Docker behind Caddy (automatic HTTPS) | https://keeper.c0lony.xyz |
+| Keeper and Voter's Pass files | VPS, Docker container on localhost behind a reverse proxy (automatic HTTPS) | https://keeper.c0lony.xyz |
 
-- **No Node server for the site.** Server code exists only as Cloudflare Pages Functions in `web/functions`. Their secrets, such as the Quicknode URL, are encrypted runtime variables, never build variables.
+- **No Node server for the site.** Server code exists only as Cloudflare Pages Functions in `web/functions` (feed, profiles and push, see "Live feed, profiles and push" below). Their secrets are encrypted runtime variables, never build variables.
 - **Public site config is in the repo.** Contract addresses, RPC and explorer URLs, and the drand, KyberSwap and keeper settings for both networks live in `web/src/config.ts`. Each Pages project sets only `NEXT_PUBLIC_SITE` (`landing` or `app`), `NEXT_PUBLIC_NETWORK` (`testnet` or `mainnet`), `NODE_VERSION` and `PNPM_VERSION`.
 - **Voter's Pass files** are served from the VPS, not the site, so daily list updates need no redeploy:
   - `https://keeper.c0lony.xyz/voters/voters.json`: the full list and root.
@@ -150,6 +150,27 @@ Checked with `eth_getLogs` on mainnet (2026-10-30):
 | Mainnet (4663) | 16,633,817 | 0.04 gwei | ≈0.00067 ETH (≈0.0083 ETH if gas spiked to 0.5 gwei) |
 
 Measured gas per call (`forge snapshot`, see `contracts/.gas-snapshot`): `settle` ≈ 269k execution gas (≈306k for the whole transaction), of which drand signature verification ≈ 222k. The Avenge grant and raid record counters added about 44k gas to `settle` on 2026-10-31 (Foundry, `test_gas_settle` 467,768 → 511,644).
+
+## Live feed, profiles and push
+
+The Live tab, X profiles and push alerts need a small backend: serverless functions in `web/functions` on the **app** site, plus the keeper. Names only below; values live in the hosting dashboards and the keeper's `.env`, never in the repo.
+
+| Piece | Name | Notes |
+| --- | --- | --- |
+| D1 database | `c0lony-feed`, bound to the app project as `FEED_DB` | Schema in `web/migrations/0001_feed.sql` (`events`, `event_actors`, `push_subs`) |
+| KV namespace | `c0lony-profiles`, bound as `PROFILES` | Wallet to X handle and avatar |
+| Pages variables | `PRIVY_APP_ID`, `PRIVY_VERIFICATION_KEY` | Verify Privy access tokens |
+| Pages secrets | `PRIVY_APP_SECRET`, `FEED_INGEST_SECRET` | Read linked accounts; verify keeper requests |
+
+- **App project only.** The landing project has none of these bindings, so its `/api` functions return 404.
+- **Public values in the repo** (`web/src/config.ts`): the Privy app ID (`privyAppId`) and the Web Push VAPID public key (`vapidPublicKey`). The VAPID private key stays in the keeper env.
+- **Functions** (`web/functions/api`): `feed` (list, `ingest`, `stats`, `summary`), `profile`, `profiles`, and `push` (`subscribe`, `unsubscribe`, `prefs`, `targets`, `prune`).
+
+### Keeper
+
+The keeper runs as a Docker container (`keeper/Dockerfile`, `keeper/docker-compose.yml`, container `c0lony-keeper`). It listens only on localhost (`127.0.0.1:8790` to the container's 8787), and a reverse proxy serves it at `keeper.c0lony.xyz`. State and the published Voter's Pass files are host volumes, so rebuilds keep them. Build from the repo root: `docker compose -f keeper/docker-compose.yml up -d --build`.
+
+Environment variable names (see `keeper/.env.example`): `FEED_API_BASE`, `FEED_INGEST_SECRET` (same value as the Pages secret), `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, `KEEPER_PRIVATE_KEY` (settlement wallet, small ETH float only), `MIN_BALANCE_ETH`, plus the RPC, contract and Streams settings. Each part switches itself off with one log line when its settings are missing.
 
 ## Deployed contracts
 
