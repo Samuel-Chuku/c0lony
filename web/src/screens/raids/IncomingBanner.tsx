@@ -1,4 +1,5 @@
 "use client";
+import { ResIcon } from "../../ui/ResIcon";
 import { useState } from "react";
 import { Button } from "../../ui";
 import { Resource, useNow, type Raid } from "../../lib/game";
@@ -33,11 +34,11 @@ export function IncomingBanner({ raid, guardWindow }: { raid: Raid; guardWindow:
         <p style={{ margin: 0, fontSize: 13 }}>You guarded {guarded}. If they aim there, they lose half their soldiers.</p>
       ) : (
         <div className="c0-banner__btns">
-          <Button variant="paper" size="compact" icon="leaf" busy={action.busy && which === Resource.Leaves ? "Guarding…" : undefined} disabled={action.busy} onClick={() => pick(Resource.Leaves)}>
-            Guard leaves
+          <Button variant="paper" size="compact" busy={action.busy && which === Resource.Leaves ? "Guarding…" : undefined} disabled={action.busy} onClick={() => pick(Resource.Leaves)}>
+            <ResIcon name="leaf" /> Guard leaves
           </Button>
-          <Button variant="paper" size="compact" icon="sugar" busy={action.busy && which === Resource.Sugar ? "Guarding…" : undefined} disabled={action.busy} onClick={() => pick(Resource.Sugar)}>
-            Guard sugar
+          <Button variant="paper" size="compact" busy={action.busy && which === Resource.Sugar ? "Guarding…" : undefined} disabled={action.busy} onClick={() => pick(Resource.Sugar)}>
+            <ResIcon name="sugar" /> Guard sugar
           </Button>
         </div>
       )}

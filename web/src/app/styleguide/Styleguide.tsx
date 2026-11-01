@@ -5,6 +5,7 @@ import {
   ICON_NAMES, JournalRow, Meter, Modal, NeighbourRow, Panel, PixelIcon, SignLabel, StatRow, StatTile, Stepper,
   Switch, Underway, shortAddress, type NavTab,
 } from "../../ui";
+import { ResIcon } from "../../ui/ResIcon";
 import { ColonyWorld } from "../../world/ColonyWorld";
 
 const NOW = 1_800_000_000;
@@ -38,6 +39,19 @@ export function Styleguide() {
 
   return (
     <div className="c0-app">
+      <Section title="Game icons">
+        <div style={{ display: "flex", gap: 16, flexWrap: "wrap", padding: 12, background: "var(--c0-paper)" }}>
+          {(["leaf", "sugar", "ant", "chamber", "trail", "farm", "queen"] as const).map((n) => (
+            <span key={n} style={{ display: "inline-flex", flexDirection: "column", alignItems: "center", gap: 4, color: "var(--c0-ink)", fontSize: 11 }}>
+              <span style={{ display: "flex", gap: 8 }}><ResIcon name={n} size={20} /><ResIcon name={n} size={40} /></span>{n}
+            </span>
+          ))}
+        </div>
+        <div style={{ display: "flex", gap: 16, padding: 12, background: "var(--c0-loam)" }}>
+          {(["leaf", "sugar", "ant", "chamber", "trail", "farm", "queen"] as const).map((n) => <ResIcon key={n} name={n} size={28} />)}
+        </div>
+      </Section>
+
       <Section title="Buttons">
         {VARIANTS.map((v) =>
           SIZES.map((s) => (

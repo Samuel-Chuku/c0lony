@@ -1,4 +1,5 @@
 // Starter gas: tops up a new player's wallet with a little ETH from the keeper wallet before their first transaction.
+// The same queue carries testnet WIF faucet requests (kind "wif"), which the keeper pays by minting test WIF.
 // The app queues requests (it applies the limits); this loop only pays them.
 //
 // Safety, in order: a request id is written to the state file as "sending" before any ETH leaves; a restart never
@@ -14,7 +15,7 @@ type Entry = { status: "sending" | GasStatus; tx?: string };
 type GasState = Record<string, Entry>;
 
 export interface GasApi {
-  pending(): Promise<{ id: number; wallet: string }[]>;
+  pending(): Promise<{ id: number; wallet: string; kind?: "gas" | "wif" }[]>;
   done(id: number, status: GasStatus, tx?: string): Promise<void>;
 }
 
@@ -23,6 +24,8 @@ export interface GasChain {
   balanceOf(address: string): Promise<bigint>;
   keeperBalance(): Promise<bigint>;
   send(to: string, amount: bigint): Promise<string>;
+  /** Mints test WIF to `to` (testnet only); absent when the faucet is off. */
+  mintWif?(to: string): Promise<string>;
   wait(hash: string): Promise<boolean>;
 }
 
@@ -77,7 +80,7 @@ export class StarterGas {
       }
       for (const r of requests) {
         try {
-          if (!(await this.handle(r.id, r.wallet))) break;
+          if (!(await this.handle(r.id, r.wallet, r.kind ?? "gas"))) break;
         } catch (err) {
           this.o.log(`gas: request ${r.id} failed this round (${msg(err)})`);
         }
@@ -99,7 +102,7 @@ export class StarterGas {
   }
 
   /** Returns false to stop the batch (balance floor). */
-  private async handle(id: number, wallet: string): Promise<boolean> {
+  private async handle(id: number, wallet: string, kind: "gas" | "wif"): Promise<boolean> {
     const prior = this.o.store.read()[String(id)];
     if (prior && prior.status !== "sending") {
       await this.o.api.done(id, prior.status, prior.tx); // reported before the restart, the app just missed it
@@ -111,12 +114,16 @@ export class StarterGas {
       await this.report(id, ok ? "sent" : "failed", prior.tx);
       return true;
     }
-    if ((await this.o.chain.balanceOf(wallet)) >= this.o.below) {
+    if (kind === "wif" && !this.o.chain.mintWif) {
+      await this.report(id, "skipped");
+      return true;
+    }
+    if (kind === "gas" && (await this.o.chain.balanceOf(wallet)) >= this.o.below) {
       await this.report(id, "skipped");
       return true;
     }
     const keeper = await this.o.chain.keeperBalance();
-    if (keeper < this.o.minBalance + this.o.amount) {
+    if (keeper < this.o.minBalance + (kind === "gas" ? this.o.amount : 0n)) {
       const now = this.o.now();
       if (now - this.lastAlert >= ALERT_EVERY_SEC) {
         this.lastAlert = now;
@@ -125,11 +132,11 @@ export class StarterGas {
       return false;
     }
     this.record(id, { status: "sending" });
-    const hash = await this.o.chain.send(wallet, this.o.amount);
+    const hash = kind === "wif" ? await this.o.chain.mintWif!(wallet) : await this.o.chain.send(wallet, this.o.amount);
     this.record(id, { status: "sending", tx: hash });
     const ok = await this.o.chain.wait(hash);
     await this.report(id, ok ? "sent" : "failed", hash);
-    this.o.log(`gas: ${ok ? "sent" : "reverted"} request ${id} to ${wallet} (${hash})`);
+    this.o.log(`${kind === "wif" ? "faucet" : "gas"}: ${ok ? "sent" : "reverted"} request ${id} to ${wallet} (${hash})`);
     return true;
   }
 }
@@ -142,7 +149,7 @@ export function httpGasApi(fetchFn: FetchFn, base: string, secret: string): GasA
   };
   return {
     async pending() {
-      const j = (await (await post("/api/gas/pending", {})).json()) as { requests?: { id: number; wallet: string }[] };
+      const j = (await (await post("/api/gas/pending", {})).json()) as { requests?: { id: number; wallet: string; kind?: "gas" | "wif" }[] };
       return j.requests ?? [];
     },
     async done(id, status, tx) {

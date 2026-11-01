@@ -1,10 +1,11 @@
 import { PixelIcon, type IconName } from "./PixelIcon";
 
-export type NavTab = "colony" | "raids" | "live";
+export type NavTab = "colony" | "raids" | "live" | "season";
 const TABS: Array<{ id: NavTab; label: string; icon: IconName }> = [
   { id: "colony", label: "Colony", icon: "colony" },
   { id: "raids", label: "Raids", icon: "raids" },
   { id: "live", label: "Live", icon: "live" },
+  { id: "season", label: "Season", icon: "trophy" },
 ];
 
 export function BottomNav({ active, onSelect }: { active: NavTab; onSelect: (tab: NavTab) => void }) {

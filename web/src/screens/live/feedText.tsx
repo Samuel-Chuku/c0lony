@@ -4,6 +4,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import type { FeedEvent } from "../../lib/api";
+import { ResIcon } from "../../ui/ResIcon";
 import { displayName, fmtInt, fmtRes, fmtWif } from "../../lib/format";
 import { useXProfile } from "../../lib/useXProfile";
 
@@ -86,7 +87,7 @@ export function describeEvent(ev: FeedEvent, me?: string | null): FeedLine | nul
         const youWereRaided = !!me && defender?.toLowerCase() === me.toLowerCase();
         return { ...base, actor: raider, kind: youWereRaided ? "RAIDED" : "RAID WON", tone: "raid",
           shareText: "My ants came home with loot on C0LONY.",
-          sentence: <>{H(raider)} raided {H(defender)} and carried off {fmtRes(big(d.lootAmount))} {res}</> };
+          sentence: <>{H(raider)} raided {H(defender)} and carried off {fmtRes(big(d.lootAmount))} {res === "leaves" || res === "sugar" ? <ResIcon name={res === "leaves" ? "leaf" : "sugar"} size={16} label={res} /> : res}</> };
       }
       if (out === "guarded") {
         return { ...base, actor: defender, kind: "DEFENDED", tone: "sub", shareText: "My guard held on C0LONY.",

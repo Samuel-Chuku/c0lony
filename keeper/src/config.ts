@@ -66,6 +66,9 @@ export function loadConfig() {
     // keeper key and the app link are set; STARTER_GAS_ENABLED=false turns it off.
     starterGasEnabled:
       env("STARTER_GAS_ENABLED", env("KEEPER_PRIVATE_KEY", "") && env("FEED_API_BASE", "") && env("FEED_INGEST_SECRET", "") ? "true" : "false") === "true",
+    // Testnet WIF faucet: the mock token the keeper mints from, and how much per request (once a day per wallet).
+    wifAddress: env("WIF_ADDRESS", network === "mainnet" ? "" : "0xC7524F3D78E5f6150aff0Eac811e9Bd0D0Fd9B68"),
+    faucetWifAmount: env("FAUCET_WIF_AMOUNT", "10000"),
     starterGasEth: env("STARTER_GAS_ETH", network === "mainnet" ? "0.00003" : "0.001"),
     starterGasBelowEth: env("STARTER_GAS_BELOW_ETH", network === "mainnet" ? "0.00002" : "0.0002"),
     colonyGameAddress: env("COLONY_GAME_ADDRESS", ""),

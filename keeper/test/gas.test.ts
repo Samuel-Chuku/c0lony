@@ -88,3 +88,28 @@ test("stops below the floor, alerts once an hour, resumes when topped up", async
   await g.tick();
   assert.deepEqual(s.sends, [W1, W2]);
 });
+
+test("wif faucet requests mint instead of sending ETH, even for funded wallets", async () => {
+  const sent: string[] = [];
+  const minted: string[] = [];
+  const done: { id: number; status: string }[] = [];
+  const g = new StarterGas({
+    api: { pending: async () => [{ id: 9, wallet: "0xabc", kind: "wif" as const }], done: async (id, status) => void done.push({ id, status }) },
+    chain: {
+      balanceOf: async () => 10n ** 18n, // already funded: irrelevant for the faucet
+      keeperBalance: async () => 10n ** 18n,
+      send: async (to) => (sent.push(to), "0x" + "1".repeat(64)),
+      mintWif: async (to) => (minted.push(to), "0x" + "2".repeat(64)),
+      wait: async () => true,
+    },
+    store: new JsonStore(join(tmpDir(), "s.json"), {}),
+    amount: 1000n,
+    below: 100n,
+    minBalance: 0n,
+  });
+  await g.tick();
+  await g.tick(); // a second round never mints twice
+  assert.deepEqual(minted, ["0xabc"]);
+  assert.deepEqual(sent, []);
+  assert.deepEqual(done.map((d) => d.status), ["sent", "sent"]);
+});

@@ -1,7 +1,7 @@
 "use client";
 import { forwardRef } from "react";
 import { useRouter } from "next/navigation";
-import { Avatar, Card } from "../../ui";
+import { Avatar, Card, ResIcon } from "../../ui";
 import { displayName, fmtInt } from "../../lib/format";
 import type { ColonyRow } from "../../lib/game";
 import { useXProfile } from "../../lib/useXProfile";
@@ -18,7 +18,7 @@ export const LeaderRow = forwardRef<HTMLDivElement, { row: ColonyRow; rank: numb
           <Avatar src={x?.xAvatar ?? null} address={row.owner} alt={handle} size={40} />
           <span className="c0-nrow__col">
             <span className="c0-nrow__handle">{mine ? `${handle} · you` : handle}</span>
-            <span className="c0-nrow__line">{fmtInt(row.workers)} ants</span>
+            <span className="c0-nrow__line"><ResIcon name="ant" size={16} label="ants" /> {fmtInt(row.workers)} ants</span>
           </span>
         </button>
         <span className="c0-lrow__score"><b>{fmtInt(row.score)}</b><span>score</span></span>

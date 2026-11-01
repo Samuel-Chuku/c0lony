@@ -273,3 +273,14 @@ a { color: var(--c0-paper); }
 .c0-inv { display: flex; flex-direction: column; gap: var(--c0-s3); }
 .c0-inv__btn { text-decoration: none; height: var(--c0-btn-h-hero); font-size: 28px; }
 .c0-inv__note { color: var(--c0-sub); text-align: center; }
+
+/* How to play: sections, tables */
+.c0-ht__sec { display: flex; flex-direction: column; gap: var(--c0-s2); }
+.c0-ht__p { margin: 0; font-size: var(--c0-fs-body); line-height: var(--c0-lh-body); }
+.c0-ht__ul { margin: 0; padding: 0 0 0 var(--c0-s4); display: flex; flex-direction: column; gap: var(--c0-s1); font-size: var(--c0-fs-body); line-height: var(--c0-lh-body); }
+.c0-ht__table { width: 100%; border-collapse: collapse; font-size: var(--c0-fs-caption); }
+.c0-ht__table th { text-align: left; font-family: var(--c0-f-display); font-weight: 400; font-size: 16px; padding: var(--c0-s1) var(--c0-s1) var(--c0-s1) 0; border-bottom: 2px solid var(--c0-ink); }
+.c0-ht__table td { padding: var(--c0-s1) var(--c0-s1) var(--c0-s1) 0; border-bottom: 2px dashed var(--c0-rule); vertical-align: top; line-height: var(--c0-lh-body); }
+.c0-ht__table tr:last-child td { border-bottom: 0; }
+.c0-ht__table td:first-child { white-space: nowrap; }
+.c0-ht__ico { display: inline-flex; align-items: center; gap: var(--c0-s1); }

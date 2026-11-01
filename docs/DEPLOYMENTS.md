@@ -157,7 +157,7 @@ The Live tab, X profiles and push alerts need a small backend: serverless functi
 
 | Piece | Name | Notes |
 | --- | --- | --- |
-| D1 database | `c0lony-feed`, bound to the app project as `FEED_DB` | Schema in `web/migrations/0001_feed.sql` (`events`, `event_actors`, `push_subs`) and `web/migrations/0002_gas.sql` (`gas_requests`, starter gas) |
+| D1 database | `c0lony-feed`, bound to the app project as `FEED_DB` | Schema in `web/migrations/0001_feed.sql` (`events`, `event_actors`, `push_subs`) `web/migrations/0002_gas.sql` (`gas_requests`, starter gas) and `web/migrations/0003_wif_faucet.sql` (adds `kind` for the testnet WIF faucet) |
 | KV namespace | `c0lony-profiles`, bound as `PROFILES` | Wallet to X handle and avatar |
 | Pages variables | `PRIVY_APP_ID`, `PRIVY_VERIFICATION_KEY` | Verify Privy access tokens |
 | Pages secrets | `PRIVY_APP_SECRET`, `FEED_INGEST_SECRET` | Read linked accounts; verify keeper requests |
@@ -170,9 +170,11 @@ The Live tab, X profiles and push alerts need a small backend: serverless functi
 
 The keeper runs as a Docker container (`keeper/Dockerfile`, `keeper/docker-compose.yml`, container `c0lony-keeper`). It listens only on localhost (`127.0.0.1:8790` to the container's 8787), and a reverse proxy serves it at `keeper.c0lony.xyz`. State and the published Voter's Pass files are host volumes, so rebuilds keep them. Build from the repo root: `docker compose -f keeper/docker-compose.yml up -d --build`.
 
-Environment variable names (see `keeper/.env.example`): `FEED_API_BASE`, `FEED_INGEST_SECRET` (same value as the Pages secret), `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, `KEEPER_PRIVATE_KEY` (settlement wallet, small ETH float only), `MIN_BALANCE_ETH`, `STARTER_GAS_ETH`, `STARTER_GAS_BELOW_ETH` (and `STARTER_GAS_ENABLED`), plus the RPC, contract and Streams settings. Each part switches itself off with one log line when its settings are missing.
+Environment variable names (see `keeper/.env.example`): `FEED_API_BASE`, `FEED_INGEST_SECRET` (same value as the Pages secret), `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, `KEEPER_PRIVATE_KEY` (settlement wallet, small ETH float only), `MIN_BALANCE_ETH`, `STARTER_GAS_ETH`, `STARTER_GAS_BELOW_ETH` (and `STARTER_GAS_ENABLED`), `WIF_ADDRESS`, `FAUCET_WIF_AMOUNT` (testnet faucet), plus the RPC, contract and Streams settings. Each part switches itself off with one log line when its settings are missing.
 
 **Starter gas** is an offchain top-up from the keeper wallet, separate from the onchain founder drip and settle refund (unchanged). Testnet: any signed-in wallet under 0.0002 ETH gets 0.001 ETH, once per wallet per 24 h, 100 a day overall. Mainnet: only a player's Privy embedded wallet, once ever per user and per wallet, 0.00003 ETH, 25 a day overall. The keeper stops and logs an ALERT when sending would take it below `MIN_BALANCE_ETH`. Apply `0002_gas.sql` to D1 before deploying.
+
+**Testnet WIF faucet:** `POST /api/wif/faucet` queues 10,000 test WIF for a signed-in player's wallet, once per wallet per 24 h and 300 a day overall; the keeper mints it (testnet only, and the app never calls the mock token's open mint directly). Apply `0003_wif_faucet.sql` to D1 before deploying.
 
 ## Deployed contracts
 

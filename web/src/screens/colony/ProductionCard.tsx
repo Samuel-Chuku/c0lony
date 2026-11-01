@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 import { Button, Card } from "../../ui";
 import { fmtDuration, fmtRes, fmtWif } from "../../lib/format";
 import type { ColonyView, GameConfig } from "../../lib/game";
@@ -10,6 +11,7 @@ type Props = { view: ColonyView; cfg: GameConfig; now: number; wif: bigint | und
 
 /** Trails, farms and hand foraging: one Tend collects everything that is home. */
 export function ProductionCard({ view, cfg, now, wif, onBuy }: Props) {
+  const [open, setOpen] = useState(false);
   const tend = useAction("Tending");
   const speed = useAction("Speeding up");
   const w = waitingNow(view, cfg, now);
@@ -45,8 +47,12 @@ export function ProductionCard({ view, cfg, now, wif, onBuy }: Props) {
         </Button>
       </div>
       {tend.error ? <div className="c0-blocked" role="alert">{tend.error}</div> : null}
-      {forage !== null ? (
-        <>
+      {forage !== null && !open ? (
+        <button type="button" className="c0-fold__link" aria-expanded={false} onClick={() => setOpen(true)}>Want the foragers home now?</button>
+      ) : null}
+      {forage !== null && open ? (
+        <div className="c0-fold">
+          <div className="c0-prod__line">Brings the {forage === Resource.Leaves ? "leaf" : "sugar"} foragers home now and collects them. Once a day.</div>
           <Button
             variant="wif"
             size="compact"
@@ -57,9 +63,9 @@ export function ProductionCard({ view, cfg, now, wif, onBuy }: Props) {
           >
             Speed up · {fmtWif(price)} WIF
           </Button>
-          <div className="c0-prod__line">Brings the {forage === Resource.Leaves ? "leaf" : "sugar"} foragers home now. Once a day.</div>
           {speed.error ? <div className="c0-blocked" role="alert">{speed.error}</div> : null}
-        </>
+          <button type="button" className="c0-fold__link" onClick={() => setOpen(false)}>Not now</button>
+        </div>
       ) : null}
     </Card>
   );

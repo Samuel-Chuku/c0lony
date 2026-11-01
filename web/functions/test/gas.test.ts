@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { SignJWT, exportSPKI, generateKeyPair } from "jose";
-import { gasDone, gasPending, gasStarter } from "../_lib/handlers.ts";
+import { gasDone, gasPending, gasStarter, wifFaucet } from "../_lib/handlers.ts";
 import { A, B, makeEnv, signedReq } from "./helpers.ts";
 
 const APP = "app123";
@@ -100,4 +100,33 @@ test("pending and done need the HMAC; done updates once", async () => {
   const after = (await (await gasPending(await signedReq("/api/gas/pending", {}), env)).json()) as { requests: unknown[] };
   assert.equal(after.requests.length, 0);
   assert.equal((await gasDone(await signedReq("/api/gas/done", { id: 1, status: "failed" }, { secret: "wrong" }), env)).status, 401);
+});
+
+const faucet = async (env: ReturnType<typeof mkEnv>["env"], wallet: string) =>
+  wifFaucet(req(await tok(), { wallet }), env, mockFetch);
+
+test("wif faucet: testnet only, once per wallet per 24h, separate from starter gas", async () => {
+  const main = mkEnv("mainnet");
+  assert.equal((await faucet(main.env, A)).status, 404);
+
+  const { env, d1 } = mkEnv("testnet");
+  assert.equal(((await (await faucet(env, A)).json()) as { status: string }).status, "queued");
+  const again = (await (await faucet(env, A)).json()) as { status: string; nextAt: number };
+  assert.equal(again.status, "already");
+  assert.ok(again.nextAt > Math.floor(Date.now() / 1000));
+  // a wif request doesn't use up starter gas, and vice versa
+  assert.equal((await ask(env, A)).status, "queued");
+  const kinds = (d1.raw.prepare("SELECT kind FROM gas_requests ORDER BY id").all() as { kind: string }[]).map((r) => r.kind);
+  assert.deepEqual(kinds, ["wif", "gas"]);
+  // the keeper sees the kind
+  const pending = (await (await gasPending(await signedReq("/api/gas/pending", {}), env)).json()) as { requests: { kind: string }[] };
+  assert.deepEqual(pending.requests.map((r) => r.kind), ["wif", "gas"]);
+  // after 24 h it's allowed again
+  d1.raw.prepare("UPDATE gas_requests SET createdAt = createdAt - 90000").run();
+  assert.equal(((await (await faucet(env, A)).json()) as { status: string }).status, "queued");
+});
+
+test("wif faucet: wallet must belong to the signed-in user", async () => {
+  const { env } = mkEnv("testnet");
+  assert.equal((await faucet(env, "0x" + "7".repeat(40))).status, 403);
 });

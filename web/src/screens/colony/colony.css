@@ -6,7 +6,7 @@
 .c0-resbar-wrap { padding: 0 var(--c0-s3) var(--c0-s2); border-bottom: 4px solid var(--c0-ink); background: var(--c0-soil); }
 .c0-resbar { width: 100%; height: var(--c0-tap); box-sizing: border-box; padding: 0 var(--c0-s1) 0 var(--c0-s3); display: flex; align-items: center; gap: var(--c0-s4); background: var(--c0-loam); border: var(--c0-bw) solid var(--c0-ink); box-shadow: inset 0 0 0 2px var(--c0-clay); color: var(--c0-paper); font-family: var(--c0-f-display); font-size: 22px; text-align: left; }
 .c0-resbar__item { display: inline-flex; align-items: center; gap: var(--c0-s1); }
-.c0-resbar__item .c0-icon { color: var(--c0-muted); }
+
 .c0-resbar__tag { margin-left: auto; height: 30px; padding: 0 10px; display: inline-flex; align-items: center; background: var(--c0-paper-hi); color: var(--c0-ink); border: var(--c0-bw-thin) solid var(--c0-ink); font-size: 20px; }
 .c0-world-wrap { border-bottom: 4px solid var(--c0-ink); flex: none; }
 .c0-colony__cards { padding: var(--c0-s3) var(--c0-s3) var(--c0-s4); display: flex; flex-direction: column; gap: var(--c0-s3); }
@@ -68,3 +68,22 @@
 .c0-wb__pair .c0-btn { width: 100%; padding: 0 var(--c0-s2); font-size: 20px; }
 .c0-wb__report { text-align: center; color: var(--c0-ink); text-decoration: underline; display: block; padding: var(--c0-s2) 0; }
 .c0-world-wrap--top { border-top: 4px solid var(--c0-ink); }
+
+/* v2: Build rows, chips, limits, fed block, speed-up fold */
+.c0-urow { padding: var(--c0-s2) var(--c0-s2); gap: 4px; }
+.c0-urow__main { gap: 8px; }
+.c0-urow__tile { position: relative; width: 44px; height: 44px; flex: none; box-sizing: border-box; background: var(--c0-loam); border: var(--c0-bw) solid var(--c0-ink); display: flex; align-items: center; justify-content: center; }
+.c0-urow__count { position: absolute; right: -8px; bottom: -8px; min-width: 24px; height: 24px; box-sizing: border-box; padding: 0 4px; display: flex; align-items: center; justify-content: center; background: var(--c0-paper-hi); color: var(--c0-ink); border: var(--c0-bw-thin) solid var(--c0-ink); font-family: var(--c0-f-display); font-size: 18px; line-height: 1; }
+.c0-urow__text { padding-left: 4px; }
+.c0-urow__gives { font-size: 12px; line-height: 16px; }
+.c0-urow__buy { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.c0-urow__chips { white-space: nowrap; display: flex; gap: 6px; }
+.c0-cost { white-space: nowrap; display: inline-flex; align-items: center; gap: 2px; font-family: var(--c0-f-display); font-size: 20px; line-height: 1; }
+.c0-urow__need { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; font-size: 12px; color: var(--c0-sub); }
+.c0-urow__need svg { vertical-align: middle; }
+.c0-assign__limit { font-size: 11px; color: var(--c0-sub); }
+.c0-fed { display: flex; flex-direction: column; gap: 2px; padding: var(--c0-s3); background: var(--c0-loam); color: var(--c0-paper); border: var(--c0-bw) solid var(--c0-ink); box-sizing: border-box; text-align: center; }
+.c0-fed__big { font-family: var(--c0-f-display); font-size: 22px; line-height: var(--c0-lh-tight); }
+.c0-fed__small { font-size: 12px; color: var(--c0-muted); }
+.c0-fold { display: flex; flex-direction: column; gap: var(--c0-s2); }
+.c0-fold__link { align-self: center; min-height: var(--c0-tap); font-size: 12px; color: var(--c0-sub); text-decoration: underline; background: none; border: 0; padding: 0 var(--c0-s2); cursor: pointer; }

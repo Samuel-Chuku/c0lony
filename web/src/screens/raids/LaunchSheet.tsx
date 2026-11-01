@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { BottomSheet, Button, Chip, ChipRow, PixelIcon, Stepper } from "../../ui";
+import { BottomSheet, Button, Chip, ChipRow, ResIcon, Stepper } from "../../ui";
 import { Resource, maxSoldiers, MIN_RAID_WORKERS, useGameConfig, type ColonyRow, type Profile } from "../../lib/game";
 import { avenge, launchRaid } from "../../lib/raids";
 import { useSession } from "../../lib/session";
@@ -51,8 +51,8 @@ export function LaunchSheet({ open, mode, target, me, cooldownLeft, onClose }: P
         <div>
           <div className="c0-label">TARGET</div>
           <ChipRow>
-            <Chip selected={res === Resource.Leaves} onClick={() => setRes(Resource.Leaves)}><PixelIcon name="leaf" /> Leaves</Chip>
-            <Chip selected={res === Resource.Sugar} onClick={() => setRes(Resource.Sugar)}><PixelIcon name="sugar" /> Sugar</Chip>
+            <Chip selected={res === Resource.Leaves} onClick={() => setRes(Resource.Leaves)}><ResIcon name="leaf" size={20} /> Leaves</Chip>
+            <Chip selected={res === Resource.Sugar} onClick={() => setRes(Resource.Sugar)}><ResIcon name="sugar" size={20} /> Sugar</Chip>
           </ChipRow>
           <p className="c0-sub" style={{ marginTop: 8 }}>Sealed. They won&apos;t see your target until the roll.</p>
         </div>

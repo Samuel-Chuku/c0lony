@@ -90,6 +90,17 @@ if (cfg.starterGasEnabled && cfg.keeperPrivateKey && cfg.feedApiBase && cfg.feed
       balanceOf: (a) => client.getBalance({ address: a as Address }),
       keeperBalance: () => client.getBalance({ address: account.address }),
       send: (to, amount) => wallet.sendTransaction({ to: to as Address, value: amount }),
+      // Testnet only: the mock WIF token has an open mint, and the keeper mints from the faucet queue.
+      mintWif:
+        cfg.network === "testnet" && cfg.wifAddress
+          ? (to) =>
+              wallet.writeContract({
+                address: cfg.wifAddress as Address,
+                abi: [{ type: "function", name: "mint", stateMutability: "nonpayable", inputs: [{ name: "to", type: "address" }, { name: "amount", type: "uint256" }], outputs: [] }] as const,
+                functionName: "mint",
+                args: [to as Address, parseEther(cfg.faucetWifAmount)],
+              })
+          : undefined,
       wait: async (hash) => (await client.waitForTransactionReceipt({ hash: hash as Hash })).status === "success",
     },
     store: new JsonStore(join(cfg.stateDir, "gas-sent.json"), {}),

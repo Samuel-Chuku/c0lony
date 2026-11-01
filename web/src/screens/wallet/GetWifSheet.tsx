@@ -1,19 +1,19 @@
 "use client";
-// The "Get WIF" sheet. Mainnet: ETH to WIF through KyberSwap (0.5% fee to the treasury). Testnet: free mint.
+// The "Get WIF" sheet. Mainnet: ETH to WIF through KyberSwap (0.5% fee to the treasury). Testnet: a daily faucet.
 import { useEffect, useState } from "react";
 import { formatEther, parseEther } from "viem";
 import { BottomSheet, Button, Chip, ChipRow } from "../../ui";
 import { NETWORK, NETWORK_NAME } from "../../config";
-import { fmtEth, fmtWif } from "../../lib/format";
-import { usePrices, useGameConfig, WIF } from "../../lib/game";
+import { fmtDuration, fmtEth, fmtWif } from "../../lib/format";
+import { usePrices, useGameConfig, useNow } from "../../lib/game";
 import { useSession } from "../../lib/session";
 import { txUrl } from "../../lib/chain";
-import { gasProgressLabel, gasWaiting, useStarterGas, WAITING_REASON } from "../../lib/starterGas";
+import { gasProgressLabel, useStarterGas } from "../../lib/starterGas";
+import { invalidate } from "../../lib/store";
 import { useAction } from "../../lib/tx";
 import { buildSwap, FEE_BPS, getQuote, type Quote } from "./kyber";
 import "./wallet.css";
 
-const mintAbi = [{ type: "function", name: "mint", stateMutability: "nonpayable", inputs: [{ name: "to", type: "address" }, { name: "amount", type: "uint256" }], outputs: [] }] as const;
 const FAUCET = "https://faucet.testnet.chain.robinhood.com"; // recorded in docs/DEPLOYMENTS.md
 const HIGH_IMPACT = 3;
 
@@ -25,34 +25,80 @@ export function GetWifSheet({ open, onClose }: { open: boolean; onClose: () => v
   );
 }
 
+// Testnet faucet: the keeper mints 10,000 test WIF to the player's wallet, once a day per wallet. The player pays
+// no gas for it, and the app never calls the token's open mint directly, so the daily limit holds.
+const FAUCET_KEY = (wallet: string) => `c0lony:faucet:${wallet}`;
+
 function Mint() {
   const session = useSession();
-  const mint = useAction("Minting");
+  const now = useNow();
   const gas = useStarterGas();
   const gasLabel = gasProgressLabel(gas);
+  const [nextAt, setNextAt] = useState(0);
+  const [state, setState] = useState<"idle" | "asking" | "coming" | "error">("idle");
+  const [message, setMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (session.address) setNextAt(Number(localStorage.getItem(FAUCET_KEY(session.address)) ?? 0));
+  }, [session.address]);
+
+  // While a mint is on its way, refresh balances every 5 s for up to a minute.
+  useEffect(() => {
+    if (state !== "coming") return;
+    const id = setInterval(() => void invalidate("balances:"), 5000);
+    const stop = setTimeout(() => setState("idle"), 60_000);
+    return () => {
+      clearInterval(id);
+      clearTimeout(stop);
+    };
+  }, [state]);
+
+  const ask = async () => {
+    if (!session.address) return;
+    setState("asking");
+    setMessage(null);
+    try {
+      const token = await session.getToken();
+      const res = await fetch("/api/wif/faucet", {
+        method: "POST",
+        headers: { "content-type": "application/json", authorization: `Bearer ${token}` },
+        body: JSON.stringify({ wallet: session.address }),
+      });
+      const body = (await res.json().catch(() => ({}))) as { status?: string; nextAt?: number; message?: string; error?: string };
+      if (!res.ok) throw new Error(body.error || `The server answered ${res.status}.`);
+      if (body.nextAt) {
+        localStorage.setItem(FAUCET_KEY(session.address), String(body.nextAt));
+        setNextAt(body.nextAt);
+      }
+      setMessage(body.message ?? null);
+      setState(body.status === "queued" ? "coming" : "idle");
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : "The faucet didn't answer. Try again.");
+      setState("error");
+    }
+  };
+
+  const wait = nextAt > now ? nextAt - now : 0;
   return (
     <div className="c0-wsheet">
-      <p className="c0-wsheet__note">Testnet WIF is free.</p>
+      <p className="c0-wsheet__note">Testnet WIF is free: 10,000 once a day. C0LONY pays the gas.</p>
       {gasLabel ? (
         <div className="c0-underway" role="status"><div className="c0-underway__bar" aria-hidden="true" /><span>{gasLabel}</span></div>
-      ) : gas.state === "denied" ? (
-        <p className="c0-wsheet__note">{gas.message}</p>
+      ) : null}
+      {state === "coming" ? (
+        <div className="c0-underway" role="status"><div className="c0-underway__bar" aria-hidden="true" /><span>10,000 test WIF on its way · a few seconds</span></div>
       ) : null}
       <Button
         variant="paper"
         fullWidth
-        busy={mint.busy ? "Minting…" : undefined}
-        disabledReason={session.address ? (gasWaiting(gas) ? WAITING_REASON : undefined) : "Sign in to mint"}
-        error={mint.error}
-        onClick={() =>
-          void mint.run((client) =>
-            client.writeContract({ address: WIF, abi: mintAbi, functionName: "mint", args: [client.account.address, 10_000n * 10n ** 18n] }),
-          )
-        }
+        busy={state === "asking" ? "Asking…" : undefined}
+        disabledReason={!session.address ? "Sign in to get test WIF" : wait > 0 && state !== "coming" ? `Next test WIF in ${fmtDuration(wait)}` : undefined}
+        error={state === "error" ? `Getting test WIF failed · ${message}` : undefined}
+        onClick={() => void ask()}
       >
-        Mint 10,000 test WIF
+        Get 10,000 test WIF
       </Button>
-      {mint.hash ? <a className="c0-wsheet__note" href={txUrl(mint.hash)} target="_blank" rel="noreferrer">Minted · view transaction</a> : null}
+      {message && state !== "error" ? <p className="c0-wsheet__note">{message}</p> : null}
       <p className="c0-wsheet__note">New wallets get a little testnet ETH for gas automatically. You can also use the <a href={FAUCET} target="_blank" rel="noreferrer">Robinhood Chain testnet faucet</a>.</p>
     </div>
   );

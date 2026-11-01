@@ -63,11 +63,11 @@ export function ProfileScreen() {
       <Header addr={addr} xHandle={x?.xHandle} xAvatar={x?.xAvatar} founded={`founded on day ${p.foundedDay} · ${ago < 86400 ? `${fmtDuration(ago)} ago` : `${Math.floor(ago / 86400)} days ago`}`} />
       <RankCard addr={addr} profile={p} rows={colonies.data} loading={colonies.loading} pot={season.data?.pot} isMe={isMe} />
       <StatRow>
-        <StatTile icon="ant" value={`${fmtInt(p.ants)}/${fmtInt(p.capacity)}`} caption="ants" />
-        <StatTile icon="chamber" value={fmtInt(p.chambers)} caption="chambers" />
-        <StatTile icon="leaf" value={fmtInt(p.trails)} caption="trails" />
-        <StatTile icon="sugar" value={fmtInt(p.farms)} caption="farms" />
-        <StatTile icon="ant-head" value={fmtInt(p.freeAnts)} caption="free ants" />
+        <StatTile res="ant" value={`${fmtInt(p.ants)}/${fmtInt(p.capacity)}`} caption="ants" />
+        <StatTile res="chamber" value={fmtInt(p.chambers)} caption="chambers" />
+        <StatTile res="trail" value={fmtInt(p.trails)} caption="trails" />
+        <StatTile res="farm" value={fmtInt(p.farms)} caption="farms" />
+        <StatTile res="ant" value={fmtInt(p.freeAnts)} caption="free ants" />
       </StatRow>
       {isMe ? <ClaimButton wallet={addr} season={season.data?.season} /> : null}
       <RaidRecord addr={addr} profile={p} me={session.address} isMe={isMe} />

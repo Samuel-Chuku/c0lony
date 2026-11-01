@@ -76,6 +76,7 @@ export function QueenCard({ addr, profile, view, cfg, season, wif, now, onBuy }:
   const price = prices.feed;
   const lastFeedAt = view ? Number(view.data.lastFeedAt) : fedUntil - 72 * 3600;
   const nextFeed = cfg && lastFeedAt > 0 ? lastFeedAt + Number(cfg.feedMinInterval) : 0;
+  const waiting = !!cfg && now < nextFeed;
   let reason: ReactNode;
   if (price === undefined || !cfg) reason = <span className="c0-sr">Loading the price</span>;
   else if (now < nextFeed) reason = `She can be fed again in ${fmtDuration(nextFeed - now)}`;
@@ -90,18 +91,24 @@ export function QueenCard({ addr, profile, view, cfg, season, wif, now, onBuy }:
       </div>
       <Meter kind="queen" value={Math.max(0, left) / 3600} max={72} label="Queen fed, hours left out of 72" />
       {left < 12 * 3600 ? <BlockedStrip>Queen is hungry in {fmtDuration(left)}</BlockedStrip> : null}
-      <Button
-        variant="wif"
-        size="hero"
-        fullWidth
-        busy={feed.busy ? "Feeding…" : undefined}
-        disabledReason={reason}
-        error={feed.error}
-        onClick={() => void feed.run({ functionName: "feedQueen", args: [prices.proof], wif: price })}
-      >
-        Feed her · {price !== undefined ? fmtWif(price) : "…"} WIF
-      </Button>
-      {prices.passApplies && price !== undefined ? <Hand size={15}>Voter&apos;s Pass price: {fmtWif(price)} WIF</Hand> : null}
+      {waiting ? (
+        <div className="c0-fed" role="status">
+          <div className="c0-fed__big">Fed today · next feed in {fmtDuration(nextFeed - now)}</div>
+        </div>
+      ) : (
+        <Button
+          variant="wif"
+          size="hero"
+          fullWidth
+          busy={feed.busy ? "Feeding…" : undefined}
+          disabledReason={reason}
+          error={feed.error}
+          onClick={() => void feed.run({ functionName: "feedQueen", args: [prices.proof], wif: price })}
+        >
+          Feed her · {price !== undefined ? fmtWif(price) : "…"} WIF
+        </Button>
+      )}
+      {!waiting && prices.passApplies && price !== undefined ? <Hand size={15}>Voter&apos;s Pass price: {fmtWif(price)} WIF</Hand> : null}
     </Card>
   );
 }

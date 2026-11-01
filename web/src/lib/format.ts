@@ -35,7 +35,7 @@ export function fmtDuration(sec: number): string {
   const h = Math.floor((s % 86400) / 3600);
   const m = Math.floor((s % 3600) / 60);
   if (d >= 3) return `${d}d ${h}h`;
-  if (d > 0 || h > 0) return `${d * 24 + h}h ${m}m`;
+  if (d > 0 || h > 0) return m === 0 ? `${d * 24 + h}h` : `${d * 24 + h}h ${m}m`;
   if (m > 0) return `${m}m`;
   return `${s}s`;
 }

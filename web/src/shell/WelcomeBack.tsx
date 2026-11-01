@@ -2,8 +2,8 @@
 // "While you were away": shown once per app load when something happened since the player was last here.
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { BlockedStrip, Button, Modal } from "../ui";
+import { useEffect, useState, type ReactNode } from "react";
+import { BlockedStrip, Button, Modal, ResIcon } from "../ui";
 import { fetchSummary, type Summary } from "../lib/api";
 import { fmtDuration, fmtRes } from "../lib/format";
 import { Status, useNow, useProfile } from "../lib/game";
@@ -19,14 +19,28 @@ const handled = new Set<string>(); // wallets already checked in this app load
 
 const sum = (a: string, b: string) => BigInt(a) + BigInt(b);
 
-type Row = { tag: string; raid: boolean; text: string; value: string; loss?: boolean };
+/** "12 leaves and 3 sugar" with the little icons, for the amounts that are non-zero. */
+function whatOf(leaves: string, sugar: string): ReactNode {
+  const l = BigInt(leaves);
+  const g = BigInt(sugar);
+  if (l <= 0n && g <= 0n) return null;
+  return (
+    <>
+      {l > 0n ? <>{fmtRes(l)} <ResIcon name="leaf" size={16} label="leaves" /></> : null}
+      {l > 0n && g > 0n ? " and " : null}
+      {g > 0n ? <>{fmtRes(g)} <ResIcon name="sugar" size={16} label="sugar" /></> : null}
+    </>
+  );
+}
+
+type Row = { tag: string; raid: boolean; text: ReactNode; value: string; loss?: boolean };
 
 function rowsOf(s: Summary, wallet: string): Row[] {
   const rows: Row[] = [];
   const lost = sum(s.lostLeaves, s.lostSugar);
   if (s.raided > 0) {
-    const what = [BigInt(s.lostLeaves) > 0n && `${fmtRes(BigInt(s.lostLeaves))} leaves`, BigInt(s.lostSugar) > 0n && `${fmtRes(BigInt(s.lostSugar))} sugar`].filter(Boolean).join(" and ");
-    rows.push({ tag: "Raided", raid: true, text: `${s.raided === 1 ? "A raider" : `${s.raided} raiders`} took ${what || "from your stores"}`, value: lost > 0n ? `−${fmtRes(lost)}` : "", loss: true });
+    const what = whatOf(s.lostLeaves, s.lostSugar);
+    rows.push({ tag: "Raided", raid: true, text: <>{s.raided === 1 ? "A raider" : `${s.raided} raiders`} took {what ?? "from your stores"}</>, value: lost > 0n ? `−${fmtRes(lost)}` : "", loss: true });
   }
   if (s.defended > 0) {
     const guarded = s.rows.filter((r) => r.type === "settled" && r.data.outcome === "guarded" && r.data.defender === wallet).length;
@@ -39,8 +53,8 @@ function rowsOf(s: Summary, wallet: string): Row[] {
   }
   if (s.raidsWon > 0) {
     const won = sum(s.wonLeaves, s.wonSugar);
-    const what = [BigInt(s.wonLeaves) > 0n && `${fmtRes(BigInt(s.wonLeaves))} leaves`, BigInt(s.wonSugar) > 0n && `${fmtRes(BigInt(s.wonSugar))} sugar`].filter(Boolean).join(" and ");
-    rows.push({ tag: "Raid won", raid: true, text: `You took ${what || "loot"}${s.raidsWon > 1 ? ` in ${s.raidsWon} raids` : ""}`, value: won > 0n ? `+${fmtRes(won)}` : "" });
+    const what = whatOf(s.wonLeaves, s.wonSugar);
+    rows.push({ tag: "Raid won", raid: true, text: <>You took {what ?? "loot"}{s.raidsWon > 1 ? ` in ${s.raidsWon} raids` : ""}</>, value: won > 0n ? `+${fmtRes(won)}` : "" });
   }
   return rows;
 }

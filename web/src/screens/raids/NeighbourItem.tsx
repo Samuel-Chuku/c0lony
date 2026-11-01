@@ -1,5 +1,5 @@
 "use client";
-import { Avatar, Button, Card, Hand } from "../../ui";
+import { Avatar, Button, Card, Hand, ResIcon } from "../../ui";
 import { useAvenge, useNow, type ColonyRow } from "../../lib/game";
 import { fmtDuration, fmtInt, fmtRes, timeAgo } from "../../lib/format";
 import { useWho } from "./shared";
@@ -56,7 +56,7 @@ export function NeighbourItem({ row, ctx, onRaid, onProfile }: Props) {
         <Avatar src={who.avatar} address={row.owner} alt={who.name} size={40} />
         <span className="c0-nrow__col">
           <span className="c0-nrow__handle">{who.name}</span>
-          <span className="c0-nrow__line">{fmtInt(row.workers)} ants · ~{fmtRes(row.sugar)} sugar</span>
+          <span className="c0-nrow__line"><ResIcon name="ant" size={16} label="ants" /> {fmtInt(row.workers)} · <ResIcon name="sugar" size={16} label="sugar" /> ~{fmtRes(row.sugar)}</span>
           <Hand size={15} className={isRaider ? "c0-nrow__note c0-nrow__note--raider" : "c0-nrow__note"}>{note}</Hand>
         </span>
       </button>

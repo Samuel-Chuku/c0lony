@@ -20,3 +20,4 @@ export { FeedRow, type FeedRowProps } from "./FeedRow";
 export { JournalRow } from "./JournalRow";
 export { BlockedStrip, Underway } from "./Global";
 export { useDialog } from "./useDialog";
+export { ResIcon, type ResIconName } from "./ResIcon";

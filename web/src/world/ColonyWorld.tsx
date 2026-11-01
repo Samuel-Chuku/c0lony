@@ -90,6 +90,37 @@ function chamberLabel(name: ChamberName, counts?: ColonyWorldProps["counts"]): s
  * fed-until time and dims in steps; ants shuffle along the tunnels (not under reduced motion). Tapping any
  * chamber opens the Build sheet.
  */
+/**
+ * The queen as a drawn figure (owner's call, 2026-11-01: she reads better than as pixels), resting in her chamber.
+ * Full colour while fed; muted when she is hungry; grey and still when the colony has fallen.
+ */
+function QueenFigure({ glow }: { glow: string }) {
+  const tone =
+    glow === "collapsed"
+      ? { body: "#4A3020", abdomen: "#4A3020", band: "#33231A", crown: "#6B4A33", eye: "#6B4A33" }
+      : glow === "low"
+        ? { body: "#5A3A1C", abdomen: "#6B4A33", band: "#45301D", crown: "#B08A3A", eye: "#E9D8B4" }
+        : { body: "#3A2010", abdomen: "#5A3418", band: "#2A160A", crown: "#F2C04E", eye: "#FBF3DE" };
+  const INK = "#0B0704";
+  return (
+    <g className={glow === "collapsed" ? "c0-world-queen" : "c0-world-queen c0-world-queen--alive"} transform="translate(150 212)" shapeRendering="geometricPrecision">
+      {/* legs */}
+      <path d="M28 26 20 38M34 27l-2 13M40 26l8 12M30 22 18 14M38 22l10-9" stroke={INK} strokeWidth="2.5" strokeLinecap="round" fill="none" />
+      {/* abdomen with bands */}
+      <ellipse cx="62" cy="24" rx="22" ry="13" fill={tone.abdomen} stroke={INK} strokeWidth="2.5" />
+      <path d="M54 12c-3 8-3 16 0 24M63 11c-3 9-3 17 0 26M72 13c-2 7-2 15 0 22" stroke={tone.band} strokeWidth="3" fill="none" />
+      {/* thorax and head */}
+      <ellipse cx="35" cy="22" rx="8" ry="6.5" fill={tone.body} stroke={INK} strokeWidth="2.5" />
+      <ellipse cx="20" cy="18" rx="8.5" ry="7.5" fill={tone.body} stroke={INK} strokeWidth="2.5" />
+      <circle cx="16.5" cy="16" r="2" fill={tone.eye} />
+      {/* antennae */}
+      <path d="M15 11c-4-6-9-7-12-5M19 10c-1-6-4-9-7-9" stroke={INK} strokeWidth="2" strokeLinecap="round" fill="none" />
+      {/* crown */}
+      <path d="M12 9 14 1l4 4 3-5 3 5 4-4 1 8Z" fill={tone.crown} stroke={INK} strokeWidth="1.8" strokeLinejoin="round" />
+    </g>
+  );
+}
+
 export function ColonyWorld({ fedUntil, now, collapsed = false, invite = false, state = "live", counts, onOpenBuild }: ColonyWorldProps) {
   const glow = state !== "live" ? "collapsed" : invite ? "full" : queenGlow(fedUntil, now, collapsed);
   const glowLayer = useMemo(() => {
@@ -97,8 +128,9 @@ export function ColonyWorld({ fedUntil, now, collapsed = false, invite = false, 
     const queen = QUEEN_COLOURS[glow];
     return [
       ...(["3", "2", "1"] as GlowKey[]).map((k) => <Runs key={k} runs={cellsToRuns(glowCells[k], colours[k])} />),
-      <Runs key="body" runs={cellsToRuns(queenBodyCells, queen.body)} />,
-      <Runs key="bands" runs={cellsToRuns(queenBandCells, queen.bands)} />,
+      // The pixel silhouette is filled with the chamber's glow, and the drawn queen sits on top.
+      <Runs key="body" runs={cellsToRuns(queenBodyCells, colours["2"])} />,
+      <Runs key="bands" runs={cellsToRuns(queenBandCells, colours["2"])} />,
     ];
   }, [glow]);
 
@@ -128,10 +160,11 @@ export function ColonyWorld({ fedUntil, now, collapsed = false, invite = false, 
         {staticLayer}
         {glowLayer}
         <Runs runs={outlineRuns} className={glow === "low" ? "c0-world-outline c0-world-outline-pulse" : "c0-world-outline"} />
+        <QueenFigure glow={glow} />
         {live && antsLayer}
       </svg>
       {SIGNS.map((s) => (
-        <div key={s.name} className="c0-world-sign" aria-hidden="true" style={{ left: s.name === "queen" && pips !== null ? s.left - 20 : s.left, top: s.top }}>
+        <div key={s.name} className="c0-world-sign" aria-hidden="true" style={{ left: s.name === "queen" && pips !== null ? s.left - 24 : s.left, top: s.top }}>
           {s.text}
           {s.name === "queen" && pips !== null ? (
             <span className={`c0-world-pips${pips === 0 ? " c0-world-pips--hungry" : ""}`}>

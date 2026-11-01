@@ -1,6 +1,6 @@
 "use client";
 // The frame every app screen sits in: header (title or back link, WIF balance, the player's X picture that
-// opens the Menu), the offline and update strips, the content, and the three-tab bottom nav on main screens.
+// opens the Menu), the offline and update strips, the content, and the four-tab bottom nav on main screens.
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { BlockedStrip, BottomNav, Button, Header, type NavTab } from "../ui";
