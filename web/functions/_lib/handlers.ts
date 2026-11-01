@@ -5,7 +5,7 @@ import {
 } from "./feed.ts";
 import { verifyHmac } from "./hmac.ts";
 import { enabled, fail, json, parseJson, readBody } from "./http.ts";
-import { bearer, refreshProfile, userWallets, verifyPrivyToken } from "./privy.ts";
+import { bearer, profileFor, refreshProfile, userWallets, verifyPrivyToken } from "./privy.ts";
 import { clampInt, isRecord, normAddr, sanitizePrefs } from "./validate.ts";
 
 type Res = Promise<Response>;
@@ -238,6 +238,86 @@ export async function pushPrune(request: Request, env: Env): Res {
     await env.FEED_DB!.prepare(`DELETE FROM push_subs WHERE endpoint IN (${placeholders(part.length)})`).bind(...part).run();
   }
   return json({ ok: true, removed: eps.length });
+}
+
+const DAY = 86400;
+const GAS_LIVE = "('pending', 'sent')";
+
+type GasPolicy = { network: "mainnet" | "testnet"; dailyCap: number };
+
+const gasReply = (status: "queued" | "already" | "limit" | "not-eligible", message: string) => json({ status, message });
+
+async function gasCount(db: D1Database, sql: string, ...args: unknown[]): Promise<number> {
+  const r = await db.prepare(sql).bind(...args).first<{ n: number }>();
+  return r?.n ?? 0;
+}
+
+export async function gasStarter(request: Request, env: Env, fetchImpl: typeof fetch = fetch): Res {
+  const did = await verifyPrivyToken(bearer(request), env);
+  if (!did) return fail(401, "Sign in again to continue.");
+  const b = await jsonBody(request);
+  if (b instanceof Response) return b;
+  const wallet = normAddr(b.wallet);
+  if (!wallet) return fail(400, "A valid wallet is needed.");
+  const profileNow = await profileFor(did, wallet, env, fetchImpl);
+  if (!profileNow) return fail(502, "Could not load your profile right now.");
+  if (!profileNow.wallets.includes(wallet)) return fail(403, "That wallet is not linked to your account.");
+  const policy: GasPolicy =
+    env.NEXT_PUBLIC_NETWORK === "mainnet" ? { network: "mainnet", dailyCap: 25 } : { network: "testnet", dailyCap: 100 };
+  const db = env.FEED_DB!;
+  const now = Math.floor(Date.now() / 1000);
+  if (policy.network === "mainnet") {
+    if (!(profileNow.embedded ?? []).includes(wallet)) {
+      return gasReply("not-eligible", "Starter gas is for the wallet C0LONY made for you. Your own wallet pays its own gas.");
+    }
+    const prior = await gasCount(
+      db,
+      `SELECT COUNT(*) AS n FROM gas_requests WHERE network = 'mainnet' AND status IN ${GAS_LIVE} AND (did = ? OR wallet = ?)`,
+      did, wallet,
+    );
+    if (prior > 0) return gasReply("already", "This wallet already got its starter gas.");
+  } else {
+    const prior = await gasCount(
+      db,
+      `SELECT COUNT(*) AS n FROM gas_requests WHERE network = 'testnet' AND wallet = ? AND status IN ${GAS_LIVE} AND createdAt > ?`,
+      wallet, now - DAY,
+    );
+    if (prior > 0) return gasReply("already", "This wallet already got its starter gas.");
+  }
+  const today = await gasCount(
+    db,
+    `SELECT COUNT(*) AS n FROM gas_requests WHERE network = ? AND status IN ${GAS_LIVE} AND createdAt > ?`,
+    policy.network, now - DAY,
+  );
+  if (today >= policy.dailyCap) return gasReply("limit", "Starter gas is busy today. Try again tomorrow.");
+  await db
+    .prepare("INSERT INTO gas_requests (did, wallet, network, status, tx, createdAt, updatedAt) VALUES (?, ?, ?, 'pending', NULL, ?, ?)")
+    .bind(did, wallet, policy.network, now, now)
+    .run();
+  return gasReply("queued", "Your first gas is on its way.");
+}
+
+export async function gasPending(request: Request, env: Env): Res {
+  const s = await signedBody(request, env);
+  if (s instanceof Response) return s;
+  const { results } = await env.FEED_DB!
+    .prepare("SELECT id, wallet FROM gas_requests WHERE status = 'pending' ORDER BY createdAt ASC, id ASC LIMIT 50")
+    .all<{ id: number; wallet: string }>();
+  return json({ requests: results.map((r) => ({ id: r.id, wallet: r.wallet })) });
+}
+
+export async function gasDone(request: Request, env: Env): Res {
+  const s = await signedBody(request, env);
+  if (s instanceof Response) return s;
+  const b = parseJson(s.body);
+  if (!isRecord(b) || !Number.isInteger(b.id)) return fail(400, "An id is needed.");
+  if (b.status !== "sent" && b.status !== "skipped" && b.status !== "failed") return fail(400, "That status is not valid.");
+  const tx = typeof b.tx === "string" && /^0x[0-9a-fA-F]{64}$/.test(b.tx) ? b.tx.toLowerCase() : null;
+  const r = await env.FEED_DB!
+    .prepare("UPDATE gas_requests SET status = ?, tx = ?, updatedAt = ? WHERE id = ? AND status = 'pending'")
+    .bind(b.status, tx, Math.floor(Date.now() / 1000), b.id)
+    .run();
+  return json({ ok: true, updated: r.meta?.changes ?? 0 });
 }
 
 export { enabled };

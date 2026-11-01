@@ -31,6 +31,8 @@ export function loadConfig() {
     votesRpcUrl: env("ROBINHOOD_RPC_URL"),
     eventSource,
     pollIntervalMs: int("POLL_INTERVAL_MS", 15_000),
+    // Votes only change the Voter's Pass list, so they are checked every 3 hours (players are told to allow that).
+    votesPollIntervalMs: int("VOTES_POLL_INTERVAL_MS", 10_800_000),
     chunkBlocks: int("GETLOGS_CHUNK_BLOCKS", 10_000),
     confirmations: int("CONFIRMATIONS", 2),
     webhookHost: env("WEBHOOK_HOST", "0.0.0.0"),
@@ -60,6 +62,12 @@ export function loadConfig() {
     minBalanceEth: env("MIN_BALANCE_ETH", "0.0002"),
     drandApiUrl: env("DRAND_API_URL", "https://api.drand.sh").replace(/\/+$/, ""),
     drandChainHash: env("DRAND_CHAIN_HASH", "04f1e9062b8a81f848fded9c12306733282b2727ecced50032187751166ec8c3"),
+    // Starter gas: ETH sent to a new player's wallet (the app queues the requests). On by default when the
+    // keeper key and the app link are set; STARTER_GAS_ENABLED=false turns it off.
+    starterGasEnabled:
+      env("STARTER_GAS_ENABLED", env("KEEPER_PRIVATE_KEY", "") && env("FEED_API_BASE", "") && env("FEED_INGEST_SECRET", "") ? "true" : "false") === "true",
+    starterGasEth: env("STARTER_GAS_ETH", network === "mainnet" ? "0.00003" : "0.001"),
+    starterGasBelowEth: env("STARTER_GAS_BELOW_ETH", network === "mainnet" ? "0.00002" : "0.0002"),
     colonyGameAddress: env("COLONY_GAME_ADDRESS", ""),
     seasonPotAddress: env("SEASON_POT_ADDRESS", ""),
     stateDir,

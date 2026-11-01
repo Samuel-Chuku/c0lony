@@ -228,7 +228,7 @@ Mainnet WIF is `0x5173b8eA6923c2d40267890D45C46a3480954773` (source and checks i
 ## How to play
 
 1. Open [app.c0lony.xyz](https://app.c0lony.xyz) and sign in (or connect a wallet).
-2. Get WIF: use **Get WIF** to swap ETH, or bring your own. New wallets get a small gas drip when they found.
+2. Get WIF: use **Get WIF** to swap ETH, or bring your own. New wallets get a small gas drip when they found, and a new player's own C0LONY wallet gets a tiny starter top-up before that first transaction.
 3. **Found** your colony, then **tend** and **feed** the queen at least every 72 hours.
 4. **Build** chambers, trails and farms, and assign workers.
 5. **Raid** a neighbour, **guard** when you are raided, and **avenge** if you lose. Check the Live tab and claim your share when the season ends.

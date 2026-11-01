@@ -5,4 +5,5 @@ export interface Env {
   PRIVY_VERIFICATION_KEY?: string;
   PRIVY_APP_SECRET?: string;
   FEED_INGEST_SECRET?: string;
+  NEXT_PUBLIC_NETWORK?: string;
 }

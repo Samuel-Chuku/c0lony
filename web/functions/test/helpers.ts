@@ -13,7 +13,9 @@ export { A, B, C };
 /** Minimal D1 stand-in over node:sqlite running the real migration. */
 export function fakeD1() {
   const db = new DatabaseSync(":memory:");
-  db.exec(readFileSync(join(import.meta.dirname, "../../migrations/0001_feed.sql"), "utf8"));
+  for (const f of ["0001_feed.sql", "0002_gas.sql"]) {
+    db.exec(readFileSync(join(import.meta.dirname, "../../migrations", f), "utf8"));
+  }
   const mk = (sql: string, args: unknown[]) => ({
     bind: (...a: unknown[]) => mk(sql, a),
     all: async () => ({ results: db.prepare(sql).all(...(args as never[])) }),

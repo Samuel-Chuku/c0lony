@@ -2,7 +2,7 @@ import { importSPKI, jwtVerify } from "jose";
 import type { Env } from "./env.ts";
 import { normAddr } from "./validate.ts";
 
-export type Profile = { wallets: string[]; xHandle: string | null; xAvatar: string | null; updatedAt: number };
+export type Profile = { wallets: string[]; embedded?: string[]; xHandle: string | null; xAvatar: string | null; updatedAt: number };
 
 export function bearer(request: Request): string | null {
   const h = request.headers.get("authorization") ?? "";
@@ -25,6 +25,7 @@ export async function verifyPrivyToken(token: string | null, env: Env): Promise<
 
 type LinkedAccount = {
   type?: string; username?: string; profile_picture_url?: string; address?: string; chain_type?: string;
+  wallet_client_type?: string;
 };
 
 export async function fetchPrivyProfile(did: string, env: Env, fetchImpl: typeof fetch = fetch): Promise<Profile | null> {
@@ -39,6 +40,7 @@ export async function fetchPrivyProfile(did: string, env: Env, fetchImpl: typeof
   const user = (await res.json()) as { linked_accounts?: LinkedAccount[] };
   const accounts = user.linked_accounts ?? [];
   const wallets: string[] = [];
+  const embedded: string[] = [];
   let xHandle: string | null = null;
   let xAvatar: string | null = null;
   for (const a of accounts) {
@@ -48,9 +50,10 @@ export async function fetchPrivyProfile(did: string, env: Env, fetchImpl: typeof
     } else if (a.type === "wallet" && a.chain_type === "ethereum") {
       const w = normAddr(a.address);
       if (w && !wallets.includes(w)) wallets.push(w);
+      if (w && a.wallet_client_type === "privy" && !embedded.includes(w)) embedded.push(w);
     }
   }
-  return { wallets, xHandle, xAvatar, updatedAt: Math.floor(Date.now() / 1000) };
+  return { wallets, embedded, xHandle, xAvatar, updatedAt: Math.floor(Date.now() / 1000) };
 }
 
 /** Fetch from Privy and write the KV records. Returns null if Privy could not be reached. */
@@ -71,4 +74,13 @@ export async function userWallets(did: string, env: Env, fetchImpl: typeof fetch
   if (stored) return stored.wallets;
   const fresh = await refreshProfile(did, env, fetchImpl);
   return fresh ? fresh.wallets : null;
+}
+
+/** The stored profile, refreshed from Privy when missing, when it lacks the wallet, or when it predates `embedded`. */
+export async function profileFor(
+  did: string, wallet: string, env: Env, fetchImpl: typeof fetch = fetch,
+): Promise<Profile | null> {
+  const stored = env.PROFILES ? ((await env.PROFILES.get(`u:${did}`, "json")) as Profile | null) : null;
+  if (stored && stored.embedded && stored.wallets.includes(wallet)) return stored;
+  return refreshProfile(did, env, fetchImpl);
 }

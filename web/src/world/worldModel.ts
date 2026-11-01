@@ -25,8 +25,10 @@ function inEllipse(x: number, y: number, name: ChamberName, scale: number): bool
   return dx * dx + dy * dy <= scale;
 }
 
+// Slightly larger than the chamber outline, so a chamber's dark interior that touches a tunnel is never
+// mistaken for an ant (the queen's body reaches one cell past her ellipse).
 function insideAnyChamber(x: number, y: number): boolean {
-  return (Object.keys(chambers) as ChamberName[]).some((n) => inEllipse(x, y, n, 1));
+  return (Object.keys(chambers) as ChamberName[]).some((n) => inEllipse(x, y, n, 1.4));
 }
 
 // ---- ants: 8-connected clusters of `A` outside the chambers
@@ -47,7 +49,7 @@ for (let y = 0; y < world.height; y++) {
           const nx = p.x + dx;
           const ny = p.y + dy;
           if (nx < 0 || ny < 0 || nx >= world.width || ny >= world.height) continue;
-          if (grid[ny][nx] !== "A" || seen.has(`${nx},${ny}`)) continue;
+          if (grid[ny][nx] !== "A" || seen.has(`${nx},${ny}`) || insideAnyChamber(nx, ny)) continue;
           seen.add(`${nx},${ny}`);
           stack.push({ x: nx, y: ny });
         }
@@ -78,17 +80,23 @@ for (const ant of ants) {
   }
 }
 
-// ---- queen chamber: glow cells and the outline that pulses when she is hungry
+// ---- queen chamber: glow cells, the queen herself, and the outline that pulses when she is hungry
 const glow: Record<GlowKey, Cell[]> = { "1": [], "2": [], "3": [] };
 const outline: Cell[] = [];
+// Her body (A) and bands (H) are near-black, which vanishes when the chamber is dark, so they are lifted out
+// and recoloured per glow step.
+const queenBody: Cell[] = [];
+const queenBands: Cell[] = [];
 for (let y = 0; y < world.height; y++) {
   for (let x = 0; x < world.width; x++) {
     const k = base[y][x];
     if (k === "1" || k === "2" || k === "3") glow[k].push({ x, y });
     else if (k === "k" && inEllipse(x, y, "queen", 1.9)) outline.push({ x, y });
+    else if (k === "A" && inEllipse(x, y, "queen", 1.4)) queenBody.push({ x, y });
+    else if (k === "H" && inEllipse(x, y, "queen", 1.4)) queenBands.push({ x, y });
   }
 }
-const lifted = new Set<string>([...outline.map((c) => `${c.x},${c.y}`)]);
+const lifted = new Set<string>([...outline, ...queenBody, ...queenBands].map((c) => `${c.x},${c.y}`));
 
 function mergeRows(keep: (k: string, x: number, y: number) => boolean, colour: (k: string) => string): Run[] {
   const out: Run[] = [];
@@ -120,8 +128,11 @@ function cellsToRuns(cells: Cell[], fill: string): Run[] {
 
 export const glowCells = glow;
 export const outlineCells = outline;
+export const queenBodyCells = queenBody;
+export const queenBandCells = queenBands;
 export const antSprites = ants;
-export const antColour = palette.A;
+// Tunnel ants in clay, so they read against the near-black tunnels (the art's own A is almost the tunnel colour).
+export const antColour = palette.n;
 export const chamberBoxes = (Object.keys(chambers) as ChamberName[]).map((name) => {
   const c = chambers[name];
   return {
@@ -143,6 +154,15 @@ export const GLOW_COLOURS: Record<Glow, Record<GlowKey, string>> = {
   mid: { "1": "#9A6226", "2": "#6B4A33", "3": "#45301D" },
   low: { "1": "#6B4A33", "2": "#45301D", "3": "#33231A" },
   collapsed: { "1": "#24180F", "2": "#24180F", "3": "#24180F" },
+};
+
+/** The queen's body and bands: black on a lit chamber, lighter browns when the chamber is dark. */
+export const QUEEN_COLOURS: Record<Glow, { body: string; bands: string }> = {
+  full: { body: palette.A, bands: palette.H },
+  high: { body: palette.A, bands: palette.H },
+  mid: { body: palette.A, bands: palette.H },
+  low: { body: "#1A110A", bands: "#8A5A3B" },
+  collapsed: { body: "#6B4A33", bands: "#A06C46" },
 };
 
 const HOUR = 3600;

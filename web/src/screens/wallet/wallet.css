@@ -14,3 +14,9 @@
 .c0-wsheet__links { display: flex; flex-direction: column; gap: var(--c0-s1); font-size: var(--c0-fs-body); }
 .c0-wsheet__links a, .c0-wsheet__note a { color: var(--c0-ink); display: inline-flex; align-items: center; min-height: var(--c0-tap); }
 .c0-wsheet__addr { font-size: var(--c0-fs-body-lg); word-break: break-all; padding: var(--c0-s3); border: var(--c0-bw) solid var(--c0-ink); background: var(--c0-paper-hi); user-select: all; }
+
+.c0-wsheet__addrrow { display: flex; align-items: stretch; gap: var(--c0-s2); }
+.c0-wsheet__addrrow .c0-wsheet__addr { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.c0-copybtn { flex: none; width: var(--c0-tap); min-height: var(--c0-tap); display: inline-flex; align-items: center; justify-content: center; padding: 0; background: var(--c0-paper-hi); color: var(--c0-ink); border: var(--c0-bw) solid var(--c0-ink); box-shadow: var(--c0-shadow-card); }
+.c0-copybtn:active { box-shadow: none; transform: var(--c0-press); }
+.c0-copybtn__done { font-family: var(--c0-f-display); font-size: 14px; }

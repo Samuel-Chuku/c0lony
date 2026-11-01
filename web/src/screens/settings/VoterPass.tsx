@@ -48,7 +48,7 @@ function Link_({ gameWallet }: { gameWallet: string }) {
     try {
       const found = await fetchVoterProof(voting.address);
       if (!found) {
-        setError("That wallet isn't on the voter list. Connect the wallet you voted with.");
+        setError("That wallet isn't on the voter list yet. Votes are checked every 3 hours, so if you just voted, try again later. Otherwise connect the wallet you voted with.");
         return;
       }
       const nonce = await publicClient.readContract({ address: GAME, abi: colonyGameAbi, functionName: "voterNonce", args: [voting.address as Address] });
@@ -72,6 +72,7 @@ function Link_({ gameWallet }: { gameWallet: string }) {
   return (
     <>
       <p>Using the pass directly from the voting wallet uses it up, so link it to the wallet you play from.</p>
+      <p className="c0-sub">Votes are checked every 3 hours. If you voted just now, your pass shows up within 3 hours.</p>
       {voting ? (
         <>
           <p>Voting wallet connected: {shortAddress(voting.address)}</p>

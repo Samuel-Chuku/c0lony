@@ -8,6 +8,7 @@ import { fmtEth, fmtWif } from "../../lib/format";
 import { usePrices, useGameConfig, WIF } from "../../lib/game";
 import { useSession } from "../../lib/session";
 import { txUrl } from "../../lib/chain";
+import { gasProgressLabel, gasWaiting, useStarterGas, WAITING_REASON } from "../../lib/starterGas";
 import { useAction } from "../../lib/tx";
 import { buildSwap, FEE_BPS, getQuote, type Quote } from "./kyber";
 import "./wallet.css";
@@ -27,14 +28,21 @@ export function GetWifSheet({ open, onClose }: { open: boolean; onClose: () => v
 function Mint() {
   const session = useSession();
   const mint = useAction("Minting");
+  const gas = useStarterGas();
+  const gasLabel = gasProgressLabel(gas);
   return (
     <div className="c0-wsheet">
       <p className="c0-wsheet__note">Testnet WIF is free.</p>
+      {gasLabel ? (
+        <div className="c0-underway" role="status"><div className="c0-underway__bar" aria-hidden="true" /><span>{gasLabel}</span></div>
+      ) : gas.state === "denied" ? (
+        <p className="c0-wsheet__note">{gas.message}</p>
+      ) : null}
       <Button
         variant="paper"
         fullWidth
         busy={mint.busy ? "Minting…" : undefined}
-        disabledReason={session.address ? undefined : "Sign in to mint"}
+        disabledReason={session.address ? (gasWaiting(gas) ? WAITING_REASON : undefined) : "Sign in to mint"}
         error={mint.error}
         onClick={() =>
           void mint.run((client) =>
@@ -45,7 +53,7 @@ function Mint() {
         Mint 10,000 test WIF
       </Button>
       {mint.hash ? <a className="c0-wsheet__note" href={txUrl(mint.hash)} target="_blank" rel="noreferrer">Minted · view transaction</a> : null}
-      <p className="c0-wsheet__note">Testnet ETH for gas comes from the founder drip after you found a colony. You can also use the <a href={FAUCET} target="_blank" rel="noreferrer">Robinhood Chain testnet faucet</a>.</p>
+      <p className="c0-wsheet__note">New wallets get a little testnet ETH for gas automatically. You can also use the <a href={FAUCET} target="_blank" rel="noreferrer">Robinhood Chain testnet faucet</a>.</p>
     </div>
   );
 }

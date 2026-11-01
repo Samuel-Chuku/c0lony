@@ -17,8 +17,14 @@ import { fetchDrandSignature } from "./settle/drand.ts";
 import { replayHistory } from "./settle/history.ts";
 import { Settler } from "./settle/settler.ts";
 import { makeSettleWallet } from "./settle/wallet.ts";
+import { httpGasApi, StarterGas } from "./gas/starter.ts";
+import { makeVoterRefresher } from "./voters/refresh.ts";
+import { createWalletClient, http as viemHttp, type Address, type Hash } from "viem";
+import { privateKeyToAccount } from "viem/accounts";
+import { makeChain } from "./chain.ts";
 import webpush from "web-push";
 import { parseEther } from "viem";
+import { JsonStore } from "./state.ts";
 import { loadVoteWallets, votesFilter, VoteStore } from "./voters/votes.ts";
 
 const cfg = loadConfig();
@@ -73,6 +79,30 @@ if (reader && cfg.keeperPrivateKey) {
   log("settle: off (needs KEEPER_PRIVATE_KEY and game addresses)");
 }
 
+let starterGas: StarterGas | undefined;
+if (cfg.starterGasEnabled && cfg.keeperPrivateKey && cfg.feedApiBase && cfg.feedIngestSecret) {
+  const client = makePublicClient(cfg);
+  const account = privateKeyToAccount(cfg.keeperPrivateKey as Hash);
+  const wallet = createWalletClient({ account, chain: makeChain(cfg), transport: viemHttp(cfg.rpcUrl) });
+  starterGas = new StarterGas({
+    api: httpGasApi(fetch, cfg.feedApiBase, cfg.feedIngestSecret),
+    chain: {
+      balanceOf: (a) => client.getBalance({ address: a as Address }),
+      keeperBalance: () => client.getBalance({ address: account.address }),
+      send: (to, amount) => wallet.sendTransaction({ to: to as Address, value: amount }),
+      wait: async (hash) => (await client.waitForTransactionReceipt({ hash: hash as Hash })).status === "success",
+    },
+    store: new JsonStore(join(cfg.stateDir, "gas-sent.json"), {}),
+    amount: parseEther(cfg.starterGasEth),
+    below: parseEther(cfg.starterGasBelowEth),
+    minBalance: parseEther(cfg.minBalanceEth),
+    log,
+  });
+  log(`gas: starter gas on, ${cfg.starterGasEth} ETH to wallets under ${cfg.starterGasBelowEth} ETH`);
+} else {
+  log("gas: starter gas off (needs KEEPER_PRIVATE_KEY, FEED_API_BASE and FEED_INGEST_SECRET)");
+}
+
 const blockTimes = new BlockTimes(new Rpc(cfg.rpcUrl));
 const directory = new RaidDirectory(join(cfg.stateDir, "raids.json"));
 const decodeDeps = {
@@ -109,9 +139,25 @@ const onGameLogs: LogHandler = async (logs, info) => {
   log(`game: ${logs.length} logs via ${info.source}`);
   if (failed) throw failed;
 };
+// The voter list republishes itself, and the keeper posts the new root onchain when it is the root setter.
+const refreshVoters = makeVoterRefresher({
+  store: voteStore,
+  wallets,
+  publicDir: cfg.votersPublicDir,
+  listUri: cfg.votersListUri,
+  game: cfg.colonyGameAddress ? (cfg.colonyGameAddress as Address) : undefined,
+  client: cfg.colonyGameAddress ? makePublicClient(cfg) : undefined,
+  wallet: cfg.keeperPrivateKey
+    ? createWalletClient({ account: privateKeyToAccount(cfg.keeperPrivateKey as Hash), chain: makeChain(cfg), transport: viemHttp(cfg.rpcUrl) })
+    : undefined,
+  log,
+});
+const runVoterRefresh = () => refreshVoters().catch((e) => log(`voters: refresh failed: ${e instanceof Error ? e.message : e}`));
+
 const onVoteLogs: LogHandler = async (logs, info) => {
   const added = voteStore.add(logs);
   log(`votes: ${logs.length} logs via ${info.source}, ${added} new`);
+  if (added > 0) await runVoterRefresh();
 };
 
 // Voter's Pass proofs are static files (scripts/build-voters.ts) that Caddy serves at /voters/, not routes here.
@@ -142,7 +188,7 @@ if (cfg.eventSource === "streams") {
       rpc: new Rpc(cfg.votesRpcUrl),
       filter: votesFilter(wallets),
       startBlock: cfg.votesStartBlock,
-      intervalMs: cfg.pollIntervalMs,
+      intervalMs: cfg.votesPollIntervalMs,
       chunkBlocks: cfg.chunkBlocks,
       confirmations: cfg.confirmations,
       cursorFile: join(cfg.stateDir, "votes-cursor.json"),
@@ -154,16 +200,19 @@ if (cfg.eventSource === "streams") {
 
 const port = await server.listen(cfg.webhookPort, cfg.webhookHost);
 for (const [source, handler] of sources) await source.start(handler);
+void runVoterRefresh();
 log(`keeper up on :${port} · network ${cfg.network} · intake ${cfg.eventSource} · ${sources.length} sources`);
 
 outbox?.start();
 scheduler?.start();
 settler?.start();
+starterGas?.start();
 
 const shutdown = async () => {
   outbox?.stop();
   scheduler?.stop();
   settler?.stop();
+  starterGas?.stop();
   for (const [source] of sources) await source.stop();
   await server.close();
   process.exit(0);

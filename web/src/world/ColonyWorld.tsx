@@ -13,6 +13,9 @@ import {
   chamberBoxes,
   glowCells,
   outlineCells,
+  queenBandCells,
+  queenBodyCells,
+  QUEEN_COLOURS,
   queenGlow,
   staticRuns,
   type ChamberName,
@@ -27,6 +30,8 @@ export type ColonyWorldProps = {
   /** Current time, unix seconds. */
   now: number;
   collapsed?: boolean;
+  /** No colony to show yet (signed out, or not founded): the colony is drawn alive and glowing, as an invitation. */
+  invite?: boolean;
   state?: WorldState;
   counts?: { chambers: number; trails: number; farms: number; ants: number };
   onOpenBuild?: () => void;
@@ -85,11 +90,16 @@ function chamberLabel(name: ChamberName, counts?: ColonyWorldProps["counts"]): s
  * fed-until time and dims in steps; ants shuffle along the tunnels (not under reduced motion). Tapping any
  * chamber opens the Build sheet.
  */
-export function ColonyWorld({ fedUntil, now, collapsed = false, state = "live", counts, onOpenBuild }: ColonyWorldProps) {
-  const glow = state === "live" ? queenGlow(fedUntil, now, collapsed) : "collapsed";
+export function ColonyWorld({ fedUntil, now, collapsed = false, invite = false, state = "live", counts, onOpenBuild }: ColonyWorldProps) {
+  const glow = state !== "live" ? "collapsed" : invite ? "full" : queenGlow(fedUntil, now, collapsed);
   const glowLayer = useMemo(() => {
     const colours = GLOW_COLOURS[glow];
-    return (["3", "2", "1"] as GlowKey[]).map((k) => <Runs key={k} runs={cellsToRuns(glowCells[k], colours[k])} />);
+    const queen = QUEEN_COLOURS[glow];
+    return [
+      ...(["3", "2", "1"] as GlowKey[]).map((k) => <Runs key={k} runs={cellsToRuns(glowCells[k], colours[k])} />),
+      <Runs key="body" runs={cellsToRuns(queenBodyCells, queen.body)} />,
+      <Runs key="bands" runs={cellsToRuns(queenBandCells, queen.bands)} />,
+    ];
   }, [glow]);
 
   const live = state === "live" && glow !== "collapsed";

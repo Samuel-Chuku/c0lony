@@ -53,7 +53,7 @@ export function LiveScreen() {
 }
 
 function FeedList({ filter, me, configured, login }: { filter: FeedFilter; me: string | null; configured: boolean; login: () => void }) {
-  const first = useFeed(filter, me);
+  const first = useFeed(filter, filter === "mine" ? me : null);
   const now = useNow(30_000);
   const [older, setOlder] = useState<FeedEvent[]>([]);
   const [exhausted, setExhausted] = useState(false);
@@ -90,7 +90,7 @@ function FeedList({ filter, me, configured, login }: { filter: FeedFilter; me: s
     setLoadingMore(true);
     setMoreError(null);
     try {
-      const page = await fetchFeed(feedUrl(filter, { wallet: me ?? undefined, before: last.id }));
+      const page = await fetchFeed(feedUrl(filter, { wallet: filter === "mine" ? me ?? undefined : undefined, before: last.id }));
       setOlder((o) => [...o, ...page]);
       if (page.length < 20) setExhausted(true);
     } catch {

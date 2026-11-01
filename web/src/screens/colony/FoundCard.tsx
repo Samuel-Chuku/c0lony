@@ -2,6 +2,7 @@
 import { Button, Card, Hand } from "../../ui";
 import { fmtWif } from "../../lib/format";
 import { useSession } from "../../lib/session";
+import { gasProgressLabel, gasWaiting, useStarterGas, WAITING_REASON } from "../../lib/starterGas";
 import { useAction } from "../../lib/tx";
 import { usePlayerPrices } from "./data";
 
@@ -10,6 +11,8 @@ export function FoundCard({ addr, wif, onBuy }: { addr: string | null; wif: bigi
   const session = useSession();
   const prices = usePlayerPrices(addr);
   const found = useAction("Founding");
+  const gas = useStarterGas();
+  const gasLabel = gasProgressLabel(gas);
   const price = prices.found;
   const short = !!addr && price !== undefined && wif !== undefined && wif < price;
   let reason: React.ReactNode;
@@ -22,18 +25,27 @@ export function FoundCard({ addr, wif, onBuy }: { addr: string | null; wif: bigi
         <button type="button" className="c0-linkbtn" onClick={onBuy}>Buy WIF</button>
       </span>
     );
+  else if (gasWaiting(gas)) reason = WAITING_REASON;
   return (
     <Card role="region" aria-label="Found a colony" className="c0-qcard c0-qcard--centre">
       <h2 className="c0-qcard__big">Found a colony to start</h2>
       <p className="c0-qcard__note">Your ants, your queen and your tunnels live here. Feed her every 3 days to keep them.</p>
       {!session.signedIn ? (
         session.configured ? (
-          <Button variant="paper" fullWidth busy={!session.ready ? "Loading…" : undefined} onClick={() => session.login()}>
-            Sign in with X
-          </Button>
+          <>
+            <Button variant="paper" fullWidth busy={!session.ready ? "Loading…" : undefined} onClick={() => session.login()}>
+              Sign in
+            </Button>
+            <p className="c0-qcard__note">With X, email or your own wallet.</p>
+          </>
         ) : (
           <Hand size={16}>Sign-in opens soon.</Hand>
         )
+      ) : null}
+      {gasLabel ? (
+        <div className="c0-underway" role="status"><div className="c0-underway__bar" aria-hidden="true" /><span>{gasLabel}</span></div>
+      ) : gas.state === "denied" ? (
+        <p className="c0-qcard__note">{gas.message}</p>
       ) : null}
       <Button
         variant="wif"

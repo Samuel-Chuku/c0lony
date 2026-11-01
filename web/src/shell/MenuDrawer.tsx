@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Avatar, Button, Card, Drawer, PixelIcon, type IconName } from "../ui";
 import { displayName, fmtEth, fmtWif, shortAddress } from "../lib/format";
+import { useStarterGas } from "../lib/starterGas";
 import { useBalances, useColonies, useProfile } from "../lib/game";
 import { useSession } from "../lib/session";
 import { useXProfile } from "../lib/useXProfile";
@@ -17,6 +18,7 @@ export function MenuDrawer({ open, onClose }: { open: boolean; onClose: () => vo
   const me = session.address;
   const x = useXProfile(me);
   const balances = useBalances(me);
+  useStarterGas(); // asks once for a new wallet's first gas; the caption below stays
   const profile = useProfile(me);
   const colonies = useColonies();
   const path = usePathname();

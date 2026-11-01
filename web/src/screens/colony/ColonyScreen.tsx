@@ -46,7 +46,8 @@ export function ColonyScreen() {
           <ColonyWorld
             fedUntil={hasColony ? Number(p!.fedUntil) : null}
             now={now}
-            collapsed={!hasColony || p!.status === Status.Collapsed}
+            collapsed={hasColony && p!.status === Status.Collapsed}
+            invite={!hasColony}
             state={loading ? "loading" : failed ? "error" : "live"}
             counts={hasColony ? { chambers: p!.chambers, trails: p!.trails, farms: p!.farms, ants: p!.ants } : undefined}
             onOpenBuild={alive ? openBuild : undefined}
