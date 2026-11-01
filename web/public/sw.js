@@ -70,6 +70,11 @@ self.addEventListener("push", (event) => {
     data = { body: event.data ? event.data.text() : "" };
   }
   const title = data.title || "C0LONY";
+  // The home-screen icon gets a badge for the alerts that need the player (hungry queen, incoming raid).
+  // The app clears it once she is fed and nothing is marching.
+  if (self.navigator.setAppBadge && (data.tag === "hungry" || String(data.tag || "").startsWith("raid-"))) {
+    self.navigator.setAppBadge(1).catch(() => {});
+  }
   event.waitUntil(
     self.registration.showNotification(title, {
       body: data.body || "",

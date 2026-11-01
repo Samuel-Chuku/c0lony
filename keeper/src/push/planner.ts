@@ -141,7 +141,7 @@ export class PushPlanner {
       at: end - 24 * HOUR,
       wallet,
       pref: "season",
-      payload: payload(`Season ${season} ends in 24h.`, "/?tab=season", `season-${season}`),
+      payload: payload(`Season ${season} ends in 24h.`, "/?tab=live", `season-${season}`),
     });
   }
 

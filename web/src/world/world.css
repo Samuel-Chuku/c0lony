@@ -82,3 +82,11 @@
 /* The in-app "Reduce motion" setting adds this class to <html>; the OS setting is handled in tokens.css. */
 .c0-reduce-motion .c0-world-ant,
 .c0-reduce-motion .c0-world-outline-pulse { animation: none; }
+
+/* Hunger pips on the QUEEN sign: gold while her fed time (bought with WIF) lasts, hatch when she has under 12 h. */
+.c0-world-pips { display: inline-flex; gap: 2px; margin-left: 4px; vertical-align: 1px; }
+.c0-world-pip { width: 8px; height: 8px; box-sizing: border-box; border: 2px solid var(--c0-ink); background: var(--c0-paper); }
+.c0-world-pip--fed { background: var(--c0-gold); }
+.c0-world-pips--hungry .c0-world-pip { background: var(--c0-hatch); animation: c0-pip-step calc(var(--c0-queen-pulse) * 2) steps(1, end) infinite; }
+@keyframes c0-pip-step { 0% { border-color: var(--c0-ink); } 50% { border-color: #6B4A33; } }
+.c0-reduce-motion .c0-world-pips--hungry .c0-world-pip { animation: none; }

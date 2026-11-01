@@ -103,6 +103,10 @@ export function ColonyWorld({ fedUntil, now, collapsed = false, invite = false, 
   }, [glow]);
 
   const live = state === "live" && glow !== "collapsed";
+  // Days of food left as three pips on the QUEEN sign (one per 24 h of her 72 h). Under 12 h none are left and
+  // the pips turn to the Blocked hatch, stepping with the chamber outline.
+  const left = fedUntil === null ? 0 : fedUntil - now;
+  const pips = state !== "live" || invite || glow === "collapsed" ? null : left <= 12 * 3600 ? 0 : Math.min(3, Math.ceil(left / 86400));
   const description =
     state === "loading"
       ? "Your colony, loading"
@@ -127,8 +131,15 @@ export function ColonyWorld({ fedUntil, now, collapsed = false, invite = false, 
         {live && antsLayer}
       </svg>
       {SIGNS.map((s) => (
-        <div key={s.name} className="c0-world-sign" aria-hidden="true" style={{ left: s.left, top: s.top }}>
+        <div key={s.name} className="c0-world-sign" aria-hidden="true" style={{ left: s.name === "queen" && pips !== null ? s.left - 20 : s.left, top: s.top }}>
           {s.text}
+          {s.name === "queen" && pips !== null ? (
+            <span className={`c0-world-pips${pips === 0 ? " c0-world-pips--hungry" : ""}`}>
+              {[0, 1, 2].map((i) => (
+                <span key={i} className={i < pips ? "c0-world-pip c0-world-pip--fed" : "c0-world-pip"} />
+              ))}
+            </span>
+          ) : null}
         </div>
       ))}
       {state === "live" &&
