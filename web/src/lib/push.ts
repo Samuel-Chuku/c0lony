@@ -46,6 +46,21 @@ function keyBytes(base64url: string): Uint8Array<ArrayBuffer> {
   return out;
 }
 
+/**
+ * This device's subscription, if it was made with the current key. A subscription made with an older key (the
+ * keys were rotated) can never receive alerts again, so it is dropped here and the player turns alerts on afresh.
+ */
+async function currentSubscription(reg: ServiceWorkerRegistration | undefined): Promise<PushSubscription | null> {
+  const sub = await reg?.pushManager.getSubscription();
+  if (!sub) return null;
+  const used = sub.options.applicationServerKey;
+  const want = keyBytes(CONFIG.vapidPublicKey);
+  const a = used ? new Uint8Array(used) : null;
+  if (a && a.length === want.length && a.every((b, i) => b === want[i])) return sub;
+  await sub.unsubscribe().catch(() => {});
+  return null;
+}
+
 async function post(path: string, token: string, body: unknown): Promise<void> {
   const res = await fetch(path, {
     method: "POST",
@@ -65,7 +80,7 @@ export async function enablePush(wallet: string, token: string, prefs: PushPrefs
   const permission = await Notification.requestPermission();
   if (permission !== "granted") throw new Error("Alerts are blocked for this site in your browser settings.");
   const sub =
-    (await reg.pushManager.getSubscription()) ??
+    (await currentSubscription(reg)) ??
     (await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes(CONFIG.vapidPublicKey) }));
   const json = sub.toJSON();
   await post("/api/push/subscribe", token, { wallet: wallet.toLowerCase(), subscription: json, prefs });
@@ -86,6 +101,6 @@ export async function disablePush(token: string): Promise<void> {
 
 export async function currentEndpoint(): Promise<string | null> {
   const reg = await navigator.serviceWorker?.getRegistration();
-  const sub = await reg?.pushManager.getSubscription();
+  const sub = await currentSubscription(reg);
   return sub?.endpoint ?? null;
 }

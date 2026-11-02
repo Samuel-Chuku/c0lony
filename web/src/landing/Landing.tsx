@@ -3,7 +3,7 @@ import "./landing.css";
 import type { ReactNode } from "react";
 import { APP_URL, BRAND } from "../brand";
 import { NETWORK, NETWORK_NAME, CONFIG } from "../config";
-import { Hand, Meter, PixelIcon, ResIcon, shortAddress } from "../ui";
+import { BrandName, Hand, Meter, PixelIcon, ResIcon, shortAddress, withBrand } from "../ui";
 import { HeroWorld } from "./HeroWorld";
 import { LiveNumbers } from "./LiveNumbers";
 
@@ -13,7 +13,7 @@ const DRAND_INFO = `${CONFIG.drand.apiUrl}/${CONFIG.drand.chainHash}/info`;
 
 const Wif = ({ children }: { children: ReactNode }) => <span className="l-wif">{children}</span>;
 
-function PlayButton({ hero = false, label = `Play ${BRAND.name}` }: { hero?: boolean; label?: string }) {
+function PlayButton({ hero = false, label = <>Play <BrandName /></> }: { hero?: boolean; label?: ReactNode }) {
   return (
     <a className={`c0-btn c0-btn--paper l-play${hero ? " c0-btn--hero" : ""}`} href={APP_URL}>
       {label}
@@ -120,7 +120,7 @@ export function Landing() {
               <p className="l-eyebrow">A DAILY ANT-COLONY GAME PAID IN $WIF</p>
               <h1 id="h-hero">Raise an ant colony. Raid your rivals.</h1>
               <p className="l-lead">
-                {BRAND.name} is a strategy game on Robinhood Chain. Feed your queen, grow your colony, steal leaves and
+                <BrandName /> is a strategy game on Robinhood Chain. Feed your queen, grow your colony, steal leaves and
                 sugar from neighbours, and share the season's WIF pot if your colony is still alive at the end.
               </p>
               <div className="l-cta">
@@ -327,7 +327,7 @@ export function Landing() {
               {FAQ.map((f) => (
                 <details key={f.q} className="l-q">
                   <summary>{f.q}</summary>
-                  <p>{f.a}</p>
+                  <p>{typeof f.a === "string" ? withBrand(f.a) : f.a}</p>
                 </details>
               ))}
             </div>

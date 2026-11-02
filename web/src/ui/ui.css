@@ -5,6 +5,10 @@ button { cursor: pointer; min-height: var(--c0-tap); min-width: var(--c0-tap); }
 a { color: var(--c0-fg); }
 
 .c0-app { max-width: var(--c0-col-max); margin: 0 auto; min-height: 100vh; background: var(--c0-soil); position: relative; display: flex; flex-direction: column; }
+/* The zero in "C0LONY" as text: a square pixel in its middle so it never reads as an O (see BrandName). */
+.c0-brand { white-space: nowrap; }
+.c0-zero { position: relative; display: inline-block; }
+.c0-zero::after { content: ""; position: absolute; left: 50%; top: 50%; width: 0.16em; height: 0.16em; transform: translate(-50%, -40%); background: currentColor; }
 .c0-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .c0-linkbtn { background: none; border: 0; padding: 0; display: inline-flex; align-items: center; gap: var(--c0-s2); text-align: left; color: inherit; font-family: var(--c0-f-display); }
 

@@ -20,8 +20,8 @@ export const metadata: Metadata = {
   icons: { icon: { url: BRAND.favicon, sizes: "32x32", type: "image/png" }, apple: BRAND.appleTouchIcon },
   manifest: "/manifest.webmanifest",
   appleWebApp: { capable: true, title: BRAND.name, statusBarStyle: "black-translucent" },
-  openGraph: { type: "website", siteName: BRAND.name, title, description: BRAND.tagline, url: "/" },
-  twitter: { card: "summary", title, description: BRAND.tagline },
+  openGraph: { type: "website", siteName: BRAND.name, title, description: BRAND.tagline, url: "/", images: [BRAND.ogImage] },
+  twitter: { card: "summary_large_image", title, description: BRAND.tagline, images: [BRAND.ogImage] },
 };
 
 export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#24180F" };

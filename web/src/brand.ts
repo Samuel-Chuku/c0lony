@@ -7,6 +7,8 @@ export const BRAND = {
   appleTouchIcon: "/icon-180.png",
   logo: "/logo.svg",
   logoCompact: "/logo-compact.svg",
+  // Link-preview card for X and others (1200x630), made from the logo and the live colony picture.
+  ogImage: { url: "/og.png", width: 1200, height: 630, alt: "C0LONY: raise an ant colony, raid your rivals. A daily onchain strategy game paid in $WIF." },
 } as const;
 
 // One codebase, two static sites, picked at build time by NEXT_PUBLIC_SITE:

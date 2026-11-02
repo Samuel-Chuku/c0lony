@@ -70,7 +70,8 @@ export class PushClient {
         delivered++;
       } catch (err) {
         const code = (err as { statusCode?: number }).statusCode;
-        if (code === 404 || code === 410) gone.push(t.endpoint);
+        // 404/410: the browser dropped it. 401/403: it was made with an older VAPID key and can never work again.
+        if (code === 404 || code === 410 || code === 401 || code === 403) gone.push(t.endpoint);
         else this.o.log(`push: send to ${t.endpoint.slice(0, 40)}… failed (${err instanceof Error ? err.message : err})`);
       }
     }

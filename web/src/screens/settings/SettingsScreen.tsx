@@ -1,7 +1,7 @@
 "use client";
 import { useExportWallet, useLinkAccount } from "@privy-io/react-auth";
 import { useEffect, useState } from "react";
-import { Button, Switch } from "../../ui";
+import { Button, Switch, withBrand } from "../../ui";
 import { Screen } from "../../shell/Screen";
 import { useShell } from "../../shell/Providers";
 import { useSession } from "../../lib/session";
@@ -138,7 +138,7 @@ function Notifications() {
 
   return (
     <>
-      <Switch id="n-master" label="Notifications" hint={hint} checked={on} onChange={(v) => { if (canUse && !busy) void master(v); }} />
+      <Switch id="n-master" label="Notifications" hint={withBrand(hint)} checked={on} onChange={(v) => { if (canUse && !busy) void master(v); }} />
       {PREF_ROWS.map((r) => (
         <Switch key={r.key} id={`n-${r.key}`} label={r.label} hint={r.hint} checked={prefs[r.key]} onChange={(v) => void pref(r.key, v)} />
       ))}

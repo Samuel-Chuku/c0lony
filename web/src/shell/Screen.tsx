@@ -4,7 +4,7 @@
 // From 1024px wide the bottom nav gives way to the side rail and screens may lay out in two columns.
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
-import { BlockedStrip, BottomNav, Button, Header, type NavTab } from "../ui";
+import { BlockedStrip, BottomNav, BrandName, Button, Header, type NavTab } from "../ui";
 import { useBalances } from "../lib/game";
 import { useSession } from "../lib/session";
 import { useXProfile } from "../lib/useXProfile";
@@ -55,7 +55,7 @@ export function Screen({ title, sub, tab, back, header, children }: ScreenProps)
       )}
       {shell.updateReady && (
         <div className="c0-update">
-          <span>A new version of C0LONY is ready.</span>
+          <span>A new version of <BrandName /> is ready.</span>
           <Button variant="paper" size="compact" onClick={shell.applyUpdate}>
             Update
           </Button>

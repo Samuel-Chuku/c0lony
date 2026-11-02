@@ -89,7 +89,7 @@
 - [x] Desktop layout (1024px and up): side rail, two-column screens, the colony picture at 1.5x or 2x, keyboard shortcuts (1-4, B, T, M, ?; no key spends WIF), hover states
 - [x] Daylight look (Auto / Soil / Daylight in the Menu)
 - [x] Live feed only shows events from the current game deployment
-- [ ] Social preview image for link cards
+- [x] Social preview image for link cards (`web/public/og.png`, large card on X)
 - [ ] Test installing and push on a real iPhone and Android phone
 - [ ] Two Pages projects connected, c0lony.xyz and app.c0lony.xyz attached
 

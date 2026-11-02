@@ -19,6 +19,7 @@ function setup(now = { t: 1_000_000 }) {
   let targets: PushTarget[] = [target(ALICE), target(BOB)];
   const gone = new Set<string>();
   const pruned: string[][] = [];
+  const stale = new Set<string>(); // subscriptions made with an older VAPID key
   const fetchFn = (async (url: string, init?: RequestInit) => {
     if (url.includes("/api/push/targets")) {
       const { wallets } = JSON.parse(init!.body as string);
@@ -39,6 +40,7 @@ function setup(now = { t: 1_000_000 }) {
     fetchFn,
     send: async (sub, body) => {
       if (gone.has(sub.endpoint)) throw Object.assign(new Error("gone"), { statusCode: 410 });
+      if (stale.has(sub.endpoint)) throw Object.assign(new Error("key mismatch"), { statusCode: 403 });
       const wallet = sub.endpoint.split("/").pop()!;
       const p = JSON.parse(body);
       sent.push({ wallet, pref: p.tag, body: p.body });
@@ -48,7 +50,7 @@ function setup(now = { t: 1_000_000 }) {
   let planner: PushPlanner;
   const sched = new Scheduler({ file: join(dir, "j.json"), now: () => now.t, fire: (j) => planner.fire(j) });
   planner = new PushPlanner({ sched, client, chain: reader, rosterFile: join(dir, "r.json"), now: () => now.t });
-  return { dir, sent, sched, planner, reader, now, client, setTargets: (t: PushTarget[]) => (targets = t), gone, pruned };
+  return { dir, sent, sched, planner, reader, now, client, setTargets: (t: PushTarget[]) => (targets = t), gone, stale, pruned };
 }
 
 const ev = (type: FeedEvent["type"], actors: string[], data: FeedEvent["data"], block = 10, ts = 1_000_000): FeedEvent => ({
@@ -155,4 +157,13 @@ test("season reminders follow SeasonEndChanged", async () => {
   await s.planner.onEvent(ev("collapsed", [ALICE], {}, 50));
   await s.planner.onSeasonEndChanged(1, 3_100_000_000);
   assert.equal(s.sched.pending.filter((j) => j.pref === "season").length, 0);
+});
+
+test("subscriptions made with an older VAPID key (403) are pruned, not retried", async () => {
+  const s = setup();
+  s.setTargets([{ wallet: ALICE, endpoint: "https://push/" + ALICE, keys: { p256dh: "p", auth: "a" }, prefs: {} }]);
+  s.stale.add("https://push/" + ALICE);
+  const delivered = await s.client.notify(ALICE, "result", { title: "t", body: "b", tag: "result", url: "/" } as never);
+  assert.equal(delivered, 0);
+  assert.deepEqual(s.pruned.at(-1), ["https://push/" + ALICE]);
 });

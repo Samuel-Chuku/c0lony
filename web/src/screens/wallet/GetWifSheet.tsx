@@ -2,7 +2,7 @@
 // The "Get WIF" sheet. Mainnet: ETH to WIF through KyberSwap (0.5% fee to the treasury). Testnet: a daily faucet.
 import { useEffect, useState } from "react";
 import { formatEther, parseEther } from "viem";
-import { BottomSheet, Button, Chip, ChipRow } from "../../ui";
+import { BottomSheet, BrandName, Button, Chip, ChipRow } from "../../ui";
 import { NETWORK, NETWORK_NAME } from "../../config";
 import { fmtDuration, fmtEth, fmtWif } from "../../lib/format";
 import { usePrices, useGameConfig, useNow } from "../../lib/game";
@@ -85,7 +85,7 @@ function Mint() {
   const wait = nextAt > now ? nextAt - now : 0;
   return (
     <div className="c0-wsheet">
-      <p className="c0-wsheet__note">Testnet WIF is free: 10,000 once a day. C0LONY pays the gas.</p>
+      <p className="c0-wsheet__note">Testnet WIF is free: 10,000 once a day. <BrandName /> pays the gas.</p>
       {gasLabel ? (
         <div className="c0-underway" role="status"><div className="c0-underway__bar" aria-hidden="true" /><span>{gasLabel}</span></div>
       ) : null}
