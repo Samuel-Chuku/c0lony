@@ -52,6 +52,7 @@ export function ProductionCard({ view, cfg, now, wif, onBuy }: Props) {
           busy={tend.busy ? "Tending…" : undefined}
           disabledReason={w.nothing ? <span className="c0-sr">Nothing to collect yet</span> : undefined}
           onClick={() => void tend.run({ functionName: "tend" })}
+          shortcut="t"
         >
           Tend
         </Button>

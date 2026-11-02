@@ -27,7 +27,7 @@ export function ColonyHeader() {
           {fmtWif(balances.data.wif)}
         </span>
       ) : null}
-      <button type="button" className="c0-header__avatar" aria-label="Open menu and profile" onClick={shell.openMenu}>
+      <button type="button" className="c0-header__avatar" aria-label="Open menu and profile" onClick={shell.openMenu} data-shortcut="m" data-tip="Menu · M">
         <Avatar src={me?.xAvatar ?? null} address={session.address ?? undefined} alt="Your avatar" />
       </button>
     </header>

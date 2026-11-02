@@ -32,11 +32,8 @@ export function LiveScreen() {
 
   return (
     <Screen title={title} tab="live">
-      <ChipRow>
-        {FILTERS.map((f) => (
-          <Chip key={f.id} selected={filter === f.id} onClick={() => setFilter(f.id)}>{f.label}</Chip>
-        ))}
-      </ChipRow>
+      <div className="c0-split">
+      <div className="c0-split__side">
       <Panel className="c0-potstrip" aria-label="Season pot">
         <div>
           <div className="c0-potstrip__cap">SEASON {season.data ? season.data.season : ""} POT</div>
@@ -47,7 +44,16 @@ export function LiveScreen() {
           <div className="c0-potstrip__num">{stats.data ? `${fmtInt(Math.floor(Number(stats.data.burnedWif)))} WIF` : "·"}</div>
         </div>
       </Panel>
+      </div>
+      <div className="c0-split__main">
+      <ChipRow>
+        {FILTERS.map((f) => (
+          <Chip key={f.id} selected={filter === f.id} onClick={() => setFilter(f.id)}>{f.label}</Chip>
+        ))}
+      </ChipRow>
       <FeedList key={filter} filter={filter} me={session.address} configured={session.configured} login={session.login} />
+      </div>
+      </div>
     </Screen>
   );
 }

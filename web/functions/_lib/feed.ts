@@ -1,4 +1,10 @@
+import { NETWORKS } from "../../src/config.ts";
 import { clampInt, isRecord, normAddr } from "./validate.ts";
+
+/** Events before the current game deployment (earlier test games) are never served. */
+export function feedFromBlock(network: string | undefined): number {
+  return NETWORKS[network === "mainnet" ? "mainnet" : "testnet"].deployBlock;
+}
 
 export const FEED_TYPES = [
   "founded", "fed", "tended", "built", "assigned", "sped_up", "shielded", "revived", "collapsed",
@@ -55,7 +61,7 @@ function placeholders(n: number): string {
 }
 
 /** Build the SELECT for GET /api/feed. Returns an error string on bad input. */
-export function buildFeedQuery(params: URLSearchParams): FeedQuery | { error: string } {
+export function buildFeedQuery(params: URLSearchParams, fromBlock = 0): FeedQuery | { error: string } {
   const type = params.get("type") ?? "all";
   if (!["all", "raids", "mine", "pot"].includes(type)) return { error: "Unknown feed type." };
   const walletRaw = params.get("wallet");
@@ -63,8 +69,8 @@ export function buildFeedQuery(params: URLSearchParams): FeedQuery | { error: st
   if (walletRaw && !wallet) return { error: "That wallet address is not valid." };
   if (type === "mine" && !wallet) return { error: "The mine feed needs a wallet." };
   const limit = clampInt(params.get("limit"), 50, 1, 200);
-  const where: string[] = [];
-  const args: (string | number)[] = [];
+  const where: string[] = ["e.block >= ?"];
+  const args: (string | number)[] = [fromBlock];
   let join = "";
   if (wallet) {
     join = " JOIN event_actors a ON a.eventId = e.id";
@@ -89,7 +95,7 @@ export function buildFeedQuery(params: URLSearchParams): FeedQuery | { error: st
   }
   const sql =
     `SELECT e.id, e.block, e.tx, e.logIndex, e.ts, e.type, e.actors, e.data FROM events e${join}` +
-    (where.length ? ` WHERE ${where.join(" AND ")}` : "") +
+    ` WHERE ${where.join(" AND ")}` +
     " ORDER BY e.id DESC LIMIT ?";
   args.push(limit);
   return { sql, args };

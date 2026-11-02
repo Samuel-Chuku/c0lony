@@ -1,3 +1,4 @@
+import { NETWORKS } from "../../src/config.ts";
 import { DatabaseSync } from "node:sqlite";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -65,7 +66,8 @@ export async function signedReq(path: string, payload: unknown, opts: { ts?: num
 }
 
 let n = 0;
+/** Fixture events sit in the current testnet deployment's blocks, so the feed serves them. */
 export function ev(type: string, actors: string[], data: Record<string, unknown> = {}, ts = Math.floor(Date.now() / 1000)) {
   n++;
-  return { block: n, tx: "0x" + n.toString(16).padStart(64, "0"), logIndex: 0, ts, type, actors, data };
+  return { block: NETWORKS.testnet.deployBlock + n, tx: "0x" + n.toString(16).padStart(64, "0"), logIndex: 0, ts, type, actors, data };
 }

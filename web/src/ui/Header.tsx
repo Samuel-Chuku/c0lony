@@ -25,7 +25,7 @@ export function Header({ title, sub, wifBalance, avatar, onOpenMenu, back }: Hea
       {wifBalance ? (
         <span className="c0-header__wif"><PixelIcon name="wif" />{wifBalance}</span>
       ) : null}
-      <button type="button" className="c0-header__avatar" aria-label="Open menu and profile" onClick={onOpenMenu}>
+      <button type="button" className="c0-header__avatar" aria-label="Open menu and profile" onClick={onOpenMenu} data-shortcut="m" data-tip="Menu · M">
         <Avatar src={avatar.src} address={avatar.address} alt="Your avatar" />
       </button>
     </header>

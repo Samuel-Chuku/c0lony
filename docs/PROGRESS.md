@@ -81,11 +81,15 @@
 ## Frontend
 - [x] Design system and styleguide
 - [x] Screens wired to the chain: Colony, Raids (launch, guard, reveal, settle, avenge, shield), Live, raid report, profiles, leaderboard, how to play, invite, settings
-- [x] Navigation: three tabs (Colony, Raids, Live) and a Menu drawer from the avatar
+- [x] Navigation: four tabs (Colony, Raids, Live, Season) and a Menu drawer from the avatar
 - [x] Get WIF swap sheet and add-funds sheet
 - [x] Sign-in and embedded wallet (Privy) code, X profile display, push opt-in
 - [x] Landing and app split built from one codebase
-- [ ] Landing page design
+- [x] Landing page: hero with the live colony and live pot, how a day goes, raids, why WIF and the 70/20/10 split, fair and open (drand, verified contracts, owner limits), FAQ
+- [x] Desktop layout (1024px and up): side rail, two-column screens, the colony picture at 1.5x or 2x, keyboard shortcuts (1-4, B, T, M, ?; no key spends WIF), hover states
+- [x] Daylight look (Auto / Soil / Daylight in the Menu)
+- [x] Live feed only shows events from the current game deployment
+- [ ] Social preview image for link cards
 - [ ] Test installing and push on a real iPhone and Android phone
 - [ ] Two Pages projects connected, c0lony.xyz and app.c0lony.xyz attached
 

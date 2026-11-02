@@ -1,6 +1,6 @@
 import type { Env } from "./env.ts";
 import {
-  MAX_INGEST, SUMMARY_TYPES, buildFeedQuery, normaliseEvent, placeholders, rowToEvent, sumBurned, summarise,
+  MAX_INGEST, SUMMARY_TYPES, buildFeedQuery, feedFromBlock, normaliseEvent, placeholders, rowToEvent, sumBurned, summarise,
   type FeedEvent,
 } from "./feed.ts";
 import { verifyHmac } from "./hmac.ts";
@@ -52,7 +52,7 @@ export async function ingest(request: Request, env: Env): Res {
 }
 
 export async function feed(request: Request, env: Env): Res {
-  const q = buildFeedQuery(new URL(request.url).searchParams);
+  const q = buildFeedQuery(new URL(request.url).searchParams, feedFromBlock(env.NEXT_PUBLIC_NETWORK));
   if ("error" in q) return fail(400, q.error);
   const { results } = await env.FEED_DB!.prepare(q.sql).bind(...q.args).all();
   return json({ events: (results as never[]).map(rowToEvent) }, 200, "public, max-age=10");
@@ -60,11 +60,15 @@ export async function feed(request: Request, env: Env): Res {
 
 export async function stats(_request: Request, env: Env): Res {
   const db = env.FEED_DB!;
-  const burned = await db.prepare("SELECT json_extract(data, '$.burned') AS b FROM events WHERE type = 'paid'").all();
+  const from = feedFromBlock(env.NEXT_PUBLIC_NETWORK);
+  const burned = await db
+    .prepare("SELECT json_extract(data, '$.burned') AS b FROM events WHERE type = 'paid' AND block >= ?")
+    .bind(from)
+    .all();
   const since = Math.floor(Date.now() / 1000) - 86400;
   const raids = await db
-    .prepare("SELECT COUNT(*) AS n FROM events WHERE type = 'raid_launched' AND ts >= ?")
-    .bind(since)
+    .prepare("SELECT COUNT(*) AS n FROM events WHERE type = 'raid_launched' AND ts >= ? AND block >= ?")
+    .bind(since, from)
     .first<{ n: number }>();
   return json(
     {
@@ -84,22 +88,23 @@ export async function summary(request: Request, env: Env): Res {
   const since = clampInt(p.get("since"), now - 86400, 0, 4_102_444_800);
   const db = env.FEED_DB!;
   const types = SUMMARY_TYPES;
+  const from = feedFromBlock(env.NEXT_PUBLIC_NETWORK);
   const { results } = await db
     .prepare(
       `SELECT e.id, e.block, e.tx, e.logIndex, e.ts, e.type, e.actors, e.data FROM events e
        JOIN event_actors a ON a.eventId = e.id
-       WHERE a.wallet = ? AND e.ts >= ? AND e.type IN (${placeholders(types.length)})
+       WHERE a.wallet = ? AND e.ts >= ? AND e.block >= ? AND e.type IN (${placeholders(types.length)})
        ORDER BY e.id DESC LIMIT 2000`,
     )
-    .bind(wallet, since, ...types)
+    .bind(wallet, since, from, ...types)
     .all();
   const av = await db
     .prepare(
       `SELECT e.id, e.block, e.tx, e.logIndex, e.ts, e.type, e.actors, e.data FROM events e
        JOIN event_actors a ON a.eventId = e.id
-       WHERE a.wallet = ? AND e.type = 'avenge_granted' ORDER BY e.id DESC LIMIT 10`,
+       WHERE a.wallet = ? AND e.type = 'avenge_granted' AND e.block >= ? ORDER BY e.id DESC LIMIT 10`,
     )
-    .bind(wallet)
+    .bind(wallet, from)
     .all();
   const body = summarise(
     (results as never[]).map(rowToEvent), wallet, since, now, (av.results as never[]).map(rowToEvent),

@@ -14,11 +14,13 @@ export type ButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, "childre
   /** Failed transaction line, shown as a Blocked strip under the button. */
   error?: ReactNode;
   fullWidth?: boolean;
+  /** Desktop keyboard key that clicks this button (see shell/Shortcuts). Shown as a key cap on desktop only. */
+  shortcut?: string;
   children?: ReactNode;
 };
 
 export function Button({
-  variant, size = "default", icon, busy, disabledReason, error, fullWidth, className, children, disabled, type = "button", ...rest
+  variant, size = "default", icon, busy, disabledReason, error, fullWidth, shortcut, className, children, disabled, type = "button", ...rest
 }: ButtonProps) {
   const isBusy = busy !== undefined;
   const blocked = !isBusy && disabledReason !== undefined && disabledReason !== null;
@@ -32,10 +34,13 @@ export function Button({
         )}
         disabled={disabled || isBusy || blocked}
         aria-busy={isBusy || undefined}
+        data-shortcut={shortcut}
+        aria-keyshortcuts={shortcut?.toUpperCase()}
         {...rest}
       >
         {icon && !isBusy ? <PixelIcon name={icon} /> : null}
         {isBusy ? <span className="c0-btn__busy">{busy}</span> : children}
+        {shortcut && !isBusy ? <kbd className="c0-kbd c0-btn__key" aria-hidden="true">{shortcut.toUpperCase()}</kbd> : null}
         {isBusy ? <span className="c0-btn__march" aria-hidden="true" /> : null}
       </button>
       {blocked ? <span className="c0-btn-note">{disabledReason}</span> : null}

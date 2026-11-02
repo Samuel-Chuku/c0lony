@@ -5,6 +5,7 @@ import "@fontsource/dotgothic16/latin-400.css";
 import "@fontsource/gaegu/latin-700.css";
 import "./tokens.css";
 import "../ui/ui.css";
+import "../ui/desktop.css";
 import { BRAND, SITE, SITE_URL } from "../brand";
 import { LOOK_SCRIPT, Providers } from "../shell/Providers";
 

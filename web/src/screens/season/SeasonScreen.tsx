@@ -28,6 +28,8 @@ export function SeasonScreen() {
 
   return (
     <Screen title="SEASON" tab="season">
+      <div className="c0-split">
+      <div className="c0-split__main">
       <Card className="c0-ss__pot">
         <div className="c0-ss__top">
           <h2 className="c0-pf__h2">Season {season ? String(season.season) : "…"}</h2>
@@ -67,7 +69,9 @@ export function SeasonScreen() {
         </Card>
       )}
       {session.address ? <ClaimButton wallet={session.address} season={season ? Number(season.season) : undefined} /> : null}
+      </div>
 
+      <div className="c0-split__side">
       <h2 className="c0-ss__h">TOP 10</h2>
       {colonies.loading && all.length === 0 ? (
         <Underway label="Counting the colonies…" />
@@ -85,6 +89,8 @@ export function SeasonScreen() {
       <div className="c0-ss__links">
         <Link className="c0-ss__link" href="/how-to-play"><span>How to play</span><span aria-hidden="true">›</span></Link>
         <Link className="c0-ss__link" href="/invite"><span>Invite friends</span><span aria-hidden="true">›</span></Link>
+      </div>
+      </div>
       </div>
     </Screen>
   );

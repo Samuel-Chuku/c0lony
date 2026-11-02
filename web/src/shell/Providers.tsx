@@ -8,9 +8,11 @@ import { MenuDrawer } from "./MenuDrawer";
 import { WelcomeBack } from "./WelcomeBack";
 import { ResultModal } from "./ResultModal";
 import { QueenAlert } from "./QueenAlert";
+import { ShortcutsHelp, useShortcuts } from "./Shortcuts";
 
 type Shell = {
   openMenu: () => void;
+  openShortcuts: () => void;
   online: boolean;
   lastOnline: number | null; // unix seconds of the last successful load while online
   updateReady: boolean;
@@ -43,6 +45,9 @@ export const LOOK_SCRIPT = `try{var l=localStorage.getItem("${LOOK_KEY}");if(l!=
 
 export function Providers({ children }: { children: ReactNode }) {
   const [menu, setMenu] = useState(false);
+  const [keys, setKeys] = useState(false);
+  const openShortcuts = useCallback(() => setKeys(true), []);
+  useShortcuts(openShortcuts);
   const [online, setOnline] = useState(true);
   const [lastOnline, setLastOnline] = useState<number | null>(null);
   const [waiting, setWaiting] = useState<ServiceWorker | null>(null);
@@ -125,6 +130,7 @@ export function Providers({ children }: { children: ReactNode }) {
 
   const shell: Shell = {
     openMenu: () => setMenu(true),
+    openShortcuts,
     online,
     lastOnline,
     updateReady: !!waiting,
@@ -142,6 +148,7 @@ export function Providers({ children }: { children: ReactNode }) {
       <ShellContext.Provider value={shell}>
         {children}
         <MenuDrawer open={menu} onClose={() => setMenu(false)} />
+        <ShortcutsHelp open={keys} onClose={() => setKeys(false)} />
         <WelcomeBack />
         <QueenAlert />
         <ResultModal />

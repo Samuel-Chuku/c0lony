@@ -14,12 +14,14 @@ export function ResourceBar({ profile, onOpen }: { profile: Profile; onOpen: () 
         type="button"
         className="c0-resbar"
         onClick={onOpen}
+        data-shortcut="b"
+        aria-keyshortcuts="B"
         aria-label={`Resources: ${leaves} leaves, ${sugar} sugar, ${profile.ants} of ${cap} ants. Open build panel`}
       >
         <span className="c0-resbar__item"><ResIcon name="leaf" size={24} />{leaves}</span>
         <span className="c0-resbar__item"><ResIcon name="sugar" size={24} />{sugar}</span>
         <span className="c0-resbar__item"><ResIcon name="ant" size={24} />{profile.ants}/{cap}</span>
-        <span className="c0-resbar__tag" aria-hidden="true">+ BUILD</span>
+        <span className="c0-resbar__tag" aria-hidden="true">+ BUILD<kbd className="c0-kbd c0-btn__key">B</kbd></span>
       </button>
     </div>
   );

@@ -106,7 +106,8 @@ export function RaidsScreen() {
     <Screen title="RAIDS" tab="raids">
       {gate}
       {gate === null && cfg ? (
-        <>
+        <div className="c0-split">
+          <div className="c0-split__side">
           <div className={`c0-safe${underAttack ? " c0-safe--raid" : ""}`} role="status">
             {underAttack
               ? "A raid is marching on you · 60% of your stock is held until it lands"
@@ -124,6 +125,8 @@ export function RaidsScreen() {
               <Link href={`/report?raid=${id}`}><Hand size={17}>Raid is home · read the report ›</Hand></Link>
             </Panel>
           ))}
+          </div>
+          <div className="c0-split__main">
           <div className="c0-sect">
             <h2>Neighbours</h2>
             <span>sorted by sugar · {ordered.length} nearby</span>
@@ -148,7 +151,8 @@ export function RaidsScreen() {
               ))}
             </div>
           )}
-        </>
+          </div>
+        </div>
       ) : null}
       {profile && myId ? (
         <LaunchSheet open={!!sheet} mode={sheet?.mode ?? "raid"} target={sheet?.target ?? null} me={profile} cooldownLeft={cooldownLeft} onClose={() => setSheet(null)} />

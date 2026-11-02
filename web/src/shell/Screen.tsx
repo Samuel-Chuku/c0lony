@@ -1,6 +1,7 @@
 "use client";
 // The frame every app screen sits in: header (title or back link, WIF balance, the player's X picture that
 // opens the Menu), the offline and update strips, the content, and the four-tab bottom nav on main screens.
+// From 1024px wide the bottom nav gives way to the side rail and screens may lay out in two columns.
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { BlockedStrip, BottomNav, Button, Header, type NavTab } from "../ui";
@@ -9,6 +10,7 @@ import { useSession } from "../lib/session";
 import { useXProfile } from "../lib/useXProfile";
 import { fmtWif } from "../lib/format";
 import { useShell } from "./Providers";
+import { SideRail, tabHref } from "./SideRail";
 
 export type ScreenProps = {
   title?: ReactNode;
@@ -22,7 +24,7 @@ export type ScreenProps = {
   children: ReactNode;
 };
 
-export const tabHref = (tab: NavTab) => (tab === "colony" ? "/" : `/?tab=${tab}`);
+export { tabHref };
 
 export function Screen({ title, sub, tab, back, header, children }: ScreenProps) {
   const router = useRouter();
@@ -34,6 +36,8 @@ export function Screen({ title, sub, tab, back, header, children }: ScreenProps)
 
   return (
     <div className="c0-app">
+      <SideRail active={tab} />
+      <div className="c0-app__body">
       {header ?? (
         <Header
           title={title}
@@ -57,8 +61,9 @@ export function Screen({ title, sub, tab, back, header, children }: ScreenProps)
           </Button>
         </div>
       )}
-      <main className="c0-main">{children}</main>
+      <main className={tab ? "c0-main" : "c0-main c0-main--narrow"}>{children}</main>
       {tab && <BottomNav active={tab} onSelect={(t) => router.push(tabHref(t))} />}
+      </div>
     </div>
   );
 }

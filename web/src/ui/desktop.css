@@ -1,0 +1,109 @@
+/* C0LONY on a desk. Phones are untouched: everything below 1024px is the mobile layout in ui.css. Desktop rules
+   start with "html" so they outrank the screen stylesheets, which load later.
+   Widths: 1024 to 1439 a compact rail (icons over labels); 1440 and up an expanded rail with the wordmark and
+   key caps. Hover, key caps and tooltips appear only for a fine pointer that can hover (mouse or trackpad). */
+
+/* Shared pieces that exist at every width but only show on desktop */
+.c0-rail { display: none; }
+.c0-app__body { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.c0-kbd { display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; box-sizing: border-box; padding: 0 4px; background: var(--c0-paper-hi); color: var(--c0-ink); border: var(--c0-bw-thin) solid var(--c0-ink); box-shadow: 2px 2px 0 var(--c0-shadow); font-family: var(--c0-f-body); font-size: var(--c0-fs-caption); line-height: 1; letter-spacing: 0; }
+.c0-btn__key { display: none; }
+.c0-split, .c0-split__main, .c0-split__side { display: contents; }
+
+/* Keyboard help */
+.c0-keys { margin: var(--c0-s3) 0 0; display: flex; flex-direction: column; }
+.c0-keys__row { display: flex; align-items: center; gap: var(--c0-s3); min-height: 40px; border-bottom: var(--c0-bw-thin) dashed var(--c0-rule); }
+.c0-keys__row dt { width: 136px; flex: none; display: flex; gap: var(--c0-s1); }
+.c0-keys__row dd { margin: 0; font-size: var(--c0-fs-body-lg); }
+.c0-keys__note { margin: var(--c0-s3) 0 0; font-size: var(--c0-fs-body); color: var(--c0-sub); }
+
+@media (hover: hover) and (pointer: fine) {
+  .c0-btn__key { display: inline-flex; margin-left: var(--c0-s1); }
+  .c0-btn--busy .c0-btn__key, .c0-btn--blocked .c0-btn__key { display: none; }
+
+  /* Hover lifts a control one pixel towards the light; pressing still pushes it into its shadow. */
+  .c0-btn:hover:not(:disabled) { transform: translate(-1px, -1px); box-shadow: var(--c0-bevel), 4px 4px 0 var(--c0-shadow); }
+  .c0-btn:active:not(:disabled) { box-shadow: var(--c0-bevel); transform: var(--c0-press); }
+  .c0-resbar:hover .c0-resbar__tag { background: var(--c0-paper); }
+  .c0-resbar:hover { box-shadow: inset 0 0 0 2px var(--c0-paper); }
+  .c0-chip:hover:not([aria-pressed="true"]) { background: var(--c0-clay); }
+  .c0-opt:hover { opacity: 1; }
+  .c0-ss__link:hover, .c0-ss__more:hover, .c0-menu__link:hover, .c0-menu__profile:hover { text-decoration: underline; }
+  .c0-ss__link:hover { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 var(--c0-shadow); }
+  .c0-header__avatar:hover .c0-avatar { box-shadow: 0 0 0 3px var(--c0-fg); }
+  .c0-stepper__btn:hover:not(:disabled) { background: var(--c0-paper-hi); }
+  .c0-world-sign { cursor: pointer; }
+
+  /* Tooltips: short, next to the control, on hover and on keyboard focus. Never the only place a fact lives. */
+  [data-tip] { position: relative; }
+  [data-tip]:hover::after, [data-tip]:focus-visible::after {
+    content: attr(data-tip); position: absolute; top: calc(100% + 8px); right: 0; z-index: 30; white-space: nowrap;
+    padding: var(--c0-s1) var(--c0-s2); background: var(--c0-ink); color: var(--c0-paper); border: var(--c0-bw-thin) solid var(--c0-paper);
+    box-shadow: 2px 2px 0 var(--c0-shadow); font-family: var(--c0-f-body); font-size: var(--c0-fs-caption); line-height: 1.3; pointer-events: none;
+  }
+}
+
+@media (min-width: 1024px) {
+  html { scrollbar-color: var(--c0-clay) var(--c0-soil); }
+  html .c0-app { max-width: none; display: grid; grid-template-columns: 96px minmax(0, 1fr); align-items: start; }
+  html .c0-app__body { min-height: 100vh; }
+  html .c0-nav { display: none; }
+
+  /* The rail */
+  html .c0-rail { display: flex; flex-direction: column; gap: var(--c0-s3); position: sticky; top: 0; height: 100vh; box-sizing: border-box; overflow-y: auto; padding: var(--c0-s3) var(--c0-s2); background: var(--c0-soil); border-right: 4px solid var(--c0-ink); }
+  html .c0-rail__brand { display: flex; align-items: center; justify-content: center; min-height: 44px; color: var(--c0-fg); text-decoration: none; font-family: var(--c0-f-display); }
+  html .c0-rail__word { display: none; width: 200px; height: auto; image-rendering: pixelated; }
+  html .c0-rail__mark { font-size: 28px; padding: 0 var(--c0-s1); background: var(--c0-paper); color: var(--c0-ink); border: var(--c0-bw) solid var(--c0-ink); box-shadow: var(--c0-shadow-card); }
+  html .c0-rail__group { display: flex; flex-direction: column; gap: var(--c0-s1); }
+  html .c0-rail__group--more { padding-top: var(--c0-s3); border-top: var(--c0-bw-thin) solid var(--c0-loam); }
+  html .c0-rail__item { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 64px; padding: var(--c0-s1); box-sizing: border-box; color: var(--c0-fg-muted); text-decoration: none; font-family: var(--c0-f-display); font-size: 17px; line-height: var(--c0-lh-tight); border: var(--c0-bw) solid transparent; }
+  html .c0-rail__item--small { min-height: 52px; font-size: 14px; }
+  html .c0-rail__item[aria-current="page"] { background: var(--c0-loam); color: var(--c0-paper); border-color: var(--c0-ink); }
+  html .c0-rail__key { display: none; }
+  html .c0-rail__help { margin-top: auto; display: flex; flex-direction: column; align-items: center; gap: var(--c0-s1); min-height: 52px; padding: var(--c0-s1); background: none; border: 0; color: var(--c0-fg-muted); font-family: var(--c0-f-display); font-size: 14px; }
+  html .c0-rail__help .c0-rail__label { display: block; }
+  html .c0-rail__help[data-tip]:hover::after, html .c0-rail__help[data-tip]:focus-visible::after { content: none; }
+
+  /* Header and content */
+  html .c0-header, html .c0-colony__head { position: sticky; top: 0; z-index: 20; height: 64px; padding: 0 var(--c0-s8); }
+  html .c0-main { width: 100%; max-width: 1320px; margin: 0 auto; box-sizing: border-box; padding: var(--c0-s6) var(--c0-s8) 48px; gap: var(--c0-s4); }
+  html .c0-main--narrow { max-width: 800px; }
+
+  /* Two columns: the main list on the left, status on the right, which stays in view while the list scrolls. */
+  html .c0-split { display: grid; grid-template-columns: minmax(0, 1fr) 380px; grid-template-areas: "main side"; gap: var(--c0-s6); align-items: start; }
+  html .c0-split__main, html .c0-split__side { display: flex; flex-direction: column; gap: var(--c0-s4); min-width: 0; }
+  html .c0-split__main { grid-area: main; }
+  html .c0-split__side { grid-area: side; position: sticky; top: calc(64px + var(--c0-s6)); max-height: calc(100vh - 64px - 48px); overflow-y: auto; padding: 0 6px 6px 0; }
+
+  /* Colony: the living world is the play area and gets the most room; the queen and production sit beside it. */
+  html .c0-colony { --c0-world-scale: 1.5; margin: 0; display: grid; grid-template-columns: minmax(0, 1fr) 360px; grid-template-areas: "res cards" "world cards" ". cards"; grid-template-rows: auto auto 1fr; gap: 0 var(--c0-s6); align-items: start; }
+  html .c0-resbar-wrap { grid-area: res; padding: 0 0 var(--c0-s3); border: 0; background: none; }
+  html .c0-world-wrap, html .c0-world-wrap--top { grid-area: world; border: 4px solid var(--c0-ink); box-shadow: var(--c0-shadow-modal); }
+  html .c0-colony__cards { grid-area: cards; padding: 0; }
+  html .c0-world-frame { height: calc(280px * var(--c0-world-scale, 1)); }
+  html .c0-world { transform: scale(var(--c0-world-scale, 1)); transform-origin: top center; }
+
+  /* Dialogs: sheets get a little wider; the Menu drawer docks to the window's right edge. */
+  html .c0-dialog-col { max-width: 560px; }
+  html .c0-dialog-col:has(.c0-drawer) { max-width: none; }
+  html .c0-drawer { width: 360px; }
+}
+
+@media (min-width: 1280px) {
+  html .c0-colony { --c0-world-scale: 2; grid-template-columns: minmax(0, 1fr) 380px; }
+}
+
+@media (min-width: 1440px) {
+  html .c0-app { grid-template-columns: 240px minmax(0, 1fr); }
+  html .c0-rail { padding: var(--c0-s4); }
+  html .c0-rail__brand { justify-content: flex-start; padding: 0 var(--c0-s2); }
+  html .c0-rail__word { display: block; }
+  html .c0-rail__mark { display: none; }
+  html .c0-rail__item, html .c0-rail__help { flex-direction: row; justify-content: flex-start; gap: var(--c0-s3); min-height: 52px; padding: 0 var(--c0-s3); font-size: 24px; }
+  html .c0-rail__item--small, html .c0-rail__help { min-height: 44px; font-size: 20px; }
+  html .c0-rail__label { flex: 1; }
+  html .c0-rail__key { display: inline-flex; }
+  html .c0-rail__help { order: 0; }
+}
+
+@media (min-width: 1440px) and (hover: none) { .c0-rail__key { display: none; } }

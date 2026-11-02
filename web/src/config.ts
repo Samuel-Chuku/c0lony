@@ -3,9 +3,11 @@
 //   NEXT_PUBLIC_NETWORK = "testnet" (default) | "mainnet"
 // Changing an address means editing this file and pushing; no hosting dashboard changes.
 
-const NETWORKS = {
+export const NETWORKS = {
   testnet: {
     chainId: 46630,
+    // First block of the current game deployment. The live feed ignores older events (earlier test games).
+    deployBlock: 147191275,
     name: "Robinhood Chain Testnet",
     rpcUrl: "https://rpc.testnet.chain.robinhood.com",
     explorerUrl: "https://explorer.testnet.chain.robinhood.com",
@@ -18,6 +20,7 @@ const NETWORKS = {
   },
   mainnet: {
     chainId: 4663,
+    deployBlock: 0, // set with the mainnet deploy
     name: "Robinhood Chain",
     rpcUrl: "https://rpc.mainnet.chain.robinhood.com",
     explorerUrl: "https://robinhoodchain.blockscout.com",
@@ -31,7 +34,9 @@ const NETWORKS = {
 } as const;
 
 export type NetworkName = keyof typeof NETWORKS;
-export const NETWORK_NAME: NetworkName = process.env.NEXT_PUBLIC_NETWORK === "mainnet" ? "mainnet" : "testnet";
+// Guarded so the Pages Functions (no `process`) can import NETWORKS from this file too.
+export const NETWORK_NAME: NetworkName =
+  typeof process !== "undefined" && process.env.NEXT_PUBLIC_NETWORK === "mainnet" ? "mainnet" : "testnet";
 export const NETWORK = NETWORKS[NETWORK_NAME];
 
 export const CONFIG = {

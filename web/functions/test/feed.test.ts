@@ -5,6 +5,7 @@ import { verifyHmac, signHmac } from "../_lib/hmac.ts";
 import { route } from "../_lib/route.ts";
 import type { Env } from "../_lib/env.ts";
 import { A, B, C, SECRET, ev, makeEnv, signedReq } from "./helpers.ts";
+import { NETWORKS } from "../../src/config.ts";
 
 const now = () => Math.floor(Date.now() / 1000);
 const get = (path: string) => new Request("https://x.test" + path);
@@ -97,6 +98,21 @@ async function seed() {
 }
 type Page = { events: { id: number; type: string }[] };
 const page = async (env: Env, q: string) => (await (await feed(get("/api/feed" + q), env)).json()) as Page;
+
+test("events from an earlier game deployment are never served", async () => {
+  const { env } = makeEnv();
+  const t = now();
+  const old = { ...ev("settled", [A, B], { raidId: "9", raider: A, defender: B, outcome: "raider_won", lootResource: "sugar", lootAmount: "1" }, t - 5), block: NETWORKS.testnet.deployBlock - 1 };
+  const old2 = { ...ev("paid", [A], { burned: "1000000000000000000" }, t - 5), block: 5 };
+  const cur = ev("founded", [A], {}, t - 4);
+  await ingest(await signedReq("/", { events: [old, old2, cur] }), env);
+  const all = await page(env, "?type=all");
+  assert.deepEqual(all.events.map((e) => e.type), ["founded"]);
+  const mine = await page(env, `?type=mine&wallet=${A}`);
+  assert.deepEqual(mine.events.map((e) => e.type), ["founded"]);
+  const s = (await (await stats(get("/api/feed/stats"), env)).json()) as { burnedWif: string };
+  assert.equal(s.burnedWif, "0");
+});
 
 test("feed filters", async () => {
   const { env } = await seed();
