@@ -12,5 +12,5 @@
 .c0-ss__chip { background: var(--c0-gold); color: var(--c0-ink); border: var(--c0-bw-thin) solid var(--c0-ink); padding: 0 var(--c0-s2); font-family: var(--c0-f-display); font-size: 22px; }
 .c0-ss__links { display: flex; flex-direction: column; gap: var(--c0-s2); }
 .c0-ss__link { display: flex; align-items: center; justify-content: space-between; min-height: 48px; padding: 0 var(--c0-s3); background: var(--c0-paper); color: var(--c0-ink); border: var(--c0-bw) solid var(--c0-ink); box-shadow: var(--c0-shadow-card); text-decoration: none; font-family: var(--c0-f-display); font-size: 22px; box-sizing: border-box; }
-.c0-ss__more { align-self: flex-end; color: var(--c0-paper); font-family: var(--c0-f-display); font-size: 20px; text-decoration: none; min-height: 44px; display: inline-flex; align-items: center; }
-.c0-ss__h { margin: 0; font-family: var(--c0-f-display); font-weight: 400; font-size: 22px; color: var(--c0-paper); letter-spacing: 2px; }
+.c0-ss__more { align-self: flex-end; color: var(--c0-fg); font-family: var(--c0-f-display); font-size: 20px; text-decoration: none; min-height: 44px; display: inline-flex; align-items: center; }
+.c0-ss__h { margin: 0; font-family: var(--c0-f-display); font-weight: 400; font-size: 22px; color: var(--c0-fg); letter-spacing: 2px; }

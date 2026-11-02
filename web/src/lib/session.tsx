@@ -105,7 +105,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       appId={CONFIG.privyAppId}
       config={{
         loginMethods: ["twitter", "email", "wallet"],
-        appearance: { theme: "dark", accentColor: "#E7B13C", logo: BRAND.logo, walletChainType: "ethereum-only" },
+        appearance: { theme: typeof document !== "undefined" && document.documentElement.dataset.theme === "day" ? "light" : "dark", accentColor: "#E7B13C", logo: BRAND.logo, walletChainType: "ethereum-only" },
         embeddedWallets: { ethereum: { createOnLogin: "users-without-wallets" }, showWalletUIs: false },
         defaultChain: chain,
         supportedChains: [chain],

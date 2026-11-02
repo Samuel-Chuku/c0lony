@@ -8,6 +8,7 @@ import { displayName, fmtEth, fmtWif, shortAddress } from "../lib/format";
 import { useStarterGas } from "../lib/starterGas";
 import { useBalances, useColonies, useProfile } from "../lib/game";
 import { useSession } from "../lib/session";
+import { useShell, type Look } from "./Providers";
 import { useXProfile } from "../lib/useXProfile";
 import { GetWifSheet } from "../screens/wallet/GetWifSheet";
 import { AddFundsSheet } from "../screens/wallet/AddFundsSheet";
@@ -15,6 +16,7 @@ import "./menu.css";
 
 export function MenuDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
   const session = useSession();
+  const shell = useShell();
   const me = session.address;
   const x = useXProfile(me);
   const balances = useBalances(me);
@@ -97,6 +99,16 @@ export function MenuDrawer({ open, onClose }: { open: boolean; onClose: () => vo
           {link("/how-to-play", "book", "How to play")}
           {link("/settings", "gear", "Settings")}
         </nav>
+        <div className="c0-menu__look" role="group" aria-label="Look">
+          <span className="c0-menu__look-cap">LOOK · Auto follows your phone</span>
+          <div className="c0-menu__look-opts">
+            {(["auto", "soil", "day"] as Look[]).map((l) => (
+              <button key={l} type="button" className="c0-chip" aria-pressed={shell.look === l} onClick={() => shell.setLook(l)}>
+                {l === "auto" ? "Auto" : l === "soil" ? "Soil" : "Daylight"}
+              </button>
+            ))}
+          </div>
+        </div>
         {session.signedIn ? (
           <div className="c0-menu__foot">
             <span>{profile.data?.hasVoterPass ? "Voter's Pass linked" : "No Voter's Pass"}</span>

@@ -6,7 +6,7 @@ import "@fontsource/gaegu/latin-700.css";
 import "./tokens.css";
 import "../ui/ui.css";
 import { BRAND, SITE, SITE_URL } from "../brand";
-import { Providers } from "../shell/Providers";
+import { LOOK_SCRIPT, Providers } from "../shell/Providers";
 
 const title = SITE === "app" ? `Play · ${BRAND.name}` : BRAND.name;
 
@@ -27,7 +27,12 @@ export const viewport: Viewport = { width: "device-width", initialScale: 1, them
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      {SITE === "app" ? (
+        <head>
+          <script dangerouslySetInnerHTML={{ __html: LOOK_SCRIPT }} />
+        </head>
+      ) : null}
       <body>{SITE === "app" ? <Providers>{children}</Providers> : children}</body>
     </html>
   );

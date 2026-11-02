@@ -1,6 +1,6 @@
 "use client";
 // App-wide state for app.c0lony.xyz: sign-in, the Menu drawer, offline and update notices, and the in-app
-// reduce-motion switch. The landing site never mounts this.
+// reduce-motion switch, and the Soil/Daylight look. The landing site never mounts this.
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import { SessionProvider } from "../lib/session";
 import { registerServiceWorker } from "../lib/push";
@@ -19,7 +19,12 @@ type Shell = {
   setReduceMotion: (on: boolean) => void;
   sound: boolean;
   setSound: (on: boolean) => void;
+  look: Look;
+  setLook: (look: Look) => void;
 };
+
+/** "auto" follows the device's light/dark setting. */
+export type Look = "auto" | "soil" | "day";
 
 const ShellContext = createContext<Shell | null>(null);
 export function useShell(): Shell {
@@ -30,6 +35,11 @@ export function useShell(): Shell {
 
 const MOTION_KEY = "c0lony:reduce-motion";
 const SOUND_KEY = "c0lony:sound";
+export const LOOK_KEY = "c0lony:look";
+const THEME_COLOR = { soil: "#24180F", day: "#D2BB91" } as const;
+
+/** Runs in <head> before first paint so a Daylight player never sees a flash of soil. */
+export const LOOK_SCRIPT = `try{var l=localStorage.getItem("${LOOK_KEY}");if(l!=="soil"&&l!=="day")l=matchMedia("(prefers-color-scheme: light)").matches?"day":"soil";document.documentElement.dataset.theme=l}catch(e){}`;
 
 export function Providers({ children }: { children: ReactNode }) {
   const [menu, setMenu] = useState(false);
@@ -38,10 +48,13 @@ export function Providers({ children }: { children: ReactNode }) {
   const [waiting, setWaiting] = useState<ServiceWorker | null>(null);
   const [reduceMotion, setReduceMotionState] = useState(false);
   const [sound, setSoundState] = useState(false);
+  const [look, setLookState] = useState<Look>("auto");
 
   useEffect(() => {
     setReduceMotionState(localStorage.getItem(MOTION_KEY) === "1");
     setSoundState(localStorage.getItem(SOUND_KEY) === "1");
+    const saved = localStorage.getItem(LOOK_KEY);
+    if (saved === "soil" || saved === "day") setLookState(saved);
     const up = () => {
       setOnline(true);
       setLastOnline(Math.floor(Date.now() / 1000));
@@ -80,6 +93,27 @@ export function Providers({ children }: { children: ReactNode }) {
     document.documentElement.classList.toggle("c0-reduce-motion", reduceMotion);
   }, [reduceMotion]);
 
+  useEffect(() => {
+    const media = window.matchMedia("(prefers-color-scheme: light)");
+    const apply = () => {
+      const theme = look === "auto" ? (media.matches ? "day" : "soil") : look;
+      document.documentElement.dataset.theme = theme;
+      document.querySelector('meta[name="theme-color"]')?.setAttribute("content", THEME_COLOR[theme]);
+    };
+    apply();
+    if (look !== "auto") return;
+    media.addEventListener("change", apply);
+    return () => media.removeEventListener("change", apply);
+  }, [look]);
+
+  const setLook = useCallback((next: Look) => {
+    try {
+      if (next === "auto") localStorage.removeItem(LOOK_KEY);
+      else localStorage.setItem(LOOK_KEY, next);
+    } catch { /* storage blocked */ }
+    setLookState(next);
+  }, []);
+
   const setReduceMotion = useCallback((on: boolean) => {
     localStorage.setItem(MOTION_KEY, on ? "1" : "0");
     setReduceMotionState(on);
@@ -99,6 +133,8 @@ export function Providers({ children }: { children: ReactNode }) {
     setReduceMotion,
     sound,
     setSound,
+    look,
+    setLook,
   };
 
   return (
