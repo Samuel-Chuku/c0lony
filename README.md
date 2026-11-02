@@ -280,4 +280,3 @@ Details in [docs/ROADMAP.md](docs/ROADMAP.md):
 | [DEPLOYMENTS.md](docs/DEPLOYMENTS.md) | Addresses, verified chain facts, hosting and backend setup |
 | [TESTNET_RUN.md](docs/TESTNET_RUN.md) | Recorded testnet seasons with transaction links |
 | [ROADMAP.md](docs/ROADMAP.md) | Season 1 scope and what comes after |
-| [PROGRESS.md](docs/PROGRESS.md) | Build checklist |
