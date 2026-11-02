@@ -5,6 +5,7 @@ import { BottomSheet, Button, ResIcon, Stepper, type ResIconName } from "../../u
 import { RES, fmtRes } from "../../lib/format";
 import { buildCosts, type Profile } from "../../lib/game";
 import { txUrl } from "../../lib/chain";
+import { assignResult, builtResult } from "../../lib/outcomes";
 import { useAction } from "../../lib/tx";
 import "./colony.css";
 
@@ -80,10 +81,10 @@ function UpgradeRow({ icon, count, name, effect, cost, verb, busyVerb, have, bus
 }
 
 export function BuildSheet({ open, onClose, profile }: { open: boolean; onClose: () => void; profile: Profile }) {
-  const dig = useAction("Digging");
-  const trail = useAction("Building");
-  const farm = useAction("Building");
-  const assign = useAction("Saving");
+  const dig = useAction("Digging", { success: builtResult("nest chamber", "nest chambers") });
+  const trail = useAction("Building", { success: builtResult("leafcutter trail", "leafcutter trails") });
+  const farm = useAction("Building", { success: builtResult("aphid farm", "aphid farms") });
+  const assign = useAction("Saving", { success: assignResult });
   const [trailW, setTrailW] = useState(profile.trailWorkers);
   const [farmW, setFarmW] = useState(profile.farmWorkers);
 

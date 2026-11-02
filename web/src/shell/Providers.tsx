@@ -6,6 +6,7 @@ import { SessionProvider } from "../lib/session";
 import { registerServiceWorker } from "../lib/push";
 import { MenuDrawer } from "./MenuDrawer";
 import { WelcomeBack } from "./WelcomeBack";
+import { ResultModal } from "./ResultModal";
 import { QueenAlert } from "./QueenAlert";
 
 type Shell = {
@@ -107,6 +108,7 @@ export function Providers({ children }: { children: ReactNode }) {
         <MenuDrawer open={menu} onClose={() => setMenu(false)} />
         <WelcomeBack />
         <QueenAlert />
+        <ResultModal />
       </ShellContext.Provider>
     </SessionProvider>
   );

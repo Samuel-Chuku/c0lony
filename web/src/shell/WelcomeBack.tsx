@@ -8,8 +8,10 @@ import { fetchSummary, type Summary } from "../lib/api";
 import { fmtDuration, fmtRes } from "../lib/format";
 import { Status, useNow, useProfile } from "../lib/game";
 import { useSession } from "../lib/session";
+import { fedResult, tendResult } from "../lib/outcomes";
 import { useAction } from "../lib/tx";
 import { fmtWif } from "../lib/format";
+import { Handle } from "../screens/live/feedText";
 import { useColonyView, usePlayerPrices, waitingNow } from "../screens/colony/data";
 import { useGameConfig } from "../lib/game";
 import "../screens/colony/colony.css";
@@ -17,44 +19,55 @@ import "../screens/colony/colony.css";
 const key = (wallet: string) => `c0lony:lastSeen:${wallet}`;
 const handled = new Set<string>(); // wallets already checked in this app load
 
-const sum = (a: string, b: string) => BigInt(a) + BigInt(b);
+type Row = { key: string; tag: string; raid: boolean; text: ReactNode; value: string; loss?: boolean };
 
-/** "12 leaves and 3 sugar" with the little icons, for the amounts that are non-zero. */
-function whatOf(leaves: string, sugar: string): ReactNode {
-  const l = BigInt(leaves);
-  const g = BigInt(sugar);
-  if (l <= 0n && g <= 0n) return null;
-  return (
-    <>
-      {l > 0n ? <>{fmtRes(l)} <ResIcon name="leaf" size={16} label="leaves" /></> : null}
-      {l > 0n && g > 0n ? " and " : null}
-      {g > 0n ? <>{fmtRes(g)} <ResIcon name="sugar" size={16} label="sugar" /></> : null}
-    </>
-  );
-}
+const lootOf = (d: Record<string, unknown>) => {
+  let amount = 0n;
+  try { amount = BigInt(String(d.lootAmount ?? "0")); } catch { /* keep 0 */ }
+  const kind = d.lootResource === "leaves" || d.lootResource === 1 ? "leaf" : "sugar";
+  return { amount, kind: kind as "leaf" | "sugar" };
+};
 
-type Row = { tag: string; raid: boolean; text: ReactNode; value: string; loss?: boolean };
-
-function rowsOf(s: Summary, wallet: string): Row[] {
+/** One row per thing that happened to this player: raids marching on them, and raids that landed. */
+function rowsOf(s: Summary, wallet: string, now: number): Row[] {
   const rows: Row[] = [];
-  const lost = sum(s.lostLeaves, s.lostSugar);
-  if (s.raided > 0) {
-    const what = whatOf(s.lostLeaves, s.lostSugar);
-    rows.push({ tag: "Raided", raid: true, text: <>{s.raided === 1 ? "A raider" : `${s.raided} raiders`} took {what ?? "from your stores"}</>, value: lost > 0n ? `−${fmtRes(lost)}` : "", loss: true });
-  }
-  if (s.defended > 0) {
-    const guarded = s.rows.filter((r) => r.type === "settled" && r.data.outcome === "guarded" && r.data.defender === wallet).length;
-    rows.push({
-      tag: "Defended",
-      raid: false,
-      text: guarded > 0 ? `Your guard stopped ${guarded === 1 ? "a raid" : `${guarded} raids`}` : `You held off ${s.defended === 1 ? "a raid" : `${s.defended} raids`}`,
-      value: guarded > 0 ? `+${guarded * 10} pts` : "",
-    });
-  }
-  if (s.raidsWon > 0) {
-    const won = sum(s.wonLeaves, s.wonSugar);
-    const what = whatOf(s.wonLeaves, s.wonSugar);
-    rows.push({ tag: "Raid won", raid: true, text: <>You took {what ?? "loot"}{s.raidsWon > 1 ? ` in ${s.raidsWon} raids` : ""}</>, value: won > 0n ? `+${fmtRes(won)}` : "" });
+  const me = wallet.toLowerCase();
+  const settledIds = new Set(s.rows.filter((r) => r.type === "settled").map((r) => String(r.data.raidId)));
+  const guardedIds = new Set(s.rows.filter((r) => r.type === "guarded" && String(r.data.defender ?? r.actors[0]).toLowerCase() === me).map((r) => String(r.data.raidId)));
+  for (const r of s.rows) {
+    const d = r.data;
+    const raidId = String(d.raidId);
+    const raider = String(d.raider ?? r.actors[0] ?? "").toLowerCase();
+    const defender = String(d.defender ?? r.actors[1] ?? "").toLowerCase();
+    if (r.type === "raid_launched" && defender === me && !settledIds.has(raidId)) {
+      const deadline = Number(d.guardDeadline ?? 0);
+      if (deadline <= now && guardedIds.has(raidId)) continue;
+      rows.push({
+        key: `m${raidId}`, tag: "Marching", raid: true,
+        text: <><Handle addr={raider} me={me} /> is marching on you{deadline > now ? ` · guard by ${new Date(deadline * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : ""}</>,
+        value: deadline > now ? fmtDuration(deadline - now) : "",
+      });
+    } else if (r.type === "settled") {
+      const out = String(d.outcome ?? "");
+      const { amount, kind } = lootOf(d);
+      const loot = amount > 0n ? <>{fmtRes(amount)} <ResIcon name={kind} size={16} label={kind === "leaf" ? "leaves" : "sugar"} /></> : null;
+      if (raider === me) {
+        const won = out === "raider_won";
+        rows.push({
+          key: `s${raidId}`, tag: won ? "Raid won" : "Raid lost", raid: true,
+          text: won ? <>You raided <Handle addr={defender} me={me} />{loot ? <> and took {loot}</> : ""}</> : <>Your raid on <Handle addr={defender} me={me} /> {out === "guarded" ? "met a guard" : "was held off"}</>,
+          value: won && amount > 0n ? `+${fmtRes(amount)}` : "",
+        });
+      } else if (defender === me) {
+        const hit = out === "raider_won";
+        rows.push({
+          key: `s${raidId}`, tag: hit ? "Raided" : "Defended", raid: hit,
+          text: hit ? <><Handle addr={raider} me={me} /> raided you{loot ? <> and took {loot}</> : ""}</> : <>{out === "guarded" ? "Your guard stopped " : "You held off "}<Handle addr={raider} me={me} /></>,
+          value: hit && amount > 0n ? `−${fmtRes(amount)}` : !hit && out === "guarded" ? "+10 pts" : "",
+          loss: hit,
+        });
+      }
+    }
   }
   return rows;
 }
@@ -68,8 +81,8 @@ export function WelcomeBack() {
   const cfg = useGameConfig();
   const view = useColonyView(profile.data && profile.data.colonyId ? profile.data.colonyId : null);
   const prices = usePlayerPrices(wallet);
-  const feed = useAction("Feeding");
-  const tend = useAction("Tending");
+  const feed = useAction("Feeding", { success: fedResult });
+  const tend = useAction("Tending", { success: tendResult });
   const [summary, setSummary] = useState<Summary | null>(null);
   const [lastSeen, setLastSeen] = useState(0);
 
@@ -107,7 +120,8 @@ export function WelcomeBack() {
     setSummary(null);
   };
 
-  const rows = rowsOf(summary, wallet);
+  const rows = rowsOf(summary, wallet, now);
+  const marching = rows.some((r) => r.key.startsWith("m"));
   const alive = p?.status === Status.Alive;
   const left = p ? Number(p.fedUntil) - now : Infinity;
   const hungry = alive && left < 12 * 3600;
@@ -115,6 +129,7 @@ export function WelcomeBack() {
   const waiting = alive && view.data && cfg.data ? !waitingNow(view.data, cfg.data, now).nothing : false;
   const latest = summary.rows.find((r) => r.type === "settled");
   const feedPrice = prices.feed;
+  if (rows.length === 0 && !hungry && !avenge && !waiting) return null;
 
   return (
     <Modal open onClose={close} title="While you were away" kicker={`you were gone ${fmtDuration(now - lastSeen)}`}>
@@ -122,7 +137,7 @@ export function WelcomeBack() {
         {rows.length > 0 ? (
           <ul className="c0-wb__rows">
             {rows.map((r) => (
-              <li key={r.tag} className="c0-wb__row">
+              <li key={r.key} className="c0-wb__row">
                 <span className={r.raid ? "c0-wb__tag c0-wb__tag--raid" : "c0-wb__tag"}>{r.tag}</span>
                 <span className="c0-wb__text">{r.text}</span>
                 {r.value ? <span className={r.loss ? "c0-wb__val c0-wb__val--loss" : "c0-wb__val"}>{r.value}</span> : null}
@@ -143,6 +158,11 @@ export function WelcomeBack() {
               onClick={() => void feed.run({ functionName: "feedQueen", args: [prices.proof], wif: feedPrice }).then((h) => { if (h) close(); })}
             >
               Feed her · {feedPrice !== undefined ? fmtWif(feedPrice) : "…"} WIF
+            </Button>
+          ) : null}
+          {marching ? (
+            <Button variant="paper" fullWidth icon="raids" onClick={() => { close(); router.push("/?tab=raids"); }}>
+              Guard now
             </Button>
           ) : null}
           {avenge || waiting ? (

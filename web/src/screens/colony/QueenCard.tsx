@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { BlockedStrip, Button, Card, Hand, Meter } from "../../ui";
 import { fmtDuration, fmtWif, RES } from "../../lib/format";
 import { seasonDays, Status, type ColonyView, type GameConfig, type Profile } from "../../lib/game";
+import { fedResult, foundedResult, revivedResult } from "../../lib/outcomes";
 import { useAction } from "../../lib/tx";
 import { usePlayerPrices } from "./data";
 
@@ -27,9 +28,9 @@ const need = (amount: bigint, onBuy: () => void): ReactNode => (
 /** The queen: her timer, the Feed button, and the starved / collapsed variants. */
 export function QueenCard({ addr, profile, view, cfg, season, wif, now, onBuy }: Props) {
   const prices = usePlayerPrices(addr);
-  const feed = useAction("Feeding");
-  const revive = useAction("Reviving");
-  const found = useAction("Founding");
+  const feed = useAction("Feeding", { success: fedResult });
+  const revive = useAction("Reviving", { success: revivedResult() });
+  const found = useAction("Founding", { success: foundedResult() });
   const fedUntil = Number(profile.fedUntil);
   const left = fedUntil - now;
 

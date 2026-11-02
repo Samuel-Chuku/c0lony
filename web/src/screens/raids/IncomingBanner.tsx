@@ -1,10 +1,10 @@
 "use client";
 import { ResIcon } from "../../ui/ResIcon";
 import { useState } from "react";
-import { Button } from "../../ui";
 import { Resource, useNow, type Raid } from "../../lib/game";
 import { fmtDuration } from "../../lib/format";
 import { guard } from "../../lib/raids";
+import { guardResult } from "../../lib/outcomes";
 import { useAction } from "../../lib/tx";
 import { ShieldButton } from "./ShieldButton";
 import { useColonyView, useWho } from "./shared";
@@ -14,7 +14,7 @@ export function IncomingBanner({ raid, guardWindow }: { raid: Raid; guardWindow:
   const now = useNow();
   const raiderOwner = useColonyView(raid.raider).data?.data.owner.toLowerCase();
   const who = useWho(raiderOwner);
-  const action = useAction("Guarding");
+  const action = useAction("Guarding", { success: () => guardResult(which) });
   const [which, setWhich] = useState<number>(0);
   const left = Number(raid.launchedAt) + guardWindow - now;
   const guarded = raid.guard === Resource.Leaves ? "leaves" : raid.guard === Resource.Sugar ? "sugar" : null;
@@ -30,17 +30,34 @@ export function IncomingBanner({ raid, guardWindow }: { raid: Raid; guardWindow:
         <h2 className="c0-banner__title">{who.name} is marching on you</h2>
         <span className="c0-banner__time">{fmtDuration(left)}</span>
       </div>
+      <div className="c0-opts" role="radiogroup" aria-label={guarded ? "You are guarding" : "Pick what to guard"}>
+        {([Resource.Leaves, Resource.Sugar] as const).map((res) => {
+          const name = res === Resource.Leaves ? "Leaves" : "Sugar";
+          const chosen = raid.guard === res || (action.busy && which === res);
+          return (
+            <button
+              key={res}
+              type="button"
+              role="radio"
+              aria-checked={chosen}
+              aria-label={`${chosen ? "Guarding " : "Guard "}${name.toLowerCase()}`}
+              className="c0-opt"
+              disabled={action.busy || !!guarded}
+              onClick={() => pick(res)}
+            >
+              <ResIcon name={res === Resource.Leaves ? "leaf" : "sugar"} size={28} />
+              <span>{name}</span>
+              <span className="c0-opt__tag">{chosen ? (action.busy ? "Guarding…" : "✓ Guarding") : guarded ? "" : "Tap to guard"}</span>
+            </button>
+          );
+        })}
+      </div>
       {guarded ? (
-        <p style={{ margin: 0, fontSize: 13 }}>You guarded {guarded}. If they aim there, they lose half their soldiers.</p>
+        <p style={{ margin: 0, fontSize: 13 }}>
+          <ResIcon name={guarded === "leaves" ? "leaf" : "sugar"} size={16} /> You&apos;re guarding {guarded}. If they aim there, they lose half their soldiers.
+        </p>
       ) : (
-        <div className="c0-banner__btns">
-          <Button variant="paper" size="compact" busy={action.busy && which === Resource.Leaves ? "Guarding…" : undefined} disabled={action.busy} onClick={() => pick(Resource.Leaves)}>
-            <ResIcon name="leaf" /> Guard leaves
-          </Button>
-          <Button variant="paper" size="compact" busy={action.busy && which === Resource.Sugar ? "Guarding…" : undefined} disabled={action.busy} onClick={() => pick(Resource.Sugar)}>
-            <ResIcon name="sugar" /> Guard sugar
-          </Button>
-        </div>
+        <p style={{ margin: 0, fontSize: 13 }}>Guess what they will target. A right guess costs them half their soldiers.</p>
       )}
       {action.error ? <div className="c0-blocked" role="alert">{action.error}</div> : null}
       <ShieldButton full />

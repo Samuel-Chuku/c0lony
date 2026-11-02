@@ -3,6 +3,7 @@ import { Button, Card, Hand } from "../../ui";
 import { fmtWif } from "../../lib/format";
 import { useSession } from "../../lib/session";
 import { gasProgressLabel, gasWaiting, useStarterGas, WAITING_REASON } from "../../lib/starterGas";
+import { foundedResult } from "../../lib/outcomes";
 import { useAction } from "../../lib/tx";
 import { usePlayerPrices } from "./data";
 
@@ -10,7 +11,7 @@ import { usePlayerPrices } from "./data";
 export function FoundCard({ addr, wif, onBuy }: { addr: string | null; wif: bigint | undefined; onBuy: () => void }) {
   const session = useSession();
   const prices = usePlayerPrices(addr);
-  const found = useAction("Founding");
+  const found = useAction("Founding", { success: foundedResult() });
   const gas = useStarterGas();
   const gasLabel = gasProgressLabel(gas);
   const price = prices.found;

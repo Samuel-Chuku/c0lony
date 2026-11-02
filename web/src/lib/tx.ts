@@ -1,7 +1,7 @@
 "use client";
 // Sending game transactions. Each button owns one useAction(): busy while pending, a plain-English error
 // under that same button when it fails (never a toast), and every cached read refreshed when it lands.
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import {
   BaseError,
   ContractFunctionRevertedError,
@@ -9,14 +9,17 @@ import {
   custom,
   keccak256,
   maxUint256,
+  parseEventLogs,
   type Address,
   type Hash,
+  type TransactionReceipt,
 } from "viem";
 import { colonyGameAbi, erc20Abi } from "./abi";
 import { chain, publicClient } from "./chain";
 import { GAME, WIF } from "./game";
 import { useSession } from "./session";
 import { invalidate } from "./store";
+import { showResult, type ResultContent } from "./result";
 import type { ConnectedWallet } from "@privy-io/react-auth";
 
 const ERRORS: Record<string, string> = {
@@ -90,15 +93,37 @@ type GameCall = {
   wif?: bigint;
 };
 
+/** Decoded ColonyGame events of one name from a receipt (empty when none). */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function eventsOf(receipt: TransactionReceipt, name: string): Record<string, any>[] {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return parseEventLogs({ abi: colonyGameAbi, eventName: name as never, logs: receipt.logs }).map((l) => (l as any).args);
+  } catch {
+    return [];
+  }
+}
+
+export type SuccessContent = Omit<ResultContent, "failed" | "hash">;
+export type SuccessSpec = SuccessContent | ((receipt: TransactionReceipt, hash: Hash) => SuccessContent | null);
+export type ActionOptions = { success?: SuccessSpec };
+
+const advice = (reason: string) => {
+  const r = reason.charAt(0).toUpperCase() + reason.slice(1);
+  return [r.endsWith(".") ? r : `${r}.`, "Nothing was changed. Fix that and try again."];
+};
+
 export type ActionState = { busy: boolean; error: string | null; hash: Hash | null };
 
 /**
  * One action per button. `run` returns the receipt's hash, or null when it failed (the error is in state).
  * `failVerb` starts the Blocked line: "Feeding failed · not enough WIF".
  */
-export function useAction(failVerb: string) {
+export function useAction(failVerb: string, opts?: ActionOptions) {
   const session = useSession();
   const [state, setState] = useState<ActionState>({ busy: false, error: null, hash: null });
+  const optsRef = useRef(opts);
+  optsRef.current = opts;
 
   const run = useCallback(
     async (call: GameCall | ((client: Awaited<ReturnType<typeof walletClientFor>>) => Promise<Hash>)): Promise<Hash | null> => {
@@ -134,9 +159,16 @@ export function useAction(failVerb: string) {
         if (receipt.status !== "success") throw new Error("reverted");
         setState({ busy: false, error: null, hash });
         void invalidate();
+        try {
+          const spec = optsRef.current?.success;
+          const content = typeof spec === "function" ? spec(receipt, hash) : spec;
+          if (content) showResult({ ...content, hash });
+        } catch { /* a result line must never turn a landed transaction into an error */ }
         return hash;
       } catch (err) {
-        setState({ busy: false, error: `${failVerb} failed · ${reasonOf(err)}`, hash: null });
+        const reason = reasonOf(err);
+        setState({ busy: false, error: `${failVerb} failed · ${reason}`, hash: null });
+        showResult({ title: `${failVerb} failed`, failed: true, lines: advice(reason) });
         return null;
       }
     },

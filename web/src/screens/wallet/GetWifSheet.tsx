@@ -10,6 +10,7 @@ import { useSession } from "../../lib/session";
 import { txUrl } from "../../lib/chain";
 import { gasProgressLabel, useStarterGas } from "../../lib/starterGas";
 import { invalidate } from "../../lib/store";
+import { showResult } from "../../lib/result";
 import { useAction } from "../../lib/tx";
 import { buildSwap, FEE_BPS, getQuote, type Quote } from "./kyber";
 import "./wallet.css";
@@ -71,9 +72,12 @@ function Mint() {
         setNextAt(body.nextAt);
       }
       setMessage(body.message ?? null);
+      showResult({ title: body.status === "queued" ? "Test WIF is on its way" : "Test WIF", lines: [body.message ?? "10,000 test WIF will reach your wallet in a few seconds."] });
       setState(body.status === "queued" ? "coming" : "idle");
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : "The faucet didn't answer. Try again.");
+      const why = err instanceof Error ? err.message : "The faucet didn't answer. Try again.";
+      setMessage(why);
+      showResult({ title: "Getting test WIF failed", failed: true, lines: [why] });
       setState("error");
     }
   };
@@ -108,7 +112,7 @@ function Swap() {
   const session = useSession();
   const prices = usePrices(session.address);
   const cfg = useGameConfig();
-  const swap = useAction("Swap");
+  const swap = useAction("Swap", { success: { title: "WIF bought", lines: ["The swap landed. Your WIF balance updates in a few seconds."] } });
   const [eth, setEth] = useState("");
   const [quote, setQuote] = useState<Quote | null>(null);
   const [quoting, setQuoting] = useState(false);

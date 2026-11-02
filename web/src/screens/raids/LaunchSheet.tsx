@@ -1,9 +1,10 @@
 "use client";
 import { useEffect, useState } from "react";
-import { BottomSheet, Button, Chip, ChipRow, ResIcon, Stepper } from "../../ui";
+import { BottomSheet, Button, ResIcon, Stepper } from "../../ui";
 import { Resource, maxSoldiers, MIN_RAID_WORKERS, useGameConfig, type ColonyRow, type Profile } from "../../lib/game";
 import { avenge, launchRaid } from "../../lib/raids";
 import { useSession } from "../../lib/session";
+import { sealedResult } from "../../lib/outcomes";
 import { useAction } from "../../lib/tx";
 import { useWho } from "./shared";
 
@@ -16,7 +17,8 @@ export function LaunchSheet({ open, mode, target, me, cooldownLeft, onClose }: P
   const session = useSession();
   const cfg = useGameConfig().data;
   const who = useWho(target?.wallet);
-  const action = useAction("Raid");
+  const [sealed, setSealed] = useState<{ soldiers: number; avenged: boolean }>({ soldiers: 1, avenged: false });
+  const action = useAction("Raid", { success: () => sealedResult(who.name, sealed.soldiers, sealed.avenged)() });
   const [res, setRes] = useState<number>(Resource.Sugar);
   const [soldiers, setSoldiers] = useState(1);
   const max = maxSoldiers(me.freeAnts);
@@ -38,6 +40,7 @@ export function LaunchSheet({ open, mode, target, me, cooldownLeft, onClose }: P
 
   const go = async () => {
     if (!target) return;
+    setSealed({ soldiers, avenged: isAvenge });
     const run = isAvenge ? avenge(me.colonyId, target.wallet, soldiers, res) : launchRaid(me.colonyId, target.colonyId!, soldiers, res);
     if (await action.run(run)) onClose();
   };
@@ -50,11 +53,19 @@ export function LaunchSheet({ open, mode, target, me, cooldownLeft, onClose }: P
       <div className="c0-sheetbody">
         <div>
           <div className="c0-label">TARGET</div>
-          <ChipRow>
-            <Chip selected={res === Resource.Leaves} onClick={() => setRes(Resource.Leaves)}><ResIcon name="leaf" size={20} /> Leaves</Chip>
-            <Chip selected={res === Resource.Sugar} onClick={() => setRes(Resource.Sugar)}><ResIcon name="sugar" size={20} /> Sugar</Chip>
-          </ChipRow>
-          <p className="c0-sub" style={{ marginTop: 8 }}>Sealed. They won&apos;t see your target until the roll.</p>
+          <div className="c0-opts" role="radiogroup" aria-label="Raid target">
+            {([Resource.Leaves, Resource.Sugar] as const).map((r) => {
+              const on = res === r;
+              return (
+                <button key={r} type="button" role="radio" aria-checked={on} className="c0-opt" onClick={() => setRes(r)}>
+                  <ResIcon name={r === Resource.Leaves ? "leaf" : "sugar"} size={28} />
+                  <span>{r === Resource.Leaves ? "Leaves" : "Sugar"}</span>
+                  <span className="c0-opt__tag">{on ? "✓ Your target" : ""}</span>
+                </button>
+              );
+            })}
+          </div>
+          <p className="c0-optsum" style={{ marginTop: 8 }}><b>Target: {res === Resource.Leaves ? "Leaves" : "Sugar"}</b> · hidden from them until the roll</p>
         </div>
         <div className="c0-sheetrow">
           <div>

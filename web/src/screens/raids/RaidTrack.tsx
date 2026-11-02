@@ -6,6 +6,7 @@ import { fmtDuration } from "../../lib/format";
 import { collect, drandSignature, reveal, settle } from "../../lib/raids";
 import { useSession } from "../../lib/session";
 import { useQuery } from "../../lib/store";
+import { collectResult, revealResult, settleResult } from "../../lib/outcomes";
 import { useAction } from "../../lib/tx";
 import { Tracker } from "./Tracker";
 import { SETTLE_TIMEOUT, stepOf, useColonyView, useWho } from "./shared";
@@ -31,9 +32,9 @@ export function RaidTrack({ raid, role, guardWindow, revealWindow, onClosed }: P
   const otherId = role === "raider" ? raid.defender : raid.raider;
   const other = useWho(useColonyView(otherId).data?.data.owner.toLowerCase());
   const feed = useFeed("raids", session.address, 50).data;
-  const revealAct = useAction("Revealing");
-  const settleAct = useAction("Settling");
-  const collectAct = useAction("Collecting");
+  const revealAct = useAction("Revealing", { success: revealResult() });
+  const settleAct = useAction("Settling", { success: (r) => settleResult(r, session.address) });
+  const collectAct = useAction("Collecting", { success: collectResult });
 
   const step = stepOf(raid, now, guardWindow);
   const windowEnd = Number(raid.launchedAt) + guardWindow;

@@ -3,18 +3,19 @@ import { Button } from "../../ui";
 import { useBalances, useGameConfig, useNow, useProfile } from "../../lib/game";
 import { fmtDuration, fmtWif } from "../../lib/format";
 import { useSession } from "../../lib/session";
+import { shieldResult } from "../../lib/outcomes";
 import { useAction } from "../../lib/tx";
 import { useColonyView } from "./shared";
 
 /** Shield · <price> WIF. Disabled with its reason while shielded, in cooldown, or short of WIF. */
-export function ShieldButton({ size = "compact", icon = true, full }: { size?: "compact" | "default"; icon?: boolean; full?: boolean }) {
+export function ShieldButton({ size = "compact", icon = true }: { size?: "compact" | "default"; icon?: boolean; full?: boolean }) {
   const session = useSession();
   const cfg = useGameConfig().data;
   const profile = useProfile(session.address).data;
   const view = useColonyView(profile?.colonyId).data;
   const bal = useBalances(session.address).data;
   const now = useNow(5000);
-  const action = useAction("Shield");
+  const action = useAction("Shield", { success: (r) => shieldResult(r, Number(cfg?.shieldDuration ?? 0)) });
 
   if (!cfg) return null;
   const price = cfg.shieldPrice;
@@ -27,10 +28,11 @@ export function ShieldButton({ size = "compact", icon = true, full }: { size?: "
   else if (bal && bal.wif < price) reason = `You need ${fmtWif(price)} WIF`;
 
   return (
+    <div className="c0-shield">
     <Button
       variant="wif"
       size={size}
-      fullWidth={full}
+      fullWidth
       icon={icon ? "shield" : undefined}
       busy={action.busy ? "Shielding…" : undefined}
       disabledReason={reason ?? undefined}
@@ -39,5 +41,7 @@ export function ShieldButton({ size = "compact", icon = true, full }: { size?: "
     >
       Shield · {fmtWif(price)} WIF
     </Button>
+    <p className="c0-shield__note">Blocks new raids on you for {fmtDuration(Number(cfg.shieldDuration))}. Raids already marching still land.</p>
+    </div>
   );
 }

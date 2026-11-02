@@ -36,7 +36,7 @@ export function VoterPass({ open, onClose }: { open: boolean; onClose: () => voi
 function Link_({ gameWallet }: { gameWallet: string }) {
   const { connectWallet } = useConnectWallet();
   const { wallets } = useWallets();
-  const claim = useAction("Linking");
+  const claim = useAction("Linking", { success: { title: "Voter's Pass linked", lines: ["Your game wallet now gets 20% off founding and feeding."] } });
   const [working, setWorking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const voting = wallets.find((w) => w.walletClientType !== "privy" && w.address.toLowerCase() !== gameWallet.toLowerCase()) ?? null;
