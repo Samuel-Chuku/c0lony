@@ -79,22 +79,72 @@ contract CoreLoopTest is Base {
         uint64 id = _found(alice);
         vm.prank(alice);
         game.tend();
-        // +6 leaves, +3 sugar + floor(0.08 * 10) = 3
-        assertEq(_leaves(id), 26 * RES);
-        assertEq(_sugar(id), 23 * RES);
+        // 10 free ants: +6 + 0.5 x 10 = 11 leaves, +4 + 0.3 x 10 = 7 sugar
+        assertEq(_leaves(id), 31 * RES);
+        assertEq(_sugar(id), 27 * RES);
 
         // Not ready again for 3 h (sugar) / 6 h (leaves)
         vm.warp(vm.getBlockTimestamp() + 3 hours);
         vm.prank(alice);
         game.tend();
-        assertEq(_leaves(id), 26 * RES);
-        assertEq(_sugar(id), 26 * RES);
+        assertEq(_leaves(id), 31 * RES);
+        assertEq(_sugar(id), 34 * RES);
 
         vm.warp(vm.getBlockTimestamp() + 3 hours);
         vm.prank(alice);
         game.tend();
-        assertEq(_leaves(id), 32 * RES);
-        assertEq(_sugar(id), 29 * RES);
+        assertEq(_leaves(id), 42 * RES);
+        assertEq(_sugar(id), 41 * RES);
+    }
+
+    function test_tend_missedTripsWait_upToTwo() public {
+        uint64 id = _found(alice);
+        vm.prank(alice);
+        game.tend(); // 31 leaves, 27 sugar
+        vm.warp(vm.getBlockTimestamp() + 20 hours);
+        vm.prank(alice);
+        game.tend();
+        assertEq(_leaves(id), (31 + 2 * 11) * RES, "two leaf trips waited, not three");
+        assertEq(_sugar(id), (27 + 2 * 7) * RES, "two sugar trips waited, not six");
+    }
+
+    function test_tend_partTripKeepsItsProgress() public {
+        uint64 id = _found(alice);
+        vm.prank(alice);
+        game.tend();
+        uint256 t = vm.getBlockTimestamp();
+        vm.warp(t + 9 hours); // one leaf trip ready, the next half grown
+        vm.prank(alice);
+        game.tend();
+        assertEq(_colony(id).data.lastLeafForage, t + 6 hours, "clock keeps the 3 h of progress");
+        vm.warp(t + 12 hours);
+        uint256 l = _leaves(id);
+        vm.prank(alice);
+        game.tend();
+        assertEq(_leaves(id), l + 11 * RES, "the next trip is ready 6 h after the last one was due");
+    }
+
+    function test_tend_bonusCountsAtMost30FreeAnts() public {
+        uint64 id = _found(alice);
+        game.setWorkers(id, 50, 10);
+        game.setStock(id, 0, 0);
+        vm.prank(alice);
+        game.tend();
+        assertEq(_leaves(id), (6 + 15) * RES, "6 + 0.5 x 30");
+        assertEq(_sugar(id), (4 + 9) * RES, "4 + 0.3 x 30");
+        ColonyGame.Profile memory p = game.getProfile(alice);
+        assertEq(p.leafTrip, 21);
+        assertEq(p.sugarTrip, 13);
+    }
+
+    function test_tend_bonusRoundsUp_andIgnoresAssignedAnts() public {
+        uint64 id = _found(alice);
+        game.setAssigned(id, 3, 0); // 7 free
+        game.setStock(id, 0, 0);
+        vm.prank(alice);
+        game.tend();
+        assertEq(_leaves(id), (6 + 4) * RES, "0.5 x 7 = 3.5 rounds up to 4");
+        assertEq(_sugar(id), (4 + 3) * RES, "0.3 x 7 = 2.1 rounds up to 3");
     }
 
     function test_trailAndFarm_produceNonstop() public {
@@ -102,7 +152,7 @@ contract CoreLoopTest is Base {
         game.setStock(id, uint128(1_000 * RES), uint128(1_000 * RES));
         vm.startPrank(alice);
         game.buildTrail(); // 50 leaves
-        game.buildFarm(); // 25 leaves + 25 sugar
+        game.buildFarm(); // 25 leaves (the first farm costs no sugar)
         game.assignWorkers(5, 5);
         vm.stopPrank();
         uint256 l0 = _leaves(id);
@@ -110,14 +160,43 @@ contract CoreLoopTest is Base {
 
         vm.warp(vm.getBlockTimestamp() + 1 hours);
         ColonyGame.ColonyView memory v = _colony(id);
-        assertEq(v.pendingLeaves, 3600 * 5 * 11_500);
-        assertEq(v.pendingSugar, 3600 * 5 * 11_500);
+        assertEq(v.pendingLeaves, 3600 * 5 * 23_148);
+        assertEq(v.pendingSugar, 3600 * 5 * 23_148);
 
         // Reassigning collects what has accrued first
         vm.prank(alice);
         game.assignWorkers(0, 0);
-        assertEq(_leaves(id), l0 + 3600 * 5 * 11_500);
-        assertEq(_sugar(id), s0 + 3600 * 5 * 11_500);
+        assertEq(_leaves(id), l0 + 3600 * 5 * 23_148);
+        assertEq(_sugar(id), s0 + 3600 * 5 * 23_148);
+    }
+
+    function test_production_isAboutTwoPerAntPerDay() public {
+        uint64 id = _found(alice);
+        game.setStock(id, uint128(1_000 * RES), uint128(1_000 * RES));
+        vm.startPrank(alice);
+        game.buildFarm();
+        game.assignWorkers(0, 1);
+        vm.stopPrank();
+        vm.warp(vm.getBlockTimestamp() + 1 days);
+        uint256 perDay = _colony(id).pendingSugar;
+        assertGt(perDay, 1.999 * 1e9);
+        assertLe(perDay, 2 * RES);
+    }
+
+    function test_firstFarmCostsLeavesOnly_thenLeavesAndSugar() public {
+        uint64 id = _found(alice);
+        game.setStock(id, uint128(100 * RES), uint128(10 * RES));
+        vm.prank(alice);
+        game.buildFarm();
+        assertEq(_leaves(id), 75 * RES);
+        assertEq(_sugar(id), 10 * RES, "no sugar for the first farm");
+        vm.prank(alice);
+        vm.expectRevert(ColonyGame.NotEnoughSugar.selector);
+        game.buildFarm();
+        game.setStock(id, uint128(100 * RES), uint128(100 * RES));
+        vm.prank(alice);
+        game.buildFarm();
+        assertEq(_sugar(id), 75 * RES, "the second farm costs sugar too");
     }
 
     function test_assign_limits() public {
@@ -200,12 +279,23 @@ contract CoreLoopTest is Base {
         uint256 l = _leaves(id);
         vm.prank(alice);
         game.speedUp(ColonyGame.Resource.Leaves);
-        assertEq(_leaves(id), l + 6 * RES);
+        assertEq(_leaves(id), l + 11 * RES, "one trip now");
         vm.prank(alice);
         vm.expectRevert(ColonyGame.NotReady.selector);
         game.speedUp(ColonyGame.Resource.Leaves);
         vm.prank(alice);
         game.speedUp(ColonyGame.Resource.Sugar); // separate per action
+    }
+
+    function test_speedUp_alsoCollectsWaitingTrips() public {
+        uint64 id = _found(alice);
+        vm.prank(alice);
+        game.tend();
+        vm.warp(vm.getBlockTimestamp() + 7 hours); // one leaf trip waiting
+        uint256 l = _leaves(id);
+        vm.prank(alice);
+        game.speedUp(ColonyGame.Resource.Leaves);
+        assertEq(_leaves(id), l + 2 * 11 * RES, "the waiting trip plus one more");
     }
 
     function test_shield_blocksNewRaids_oncePer24h() public {
@@ -216,7 +306,7 @@ contract CoreLoopTest is Base {
         bytes32 c = game.commitmentFor(ColonyGame.Resource.Leaves, bytes32(0), game.nextRaidId(a));
         vm.prank(alice);
         vm.expectRevert(ColonyGame.TargetShielded.selector);
-        game.launchRaid(b, 1, c);
+        game.launchRaid(b, c);
 
         vm.prank(bob);
         vm.expectRevert(ColonyGame.NotReady.selector);
@@ -224,7 +314,7 @@ contract CoreLoopTest is Base {
 
         vm.warp(vm.getBlockTimestamp() + 8 hours);
         vm.prank(alice);
-        game.launchRaid(b, 1, c);
+        game.launchRaid(b, c);
     }
 
     // ------------------------------------------------------------------ starvation, revive, collapse
@@ -297,7 +387,7 @@ contract CoreLoopTest is Base {
         game.setConfig(bad);
 
         bad = game.getConfig();
-        bad.winOddsUnguarded = 86;
+        bad.raidProtection = c.raidProtection / 4 - 1;
         vm.prank(owner);
         vm.expectRevert(ColonyGame.BadConfig.selector);
         game.setConfig(bad);
@@ -317,7 +407,7 @@ contract CoreLoopTest is Base {
         // Within caps works and emits
         ColonyGame.Config memory ok = game.getConfig();
         ok.foundPrice = c.foundPrice * 4;
-        ok.winOddsUnguarded = 50;
+        ok.raidProtection = c.raidProtection * 4;
         vm.expectEmit(address(game));
         emit ColonyGame.ConfigUpdated(c, ok);
         vm.prank(owner);

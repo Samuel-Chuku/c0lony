@@ -87,3 +87,6 @@
 .c0-fed__small { font-size: 12px; color: var(--c0-muted); }
 .c0-fold { display: flex; flex-direction: column; gap: var(--c0-s2); }
 .c0-fold__link { align-self: center; min-height: var(--c0-tap); font-size: 12px; color: var(--c0-sub); text-decoration: underline; background: none; border: 0; padding: 0 var(--c0-s2); cursor: pointer; }
+
+.c0-rate { display: flex; align-items: center; gap: var(--c0-s1); font-size: var(--c0-fs-body); color: var(--c0-sub); margin-top: calc(var(--c0-s1) * -1); }
+.c0-rate b { font-family: var(--c0-f-display); font-size: 20px; color: var(--c0-ink); }

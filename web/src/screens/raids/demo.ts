@@ -4,10 +4,10 @@ import type { ColonyRow, GameConfig, Profile, Raid } from "../../lib/game";
 const RES = 1_000_000_000n;
 const row = (id: number, workers: number, sugar: number, extra: Partial<ColonyRow> = {}): ColonyRow => ({
   id: BigInt(id), owner: `0x${id.toString(16).padStart(40, "a")}`, status: 1, workers, capacity: 60, idle: workers, leaves: 0n,
-  sugar: BigInt(sugar) * RES, score: 0n, feedCount: 2, fedUntil: Math.floor(Date.now() / 1000) + 60 * 3600, shieldUntil: 0, openIncoming: 0, lastRaidLaunch: 0, foundedAt: 0, ...extra,
+  sugar: BigInt(sugar) * RES, score: 0n, feedCount: 2, fedUntil: Math.floor(Date.now() / 1000) + 60 * 3600, shieldUntil: 0, openIncoming: 0, lastRaidLaunch: 0, raidableAt: 0, foundedAt: 0, ...extra,
 });
 
-export const demoCfg = { winOddsUnguarded: 65, winOddsGuardedOther: 50, guardWindow: 14400n, revealWindow: 86400n, raidCooldown: 21600n, shieldPrice: 1000n * 10n ** 18n, shieldCooldown: 86400n } as unknown as GameConfig;
+export const demoCfg = { guardWindow: 14400n, revealWindow: 86400n, raidCooldown: 43200n, raidProtection: 43200n, shieldPrice: 1000n * 10n ** 18n, shieldCooldown: 86400n } as unknown as GameConfig;
 
 export function demoData(now: number) {
   const me = "0x00000000000000000000000000000000000000d0";

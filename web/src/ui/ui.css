@@ -37,6 +37,13 @@ a { color: var(--c0-paper); }
 .c0-btn:active:not(:disabled) { box-shadow: var(--c0-bevel); transform: var(--c0-press); }
 .c0-btn:disabled { cursor: not-allowed; }
 .c0-btn--busy { background: var(--c0-dither); color: var(--c0-paper); border-color: var(--c0-ink); }
+/* While a transaction is out: a file of pixel ants (three body cells each) marches along the bottom edge, in steps */
+.c0-btn--busy { position: relative; overflow: hidden; }
+.c0-btn__busy { position: relative; }
+.c0-btn__march { position: absolute; left: 0; right: 0; bottom: 4px; height: 4px; background: repeating-linear-gradient(90deg, var(--c0-paper-hi) 0 4px, transparent 4px 5px, var(--c0-paper-hi) 5px 8px, transparent 8px 9px, var(--c0-paper-hi) 9px 13px, transparent 13px 28px); animation: c0-march 1.2s steps(7) infinite; }
+@keyframes c0-march { from { background-position: 0 0; } to { background-position: 28px 0; } }
+@media (prefers-reduced-motion: reduce) { .c0-btn__march { animation: none; } }
+.c0-reduce-motion .c0-btn__march { animation: none; }
 .c0-btn--blocked { background: var(--c0-hatch); color: var(--c0-paper); }
 .c0-btn-note { font-size: var(--c0-fs-caption); line-height: var(--c0-lh-body); color: var(--c0-sub); }
 
@@ -305,3 +312,20 @@ a { color: var(--c0-paper); }
 .c0-opt:not([aria-checked="true"]):not([aria-pressed="true"]) { opacity: .8; }
 .c0-opt:disabled { cursor: default; }
 .c0-optsum { margin: 0; font-size: var(--c0-fs-body); }
+
+/* "You can be raided in …": the Raids tab's own-colony line (resting, or the raid state while one marches) */
+.c0-safe { border: 2px solid var(--c0-ink); background: var(--c0-paper-hi); color: var(--c0-ink); padding: var(--c0-s2) var(--c0-s3); font-size: var(--c0-fs-body); text-align: center; box-shadow: var(--c0-shadow-card); }
+.c0-safe b { font-family: var(--c0-f-display); font-size: 20px; letter-spacing: 1px; }
+.c0-safe--raid { background: var(--c0-red); color: var(--c0-paper-hi); }
+
+/* Slider: an ink-outlined loam track filled with dither up to the value, and a square paper thumb */
+.c0-slider { display: flex; flex-direction: column; gap: var(--c0-s1); width: 100%; }
+.c0-slider__input { -webkit-appearance: none; appearance: none; width: 100%; height: var(--c0-tap); margin: 0; background: transparent; cursor: pointer; }
+.c0-slider__input:disabled { cursor: not-allowed; }
+.c0-slider__input::-webkit-slider-runnable-track { height: 12px; border: var(--c0-bw-thin) solid var(--c0-ink); background: linear-gradient(90deg, var(--c0-clay) var(--c0-fill), var(--c0-loam) var(--c0-fill)); }
+.c0-slider__input::-moz-range-track { height: 8px; border: var(--c0-bw-thin) solid var(--c0-ink); background: var(--c0-loam); }
+.c0-slider__input::-moz-range-progress { height: 8px; background: var(--c0-clay); }
+.c0-slider__input::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 28px; margin-top: -10px; border: var(--c0-bw) solid var(--c0-ink); border-radius: 0; background: var(--c0-paper-hi); box-shadow: 2px 2px 0 var(--c0-shadow); }
+.c0-slider__input::-moz-range-thumb { width: 14px; height: 22px; border: var(--c0-bw) solid var(--c0-ink); border-radius: 0; background: var(--c0-paper-hi); box-shadow: 2px 2px 0 var(--c0-shadow); }
+.c0-slider__input:focus-visible { outline: 3px solid var(--c0-paper); outline-offset: 2px; }
+.c0-slider__ends { display: flex; justify-content: space-between; font-size: var(--c0-fs-caption); color: var(--c0-sub); margin-top: -8px; }

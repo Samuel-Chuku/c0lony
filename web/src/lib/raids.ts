@@ -28,13 +28,13 @@ async function sealedCommitment(client: Client, colonyId: bigint, target: number
   return publicClient.readContract({ ...game, functionName: "commitmentFor", args: [target, salt, raidId] });
 }
 
-/** Seal a raid on `defenderId`, targeting leaves or sugar (hidden until reveal). */
-export const launchRaid = (myColonyId: bigint, defenderId: bigint, soldiers: number, target: number) => async (client: Client) =>
-  send(client, "launchRaid", [defenderId, soldiers, await sealedCommitment(client, myColonyId, target)]);
+/** Seal a raid on `defenderId`, targeting leaves or sugar (hidden until reveal). Every free ant marches. */
+export const launchRaid = (myColonyId: bigint, defenderId: bigint, target: number) => async (client: Client) =>
+  send(client, "launchRaid", [defenderId, await sealedCommitment(client, myColonyId, target)]);
 
 /** Avenge: the same sealed raid, aimed at the wallet that raided you. */
-export const avenge = (myColonyId: bigint, raider: string, soldiers: number, target: number) => async (client: Client) =>
-  send(client, "avenge", [raider as Address, soldiers, await sealedCommitment(client, myColonyId, target)]);
+export const avenge = (myColonyId: bigint, raider: string, target: number) => async (client: Client) =>
+  send(client, "avenge", [raider as Address, await sealedCommitment(client, myColonyId, target)]);
 
 /** Reveal after the guard window: re-derive the salt and find which target the commitment was sealed with. */
 export const reveal = (raidId: bigint, commitment: string) => async (client: Client) => {

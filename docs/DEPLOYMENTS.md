@@ -149,7 +149,7 @@ Checked with `eth_getLogs` on mainnet (2026-10-30):
 | Testnet (46630), incl. MockWIF | 17,335,197 | 0.02 gwei | ≈0.00035 ETH |
 | Mainnet (4663) | 16,633,817 | 0.04 gwei | ≈0.00067 ETH (≈0.0083 ETH if gas spiked to 0.5 gwei) |
 
-Measured gas per call (`forge snapshot`, see `contracts/.gas-snapshot`): `settle` ≈ 269k execution gas (≈306k for the whole transaction), of which drand signature verification ≈ 222k. The Avenge grant and raid record counters added about 44k gas to `settle` on 2026-10-31 (Foundry, `test_gas_settle` 467,768 → 511,644).
+Measured gas per call (`forge snapshot`, see `contracts/.gas-snapshot`): `settle` ≈ 269k execution gas (≈306k for the whole transaction) on the third deployment, of which drand signature verification ≈ 222k. After the 2026-11-02 raid rework, the settle call alone measures 314,958 gas in Foundry (the whole `test_gas_settle` test, setup included, is 511,644). The Avenge grant and raid record counters added about 44k gas to `settle` on 2026-10-31 (Foundry, `test_gas_settle` 467,768 → 511,644).
 
 ## Live feed, profiles and push
 
@@ -178,7 +178,21 @@ Environment variable names (see `keeper/.env.example`): `FEED_API_BASE`, `FEED_I
 
 ## Deployed contracts
 
-### Robinhood Chain testnet (46630), current deployment (2026-10-31, third)
+### Robinhood Chain testnet (46630), current deployment (2026-11-02, fourth)
+
+Redeployed with the economy and raid redesign (2 a day per assigned ant, stacking forage trips, all free ants march, 12 h cooldown and protection, one raid at a time, the 60% raid lock, no win odds). Blocks 147,191,275–147,191,385, 10,112,688 gas in total. ColonyGame, SeasonPot and Treasury are verified on Blockscout; the DrandVerifier library and MockWIF are reused.
+
+| Contract | Address |
+| --- | --- |
+| ColonyGame | [`0xb826C232193B2EF12fdf60E55EE341e3edE9D672`](https://explorer.testnet.chain.robinhood.com/address/0xb826C232193B2EF12fdf60E55EE341e3edE9D672) |
+| SeasonPot | [`0xDd1b353DF1AB32e6E2A601586e0446A7bAa60FAA`](https://explorer.testnet.chain.robinhood.com/address/0xDd1b353DF1AB32e6E2A601586e0446A7bAa60FAA) |
+| Treasury | [`0xe23673FA3A54F1C84c45c386400000194Bf52a26`](https://explorer.testnet.chain.robinhood.com/address/0xe23673FA3A54F1C84c45c386400000194Bf52a26) |
+| DrandVerifier (linked library, reused) | [`0x2513832059bac29e5a5115634694F22B6B302Ae1`](https://explorer.testnet.chain.robinhood.com/address/0x2513832059bac29e5a5115634694F22B6B302Ae1) |
+| MockWIF (testnet only, reused) | [`0xC7524F3D78E5f6150aff0Eac811e9Bd0D0Fd9B68`](https://explorer.testnet.chain.robinhood.com/address/0xC7524F3D78E5f6150aff0Eac811e9Bd0D0Fd9B68) |
+
+Owner: `0x4B11611CF7C90aEc2003721d71107d7E1cBf37c2`. Treasury funded with 0.002 testnet ETH. The keeper wallet `0x1A5285D03dF06089119a093756Da5D36852C09f0` is the voter-root setter, and the existing Voter's Pass root was posted. Live check after deploy: a new colony's first tend brought 11 leaves and 7 sugar (10 free ants), and its first farm cost 25 leaves and no sugar. The keeper was still pointed at the third deployment at the time of writing.
+
+### Robinhood Chain testnet (46630), third deployment (retired)
 
 Redeployed with Avenge, the raid record, `getProfile`, owner addresses in every player event and the locked colony NFT. Blocks 145,876,263–145,876,267, 9,853,937 gas in total. ColonyGame, SeasonPot and Treasury are verified on Blockscout; the DrandVerifier library and MockWIF are reused.
 
@@ -190,7 +204,7 @@ Redeployed with Avenge, the raid record, `getProfile`, owner addresses in every 
 | DrandVerifier (linked library, reused) | [`0x2513832059bac29e5a5115634694F22B6B302Ae1`](https://explorer.testnet.chain.robinhood.com/address/0x2513832059bac29e5a5115634694F22B6B302Ae1) |
 | MockWIF (testnet only, reused) | [`0xC7524F3D78E5f6150aff0Eac811e9Bd0D0Fd9B68`](https://explorer.testnet.chain.robinhood.com/address/0xC7524F3D78E5f6150aff0Eac811e9Bd0D0Fd9B68) |
 
-Owner: `0x4B11611CF7C90aEc2003721d71107d7E1cBf37c2`. Treasury funded with 0.002 testnet ETH. Runs the launch settings (4 h guard window, 24 h feed interval) until changed for testing.
+Owner: `0x4B11611CF7C90aEc2003721d71107d7E1cBf37c2`. Treasury funded with 0.002 testnet ETH. It ran the old economy (about 1 a day per ant, soldier picker, win odds, 6 h cooldown, up to 2 raids at once on a target).
 
 ### Robinhood Chain testnet (46630), second deployment (retired)
 

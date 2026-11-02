@@ -27,7 +27,7 @@ sponsors ──sponsor()──▶ SeasonPot (100% to the chosen season)
 
 - **WIF never stays in ColonyGame.** Each payment is pulled in and split out within the same transaction.
 - **The only ways WIF leaves the pot** are `claim` (to a player with a ranked colony) and `rollUnclaimed` (into a later season's pot).
-- **Random raid rolls never touch WIF.** They only move leaves, sugar and soldiers.
+- **Random raid rolls never touch WIF.** They only move leaves, sugar and ants.
 
 ---
 
@@ -40,12 +40,17 @@ sponsors ──sponsor()──▶ SeasonPot (100% to the chosen season)
 | Action | Launch price | Rule |
 | --- | --- | --- |
 | Found a colony | 1,500 WIF (1,200 with a Voter's Pass) | One living colony per wallet. You may found again after a collapse (and pay again). |
-| Feed the queen | 100 WIF (80 with a Voter's Pass) + 3 leaves | At most once per 24 h. Grows the colony and adds score. |
-| Speed up a hand forage | 300 WIF | Once per 24 h for leaves, once for sugar. Collects that forage now. |
+| Feed the colony (`feedQueen`) | 100 WIF (80 with a Voter's Pass) + 3 leaves | At most once per 24 h. The queen eats 3 leaves, every ant eats 1 sugar (ants without sugar die), and what sugar is left hatches new ants at 2 sugar each. Grows the colony and adds score. Works while a raid marches on you: the queen's leaves and the ants' meal ignore the raid lock, but new ants only hatch from unlocked sugar. |
+| Speed up a hand forage | 300 WIF | Once per 24 h for leaves, once for sugar. Collects any waiting trips of that kind plus one more trip. |
 | Shield | 1,000 WIF | No new raids against you for 8 h, at most once per 24 h. |
 | Revive a starving queen | 2,000 + 20 per worker | Only in the 24 h after the queen has gone 72 h unfed. |
 
-**Free actions.** `tend` (collect hand forages and trail/farm output in one go), `digChamber`, `buildTrail`, `buildFarm` and `assignWorkers` (paid in leaves and sugar), plus the raid actions.
+**Free actions.** `tend` (collect hand forage trips and trail/farm output in one go), `digChamber`, `buildTrail`, `buildFarm` and `assignWorkers` (paid in leaves and sugar, never below the raid lock), plus the raid actions. The first aphid farm costs leaves only; every later farm costs the same amount in sugar too.
+
+**Gathering.**
+- **Trails and farms:** each assigned ant earns 2 a day (23,148 per second in 1e-9 units), accrued every second and spendable at once.
+- **Hand forage:** a leaf trip every 6 h brings 6 plus 0.5 per free ant, and a sugar trip every 3 h brings 4 plus 0.3 per free ant, both rounded up. Only the first 30 free ants count.
+- **Missed trips wait:** up to 2 of each kind stack. A partly grown trip keeps its progress unless the bank was full. The first trip after founding is ready at once.
 
 Prices are set in WIF and the owner can tune them within the caps below, so they are likely to change as the WIF price moves.
 
@@ -64,21 +69,21 @@ Prices are set in WIF and the owner can tune them within the caps below, so they
 
 **Raids, step by step.**
 
-1. **Seal.** `launchRaid`: the raider picks a target colony and up to 30% of their idle workers as soldiers, and submits a hash of the secret target resource. Nobody can read the target from the hash.
+1. **Seal.** `launchRaid`: the raider picks a target colony and submits a hash of the secret target resource. Every free (idle) ant marches, and the call reverts with `NoFreeAnts` if there are none. Nobody can read the target from the hash. At launch the defender's trail and farm output is accrued and 60% of their leaves and of their sugar is locked, so builds cannot dip below that (`StockLocked`). The lock is released when the raid settles or is collected. It never blocks feeding. You cannot launch (or avenge) while a raid is marching on your own colony (`UnderAttack`), and a colony can face only one raid at a time.
 2. **Guard.** `guard`: within 4 h, the defender may guess and guard one resource.
-3. **Reveal.** `reveal`: within the next 24 h, the raider reveals the target. The contract checks it matches the hash, then fixes a future drand round, the first one at least 30 s later.
+3. **Reveal.** `reveal`: within the next 24 h, the raider reveals the target. The contract checks it matches the hash, then fixes a future drand round, the first one at least 30 s later. The outcome comes from `rand = keccak256(signature, raidId)`. There are no win odds. With no guard the raider wins and takes a random 30-60% of the target resource. A guard on the other resource still lets the raider win and take 45-60%, so guessing wrong is worse than not guarding. A guard on the target resource fails the raid: the raider loses 25% of the marching ants (rounded down) and the defender takes 10-15% of a random resource from the raider. The share is `lo + (rand % 1000) % (60 - lo + 1)`, and the `RaidSettled` event's `roll` field is that percentage. Loot is capped at 8 per marching ant.
 4. **Settle.** `settle`: once that round is published, anyone submits its signature. The contract checks the signature is genuine for exactly that round, then derives the outcome from it.
-5. **Collect.** `collect`: anyone can close a raid that ended without a roll. If the raider never revealed, the soldiers are lost. If nobody settled within 48 h of the round, the soldiers come home.
+5. **Collect.** `collect`: anyone can close a raid that ended without a roll. If the raider never revealed, every marching ant is lost. If nobody settled within 48 h of the round, the ants come home. Either way the defender's lock is released.
 
 **Avenge.** When a raid settles with the raider winning, the defender's wallet gets one free raid back at the raider's wallet for 24 h (`AvengeGranted` is emitted). It is not granted if the raider loses or the raid was guarded.
-- `avenge(raider, soldiers, commitment)` works exactly like `launchRaid` against the raider's current colony: same soldier limit, range, shield, guard window, reveal and drand settle, and no bonus. The one difference is that it neither needs nor restarts the caller's raid cooldown.
+- `avenge(raider, commitment)` works exactly like `launchRaid` against the raider's current colony: all free ants march, same range, shield, guard window, reveal and drand settle, and no bonus. The differences are that it neither needs nor restarts the caller's raid cooldown, and it ignores the target's 12 h raid protection. It is still blocked by a shield, by the one-raid-at-a-time rule and by `UnderAttack`.
 - The grant is used once. It is deleted when `avenge` is called, so a second call reverts with `NoAvenge`.
 - A new win by the same raider over the same defender refreshes the expiry to 24 h from that settle.
 - If an `avenge` attempt reverts (for example the target is shielded), the grant is kept.
 - `avengeAvailable(defender, raider)` shows whether a grant is live and when it ends. `RaidLaunched` has an `isAvenge` flag.
-- Avenge never moves WIF. Like any raid, it only moves leaves, sugar and soldiers.
+- Avenge never moves WIF. Like any raid, it only moves leaves, sugar and ants.
 
-**Events and profiles.** Player events now name the colony owner's wallet (for example `Paid`, `ColonyFounded`, `QueenFed`, `Built`, `RaidLaunched`, `RaidSettled`), so the live feed needs no extra reads. `RaidLaunched` still keeps the target resource sealed. `getProfile(address)` returns a whole profile in one call: ants, capacity, buildings, assignments, free ants, leaves and sugar (including trail and farm output not yet collected), score, founding time and day, raid record, fed-until time, shield time and Voter's Pass. Each colony counts `raidsWon` and `raidsLost` (as raider) and `raidsFaced` and `raidsDefended` (as defender), only for settled raids. `seasonDay(season, timestamp)` gives the day of the season.
+**Events and profiles.** Player events now name the colony owner's wallet (for example `Paid`, `ColonyFounded`, `QueenFed`, `Built`, `RaidLaunched`, `RaidSettled`), so the live feed needs no extra reads. `RaidLaunched` still keeps the target resource sealed. `getProfile(address)` returns a whole profile in one call (it now also gives `raidableAt`, `nextRaidAt`, `lockedLeaves`, `lockedSugar`, `leafTrip` and `sugarTrip`; `raidableAt(colonyId)` is also a view of its own): ants, capacity, buildings, assignments, free ants, leaves and sugar (including trail and farm output not yet collected), score, founding time and day, raid record, fed-until time, shield time and Voter's Pass. Each colony counts `raidsWon` and `raidsLost` (as raider) and `raidsFaced` and `raidsDefended` (as defender), only for settled raids. `seasonDay(season, timestamp)` gives the day of the season.
 
 **Who can call what.**
 
@@ -96,8 +101,7 @@ Prices are set in WIF and the owner can tune them within the caps below, so they
 | `unlockSeasonNfts` | Owner only, and it always reverts (`NotYetAvailable`). A placeholder for the post-hackathon Season NFTs in [ROADMAP.md](ROADMAP.md). It cannot unlock anything. |
 
 **What the owner can change, and the limits.**
-- **Prices and cooldowns:** between ¼ and 4× their launch values.
-- **Raid win odds:** between 50 and 85 out of 100.
+- **Prices and cooldowns:** between ¼ and 4× their launch values. This includes the raider cooldown (12 h at launch) and `raidProtection` (12 h at launch).
 - **Guard window:** between 1 and 8 hours.
 - **Season length:** between 1 and 21 days. The current season's end can be moved, but only to a time in the future and no later than 21 days after the season started.
 - **Fixed in code, so the owner can never use them to hurt players:** the 72 h starvation timer, the 24 h revive window, the 48 h settle timeout and the 30 s randomness delay.
@@ -112,11 +116,12 @@ Every change emits an event (`ConfigUpdated`, `SeasonEndChanged`) that anyone ca
 - **Predict or grind a raid's outcome.** The roll comes from a drand round that's fixed at reveal and lies in the future, so nobody knows its signature in advance. Each round has exactly one valid signature, so a settler can't pick between outcomes.
 - **Submit a fake or recycled signature.** `settle` verifies the BLS signature against drand's public key for exactly the assigned round. A wrong signature, or a real one from a different round, reverts.
 - **Read the target and guard it perfectly.** The target is only a hash until the guard window closes.
-- **Back out of a bad raid.** Not revealing loses every soldier sent, which is worse than losing.
-- **Spam raids.** Each colony can launch one normal raid per 6 h (avenge raids skip this cooldown, but each needs a live grant from a raid you lost), a target can face at most 2 open raids, and you must close your finished raids before launching another.
+- **Back out of a bad raid.** Not revealing loses every marching ant, which is worse than losing (a failed raid costs only 25%).
+- **Trap a colony with the raid lock.** The lock covers 60% of leaves and sugar, never more, feeding ignores it, and it clears on settle or collect, including the 48 h timeout path. One raid at a time stops locks stacking.
+- **Spam raids.** Each colony can launch one normal raid per 12 h (avenge raids skip this cooldown, but each needs a live grant from a raid you lost), a target can face only 1 open raid, no normal raid can be launched on a colony for 12 h after the last one (so at most twice a day, three times with an Avenge), you cannot launch while a raid marches on you, and you must close your finished raids before launching another. `raidableAt(colonyId)` shows the later of shield end and protection end.
 - **Transfer a colony to dodge the one-per-wallet rule.** Colony NFTs can't be transferred between wallets.
 - **Use avenge against someone else.** It fails. The grant is stored for the exact pair of wallets (defender, raider), so `avenge` against any other wallet reverts with `NoAvenge`.
-- **Farm score by trading avenge raids with a friend.** Each avenge raid still needs the 4 h guard window, a reveal, a drand roll, the soldier limits and the collect-first rule. It is slower than normal raiding, and a raid win is worth the same +25 as any other. Each avenge also needs a fresh win by the other side, and expires after 24 h.
+- **Farm score by trading avenge raids with a friend.** Each avenge raid still needs the 4 h guard window, a reveal, a drand roll, the one-raid-at-a-time rule, the 12 h cooldown on the grant holder's own normal raids and the collect-first rule. It is slower than normal raiding, and a raid win is worth the same +25 as any other. Each avenge also needs a fresh win by the other side, and expires after 24 h.
 - **Unlock NFTs mid-season to sell pot entries.** `unlockSeasonNfts` is a placeholder that always reverts, and transfers between wallets revert in the token code itself. No call can change that.
 
 ---

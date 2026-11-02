@@ -98,12 +98,12 @@ export function describeEvent(ev: FeedEvent, me?: string | null): FeedLine | nul
           sentence: <>{S(defender, "guarded", "guarded")} the right store. {H(raider)} went home empty.</> };
       }
       return { ...base, actor: defender, kind: "DEFENDED", tone: "sub", shareText: "My colony held off a raid on C0LONY.",
-        sentence: <>{S(defender, "held off", "held off")} {H(raider)}{lost > 0 ? `. ${fmtInt(lost)} soldiers fell` : ""}</> };
+        sentence: <>{S(defender, "held off", "held off")} {H(raider)}{lost > 0 ? `. ${fmtInt(lost)} ants fell` : ""}</> };
     }
     case "collected": {
       const refunded = str(d.status) === "refunded";
       return { ...base, actor: raider, kind: "RECALLED", tone: "sub",
-        sentence: <>{isMe(raider ?? a0) ? "Your raid" : <>The raid of {H(raider ?? a0)}</>} ended without a roll{refunded ? ". The soldiers came home" : ""}</> };
+        sentence: <>{isMe(raider ?? a0) ? "Your raid" : <>The raid of {H(raider ?? a0)}</>} ended without a roll{refunded ? ". The ants came home" : ""}</> };
     }
     case "avenge_granted":
       return { ...base, actor: defender, kind: "AVENGE", tone: "raid",

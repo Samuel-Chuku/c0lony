@@ -3,10 +3,10 @@ import { useState } from "react";
 import { Button, Card, ResIcon } from "../../ui";
 import { fmtDuration, fmtRes, fmtWif } from "../../lib/format";
 import type { ColonyView, GameConfig } from "../../lib/game";
-import { Resource } from "../../lib/game";
+import { FORAGE_FREE_CAP, Resource } from "../../lib/game";
 import { speedUpResult, tendResult } from "../../lib/outcomes";
 import { useAction } from "../../lib/tx";
-import { waitingNow } from "./data";
+import { forageTrip, waitingNow } from "./data";
 
 type Props = { view: ColonyView; cfg: GameConfig; now: number; wif: bigint | undefined; onBuy: () => void };
 
@@ -17,6 +17,7 @@ export function ProductionCard({ view, cfg, now, wif, onBuy }: Props) {
   const tend = useAction("Tending", { success: tendResult });
   const speed = useAction("Speeding up", { success: (r) => speedUpResult(forage)(r) });
   const w = waitingNow(view, cfg, now);
+  const trip = forageTrip(view.idle);
   const d = view.data;
   const parts: string[] = [];
   if (w.leaves >= 1_000_000_000n) parts.push(`+${fmtRes(w.leaves)} leaves`);
@@ -43,6 +44,7 @@ export function ProductionCard({ view, cfg, now, wif, onBuy }: Props) {
         <div className="c0-prod__text">
           <div className="c0-prod__title">{w.nothing ? `Foragers home in ${fmtDuration(w.nextIn ?? 0)}` : "Trails and farms ready"}</div>
           <div className="c0-prod__line">{w.nothing ? "Trails and farms keep adding up while you wait." : parts.join(" · ")}</div>
+          <div className="c0-prod__line">Each trip: {trip.leaves} leaves · {trip.sugar} sugar{view.idle > FORAGE_FREE_CAP ? ` (your first ${FORAGE_FREE_CAP} free ants count)` : ` (${view.idle} free ants helping)`}</div>
         </div>
         <Button
           variant="paper"
@@ -59,7 +61,7 @@ export function ProductionCard({ view, cfg, now, wif, onBuy }: Props) {
         <button type="button" className="c0-fold__link" aria-expanded={false} onClick={() => setOpen(true)}>Want the foragers home now?</button>
       ) : (
         <div className="c0-fold">
-          <div className="c0-prod__line">Brings one forage home now and collects it. One speed-up per forage, once a day.</div>
+          <div className="c0-prod__line">Collects any forage that is home plus one more trip now. One speed-up per forage, once a day.</div>
           {options.map((o) => {
             const reason =
               o.state === "home" ? "already home"

@@ -13,8 +13,7 @@ contract AvengeTest is Base {
     uint64 internal b; // bob is raided and avenges
     uint64 internal c; // carol, a bystander
 
-    uint256 internal constant WIN = 0; // roll 1: the raider wins an unguarded raid
-    uint256 internal constant LOSS = 99; // roll 100: the raider loses
+    uint256 internal constant WIN = 0; // an unguarded raid always wins; 0 takes the lowest share
 
     function setUp() public override {
         super.setUp();
@@ -28,24 +27,33 @@ contract AvengeTest is Base {
 
     /// @dev Alice raids bob for sugar; the outcome is forced through the harness with a chosen random number.
     function _aliceRaidsBob(uint256 rand) internal returns (uint256 raidId) {
-        raidId = _launch(alice, a, b, 3, ColonyGame.Resource.Sugar);
+        raidId = _aliceRaidsBob(rand, ColonyGame.Resource.None);
+    }
+
+    /// @dev Bob guarding sugar makes alice lose.
+    function _aliceRaidsBob(uint256 rand, ColonyGame.Resource guardWith) internal returns (uint256 raidId) {
+        raidId = _launch(alice, a, b, ColonyGame.Resource.Sugar);
+        if (guardWith != ColonyGame.Resource.None) {
+            vm.prank(bob);
+            game.guard(raidId, guardWith);
+        }
         vm.warp(vm.getBlockTimestamp() + 4 hours);
         vm.prank(alice);
         game.reveal(raidId, ColonyGame.Resource.Sugar, _salt(alice, raidId));
         game.resolveWith(raidId, rand);
     }
 
-    function _avenge(address who, uint64 whoId, address target, uint32 soldiers) internal returns (uint256 raidId) {
+    function _avenge(address who, uint64 whoId, address target) internal returns (uint256 raidId) {
         raidId = game.nextRaidId(whoId);
         bytes32 commitment = game.commitmentFor(ColonyGame.Resource.Leaves, _salt(who, raidId), raidId);
         vm.prank(who);
-        game.avenge(target, soldiers, commitment);
+        game.avenge(target, commitment);
     }
 
     // ------------------------------------------------------------------ granting
 
     function test_grantedOnRaiderWin_withEvent() public {
-        uint256 raidId = _launch(alice, a, b, 3, ColonyGame.Resource.Sugar);
+        uint256 raidId = _launch(alice, a, b, ColonyGame.Resource.Sugar);
         vm.warp(vm.getBlockTimestamp() + 4 hours);
         vm.prank(alice);
         game.reveal(raidId, ColonyGame.Resource.Sugar, _salt(alice, raidId));
@@ -62,14 +70,14 @@ contract AvengeTest is Base {
     }
 
     function test_notGrantedWhenRaiderLoses() public {
-        _aliceRaidsBob(LOSS);
+        _aliceRaidsBob(WIN, ColonyGame.Resource.Sugar);
         (bool ok, uint64 at) = game.avengeAvailable(bob, alice);
         assertFalse(ok);
         assertEq(at, 0);
     }
 
     function test_notGrantedWhenGuarded() public {
-        uint256 raidId = _launch(alice, a, b, 3, ColonyGame.Resource.Sugar);
+        uint256 raidId = _launch(alice, a, b, ColonyGame.Resource.Sugar);
         vm.prank(bob);
         game.guard(raidId, ColonyGame.Resource.Sugar);
         vm.warp(vm.getBlockTimestamp() + 4 hours);
@@ -83,11 +91,11 @@ contract AvengeTest is Base {
     function test_newWinRefreshesExpiry() public {
         _aliceRaidsBob(WIN);
         (, uint64 first) = game.avengeAvailable(bob, alice);
-        vm.warp(vm.getBlockTimestamp() + 6 hours); // alice's cooldown
+        vm.warp(vm.getBlockTimestamp() + 12 hours); // alice's cooldown and bob's raid protection
         _aliceRaidsBob(WIN);
         (bool ok, uint64 second) = game.avengeAvailable(bob, alice);
         assertTrue(ok);
-        assertEq(second, first + 10 hours);
+        assertEq(second, first + 16 hours);
     }
 
     // ------------------------------------------------------------------ using it
@@ -97,25 +105,23 @@ contract AvengeTest is Base {
         uint256 raidId = game.nextRaidId(b);
         bytes32 commitment = game.commitmentFor(ColonyGame.Resource.Leaves, _salt(bob, raidId), raidId);
         vm.expectEmit(address(game));
-        emit ColonyGame.RaidLaunched(
-            raidId, b, a, bob, alice, 3, uint64(vm.getBlockTimestamp() + 4 hours), true
-        );
+        emit ColonyGame.RaidLaunched(raidId, b, a, bob, alice, 10, uint64(vm.getBlockTimestamp() + 4 hours), true);
         vm.prank(bob);
-        game.avenge(alice, 3, commitment);
+        game.avenge(alice, commitment);
         (uint64 raider, uint64 defender, uint32 soldiers,,,,,,,) = game.raids(raidId);
         assertEq(raider, b);
         assertEq(defender, a);
-        assertEq(soldiers, 3);
+        assertEq(soldiers, 10, "every free ant marches");
     }
 
     function test_avenge_usableOnce() public {
         _aliceRaidsBob(WIN);
-        _avenge(bob, b, alice, 1);
+        _avenge(bob, b, alice);
         (bool ok,) = game.avengeAvailable(bob, alice);
         assertFalse(ok, "cleared when used");
         vm.prank(bob);
         vm.expectRevert(ColonyGame.NoAvenge.selector);
-        game.avenge(alice, 1, bytes32(0));
+        game.avenge(alice, bytes32(0));
     }
 
     function test_avenge_expiresAfter24h() public {
@@ -125,43 +131,69 @@ contract AvengeTest is Base {
         assertFalse(ok);
         vm.prank(bob);
         vm.expectRevert(ColonyGame.NoAvenge.selector);
-        game.avenge(alice, 1, bytes32(0));
+        game.avenge(alice, bytes32(0));
     }
 
     function test_avenge_usableAtExactly24h() public {
         _aliceRaidsBob(WIN);
         vm.warp(vm.getBlockTimestamp() + 24 hours);
-        _avenge(bob, b, alice, 1);
+        _avenge(bob, b, alice);
     }
 
     function test_avenge_skipsCallersCooldown_andDoesNotRestartIt() public {
         _aliceRaidsBob(WIN);
-        // Bob raids carol, which starts his 6 h cooldown
+        uint64 k = _found(keeper);
+        // Bob raids carol, which starts his 12 h cooldown and sends all his free ants
         vm.prank(bob);
-        game.launchRaid(c, 1, bytes32(0));
+        game.launchRaid(c, bytes32(0));
+        game.setWorkers(b, 20, 10); // ten more free ants at home
         vm.prank(bob);
         vm.expectRevert(ColonyGame.NotReady.selector);
-        game.launchRaid(a, 1, bytes32(0));
+        game.launchRaid(k, bytes32(0));
         // ...but the avenge still goes through
-        _avenge(bob, b, alice, 1);
-        // and once the normal cooldown is over he can raid again: the avenge did not restart it
-        vm.warp(vm.getBlockTimestamp() + 6 hours);
-        game.setWorkers(b, 20, 10);
+        _avenge(bob, b, alice);
+        // and once the normal cooldown is over he passes the cooldown check: the avenge did not restart it
+        // (he has no free ants left, which is the next check)
+        vm.warp(vm.getBlockTimestamp() + 12 hours);
         vm.prank(bob);
-        game.launchRaid(c, 1, bytes32(0));
+        vm.expectRevert(ColonyGame.NoFreeAnts.selector);
+        game.launchRaid(k, bytes32(0));
     }
 
     function test_avenge_cooldownFreeButOtherRulesStillApply() public {
         _aliceRaidsBob(WIN);
+        game.setAssigned(b, 10, 0);
         vm.prank(bob);
-        vm.expectRevert(ColonyGame.BadSoldiers.selector);
-        game.avenge(alice, 4, bytes32(0)); // 30% of 10 idle = 3
+        vm.expectRevert(ColonyGame.NoFreeAnts.selector);
+        game.avenge(alice, bytes32(0));
+        game.setAssigned(b, 0, 0);
         game.setWorkers(a, 21, 10);
         vm.prank(bob);
         vm.expectRevert(ColonyGame.OutOfRange.selector);
-        game.avenge(alice, 1, bytes32(0));
+        game.avenge(alice, bytes32(0));
         (bool ok,) = game.avengeAvailable(bob, alice);
         assertTrue(ok, "a reverted attempt keeps the grant");
+    }
+
+    function test_avenge_ignoresTargetsRaidProtection() public {
+        _aliceRaidsBob(WIN);
+        // Carol raids alice, which protects alice from normal raids for 12 h
+        uint256 r = _launch(carol, c, a, ColonyGame.Resource.Leaves);
+        vm.warp(vm.getBlockTimestamp() + 4 hours);
+        vm.prank(carol);
+        game.reveal(r, ColonyGame.Resource.Leaves, _salt(carol, r));
+        game.resolveWith(r, WIN);
+        assertGt(game.raidableAt(a), vm.getBlockTimestamp());
+        _avenge(bob, b, alice);
+    }
+
+    function test_avenge_notWhileUnderAttack() public {
+        _aliceRaidsBob(WIN);
+        vm.warp(vm.getBlockTimestamp() + 8 hours); // bob's raid protection ends 12 h after alice launched
+        _launch(carol, c, b, ColonyGame.Resource.Leaves);
+        vm.prank(bob);
+        vm.expectRevert(ColonyGame.UnderAttack.selector);
+        game.avenge(alice, bytes32(0));
     }
 
     function test_avenge_blockedByRaidersShield() public {
@@ -170,28 +202,28 @@ contract AvengeTest is Base {
         game.shield();
         vm.prank(bob);
         vm.expectRevert(ColonyGame.TargetShielded.selector);
-        game.avenge(alice, 1, bytes32(0));
+        game.avenge(alice, bytes32(0));
     }
 
     function test_avenge_cannotTargetAnyoneElse() public {
         _aliceRaidsBob(WIN);
         vm.prank(bob);
         vm.expectRevert(ColonyGame.NoAvenge.selector);
-        game.avenge(carol, 1, bytes32(0));
+        game.avenge(carol, bytes32(0));
         vm.prank(carol);
         vm.expectRevert(ColonyGame.NoAvenge.selector);
-        game.avenge(alice, 1, bytes32(0));
+        game.avenge(alice, bytes32(0));
         vm.prank(alice);
         vm.expectRevert(ColonyGame.NoAvenge.selector);
-        game.avenge(bob, 1, bytes32(0));
+        game.avenge(bob, bytes32(0));
     }
 
     // ------------------------------------------------------------------ raid record and profile
 
     function test_raidRecord_counters() public {
         _aliceRaidsBob(WIN);
-        vm.warp(vm.getBlockTimestamp() + 6 hours);
-        _aliceRaidsBob(LOSS);
+        vm.warp(vm.getBlockTimestamp() + 12 hours);
+        _aliceRaidsBob(WIN, ColonyGame.Resource.Sugar);
         ColonyGame.Profile memory pa = game.getProfile(alice);
         ColonyGame.Profile memory pb = game.getProfile(bob);
         assertEq(pa.raidsWon, 1);
@@ -230,7 +262,7 @@ contract AvengeTest is Base {
         assertEq(p.trails, 1);
         assertEq(p.trailWorkers, 4);
         assertEq(p.freeAnts, 6);
-        assertEq(p.leaves - leavesNow, 4 * 3600 * 11_500, "trail output counted before tending");
+        assertEq(p.leaves - leavesNow, 4 * 3600 * 23_148, "trail output counted before tending");
     }
 
     function test_profile_foundedDay_laterInSeason() public {
@@ -260,7 +292,8 @@ contract AvengeTest is Base {
     function test_events_tend_build_assign_feed() public {
         vm.warp(T0 + 6 hours);
         vm.expectEmit(address(game));
-        emit ColonyGame.Tended(a, alice, 6 * RES, 3 * RES); // both hand forages ready; 10 workers add 0.8 -> 0 sugar
+        // First trips are ready at once (no pantry stacking): 6 + 0.5 x 10 free = 11 leaves, 4 + 0.3 x 10 = 7 sugar
+        emit ColonyGame.Tended(a, alice, 11 * RES, 7 * RES);
         vm.prank(alice);
         game.tend();
 
@@ -292,7 +325,7 @@ contract AvengeTest is Base {
     }
 
     function test_events_guardedNamesTheOwner() public {
-        uint256 raidId = _launch(alice, a, b, 3, ColonyGame.Resource.Sugar);
+        uint256 raidId = _launch(alice, a, b, ColonyGame.Resource.Sugar);
         vm.expectEmit(address(game));
         emit ColonyGame.Guarded(raidId, b, bob, ColonyGame.Resource.Leaves);
         vm.prank(bob);

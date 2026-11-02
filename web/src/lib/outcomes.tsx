@@ -102,13 +102,13 @@ export const revivedResult = (): SuccessContent => ({
 
 export const guardResult = (resource: number): SuccessContent => ({
   title: "Guarding " + resName(resource),
-  lines: [<>{iconOf(resource)} You&apos;re guarding {resName(resource)}.</>, "If they aim there, they lose half their soldiers."],
+  lines: [<>{iconOf(resource)} You&apos;re guarding {resName(resource)}.</>, "If they aim there, the raid fails and a quarter of their ants fall."],
 });
 
 export const sealedResult = (handle: string, soldiers: number, avenged: boolean) => (): SuccessContent => ({
   title: avenged ? `Avenge sealed on ${handle}` : `Raid sealed on ${handle}`,
   tone: "raid",
-  lines: [`${soldiers} ${soldiers === 1 ? "soldier" : "soldiers"} marching`, "Target hidden until the roll.", "Reveal it after their guard window closes."],
+  lines: [`${soldiers} ${soldiers === 1 ? "ant" : "ants"} marching`, "Target hidden until the roll.", "Reveal it after their guard window closes."],
 });
 
 export const revealResult = (): SuccessContent => ({
@@ -129,7 +129,7 @@ export const settleResult = (r: Rec, myOwner: string | null): SuccessContent => 
   let title = "Raid settled";
   if (outcome === Outcome.RaiderWon) {
     title = mineAsRaider ? "Raid won" : "Raid settled: the raider won";
-    lines.push(loot > 0n ? <>{mineAsRaider ? "Carried home" : "Taken"} {amt(loot, lootKind)}</> : "No loot this time.");
+    lines.push(loot > 0n ? <>{mineAsRaider ? "Carried home" : "Taken"} {amt(loot, lootKind)} · {String(e.roll)}% of the store</> : "No loot this time.");
   } else if (outcome === Outcome.Guarded) {
     title = mineAsRaider ? "Raid lost" : "Raid stopped";
     lines.push("The guard held the right store.");
@@ -137,7 +137,7 @@ export const settleResult = (r: Rec, myOwner: string | null): SuccessContent => 
     title = mineAsRaider ? "Raid lost" : "Raid held off";
     lines.push("The defenders held.");
   }
-  if (lost > 0) lines.push(`${lost} ${lost === 1 ? "soldier" : "soldiers"} fell`);
+  if (lost > 0) lines.push(`${lost} marching ${lost === 1 ? "ant" : "ants"} fell`);
   return { title, tone: "raid", lines };
 };
 
@@ -147,7 +147,7 @@ export const collectResult = (r: Rec): SuccessContent => {
   return {
     title: "Raid closed",
     tone: "raid",
-    lines: [lost > 0 ? `${lost} ${lost === 1 ? "soldier was" : "soldiers were"} lost for missing the reveal.` : "Your soldiers are home."],
+    lines: [lost > 0 ? `${lost} marching ${lost === 1 ? "ant was" : "ants were"} lost for missing the reveal.` : "Your ants are home."],
   };
 };
 

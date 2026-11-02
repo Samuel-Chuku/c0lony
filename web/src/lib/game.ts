@@ -122,6 +122,8 @@ export type ColonyRow = {
   shieldUntil: number;
   openIncoming: number;
   lastRaidLaunch: number;
+  /** When a normal raid can next be launched on this colony (shield and raid protection); 0 = now. */
+  raidableAt: number;
   foundedAt: number;
 };
 
@@ -133,10 +135,12 @@ export function useColonies() {
   return useQuery(
     "colonies",
     async () => {
-      const [season, next] = await Promise.all([
+      const [season, next, cfg] = await Promise.all([
         publicClient.readContract({ ...game, functionName: "currentSeason" }),
         publicClient.readContract({ ...game, functionName: "nextColonyId" }),
+        readConfig(),
       ]);
+      const protection = Number(cfg.raidProtection);
       const ids: bigint[] = [];
       for (let i = 1n; i < next; i++) ids.push(i);
       const rows: ColonyRow[] = [];
@@ -160,6 +164,7 @@ export function useColonies() {
             shieldUntil: Number(c.shieldUntil),
             openIncoming: c.openIncoming,
             lastRaidLaunch: Number(c.lastRaidLaunch),
+            raidableAt: Math.max(Number(c.shieldUntil), c.lastRaidedAt > 0n ? Number(c.lastRaidedAt) + protection : 0),
             foundedAt: Number(c.foundedAt),
           });
         }
@@ -206,24 +211,30 @@ export function inRange(myWorkers: number, theirWorkers: number): boolean {
   return theirWorkers * 2 >= myWorkers && theirWorkers <= myWorkers * 2;
 }
 
-/** Building costs, from the contract formulas (whole leaves; a farm costs the same in sugar too). */
-export function buildCosts(chambers: number, ants: number) {
+/**
+ * Building costs, from the contract formulas (whole leaves). Every farm after the first costs the same amount
+ * of sugar too; the first farm is leaves only.
+ */
+export function buildCosts(chambers: number, ants: number, farms = 0) {
+  const farm = Math.max(25, chambers, Math.floor(ants / 4));
   return {
     chamber: Math.max(10, chambers, Math.floor(ants / 5)),
     trail: Math.max(50, 2 * chambers, Math.floor(ants / 2)),
-    farm: Math.max(25, chambers, Math.floor(ants / 4)),
+    farm,
+    farmSugar: farms === 0 ? 0 : farm,
   };
 }
 
 export const WORKERS_PER_CHAMBER = 5;
 export const WORKERS_PER_BUILDING = 100;
-export const MAX_SOLDIER_PCT = 30;
 export const MIN_RAID_WORKERS = 10;
-
-/** Most soldiers a colony can send: 30% of idle workers, rounded down. */
-export function maxSoldiers(idle: number): number {
-  return Math.floor((idle * MAX_SOLDIER_PCT) / 100);
-}
+/** Each ant on a trail or farm brings 2 a day, earned every second. */
+export const PER_ANT_PER_DAY = 2;
+export const PER_ANT_PER_HOUR = PER_ANT_PER_DAY / 24;
+/** Forage trip bonuses count at most this many free ants. */
+export const FORAGE_FREE_CAP = 30;
+/** Loot shares and caps, matching ColonyGame.sol. */
+export const LOOT = { minPct: 30, wrongGuardMinPct: 45, maxPct: 60, perAnt: 8, guardedLossPct: 25, lockPct: 60 } as const;
 
 /**
  * Estimated pot share now, using the payout rule in SeasonPot: half the pot split by score among qualifying

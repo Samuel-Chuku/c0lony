@@ -59,9 +59,10 @@ function Guide({ c }: { c?: GameConfig }) {
       <Sec title="Leaves and sugar">
         <UL
           items={[
-            <>Hand foragers bring <ResIcon name="leaf" size={16} label="leaves" /> every {d(c?.leafForageCooldown)} and <ResIcon name="sugar" size={16} label="sugar" /> every {d(c?.sugarForageCooldown)}. Tend collects them.</>,
-            <>Speed up finishes a forage now for {w(c?.speedUpPrice)}, once per {d(c?.speedUpCooldown)}.</>,
-            <>Trails make leaves and farms make sugar nonstop while ants are assigned to them.</>,
+            <>Hand foragers bring <ResIcon name="leaf" size={16} label="leaves" /> every {d(c?.leafForageCooldown)}: 6, plus 0.5 for each free ant. And <ResIcon name="sugar" size={16} label="sugar" /> every {d(c?.sugarForageCooldown)}: 4, plus 0.3 for each free ant. Only your first 30 free ants count. Tend collects them.</>,
+            <>If you are away, up to two trips of each wait for you.</>,
+            <>Speed up collects what is home plus one more trip for {w(c?.speedUpPrice)}, once per {d(c?.speedUpCooldown)}.</>,
+            <>Every ant on a trail or farm brings 2 a day, earned every second. Your first farm costs leaves only.</>,
           ]}
         />
       </Sec>
@@ -72,7 +73,7 @@ function Guide({ c }: { c?: GameConfig }) {
           <tbody>
             <tr><td><Ico name="chamber">Chamber</Ico></td><td>5 ants</td><td>the most of 10, your chambers, or ants ÷ 5, in leaves</td></tr>
             <tr><td><Ico name="trail">Trail</Ico></td><td>up to 100 ants, makes leaves</td><td>the most of 50, 2 × chambers, or ants ÷ 2, in leaves</td></tr>
-            <tr><td><Ico name="farm">Farm</Ico></td><td>up to 100 ants, makes sugar</td><td>the most of 25, chambers, or ants ÷ 4, in leaves and the same in sugar</td></tr>
+            <tr><td><Ico name="farm">Farm</Ico></td><td>up to 100 ants, makes sugar</td><td>the most of 25, chambers, or ants ÷ 4, in leaves; from the second farm on, the same in sugar too</td></tr>
           </tbody>
         </table>
         <P>Costs grow as your colony grows. Ants not assigned to a trail or farm are free ants: they can raid and guard.</P>
@@ -81,19 +82,20 @@ function Guide({ c }: { c?: GameConfig }) {
       <Sec title="Raids">
         <UL
           items={[
-            <>You need 10 ants. Send up to 30% of your free ants. Targets must be between half and double your size.</>,
+            <>You need 10 ants. All your free ants march; ants on trails and farms stay home. Targets must be between half and double your size.</>,
             <>You seal your target, leaves or sugar, so nobody can see it. The defender has {d(c?.guardWindow)} to guard one of the two.</>,
-            <>Your odds are {pct(c?.winOddsUnguarded)} if they guard nothing, and {pct(c?.winOddsGuardedOther)} if they guard the other resource.</>,
-            <>If they guard the right one, you lose half your soldiers and the defender takes 10 to 15% of your stock of a random resource.</>,
-            <>A win takes 20 to 30% of the target stock, capped at 5 per soldier.</>,
-            <>Raids can be launched once per {d(c?.raidCooldown)}.</>,
-            <>The roll comes from a public drand round, so anyone can check it was fair.</>,
+            <>No guard: you win and take 30 to 60% of the target. Guard on the other resource: you win and take 45 to 60%.</>,
+            <>Guard on your target: the raid fails, a quarter of your marching ants fall, and the defender takes 10 to 15% of your stock of a random resource.</>,
+            <>Each marching ant carries at most 8, so bigger raids carry more.</>,
+            <>While a raid marches on you, 60% of your leaves and sugar is held back until it lands. Your ants still eat.</>,
+            <>You can launch one raid per {d(c?.raidCooldown)}. A colony can be raided once at a time, then not again for {d(c?.raidProtection)}. You can&apos;t launch a raid while one is marching on you.</>,
+            <>The share comes from a public drand round, so anyone can check it was fair.</>,
           ]}
         />
       </Sec>
 
       <Sec title="Avenge">
-        <P>If someone wins a raid against you, you get a free raid back at them for {AVENGE_HOURS} hours. It skips your raid cooldown and can be used once.</P>
+        <P>If someone wins a raid against you, you get a free raid back at them for {AVENGE_HOURS} hours. It skips your raid cooldown and their raid protection, and can be used once.</P>
       </Sec>
 
       <Sec title="Shield">

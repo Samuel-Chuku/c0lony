@@ -54,10 +54,10 @@ export function IncomingBanner({ raid, guardWindow }: { raid: Raid; guardWindow:
       </div>
       {guarded ? (
         <p style={{ margin: 0, fontSize: 13 }}>
-          <ResIcon name={guarded === "leaves" ? "leaf" : "sugar"} size={16} /> You&apos;re guarding {guarded}. If they aim there, they lose half their soldiers.
+          <ResIcon name={guarded === "leaves" ? "leaf" : "sugar"} size={16} /> You&apos;re guarding {guarded}. If they aim there, the raid fails and a quarter of their ants fall.
         </p>
       ) : (
-        <p style={{ margin: 0, fontSize: 13 }}>Guess what they will target. A right guess costs them half their soldiers.</p>
+        <p style={{ margin: 0, fontSize: 13 }}>Guess what they will target. Right: the raid fails. Wrong: they take a bigger share. No guard: they take 30 to 60%.</p>
       )}
       {action.error ? <div className="c0-blocked" role="alert">{action.error}</div> : null}
       <ShieldButton full />

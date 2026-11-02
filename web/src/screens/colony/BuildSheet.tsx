@@ -1,9 +1,10 @@
 "use client";
 // Bottom sheet "Build": three upgrades and the Assign ants steppers.
 import { useEffect, useState } from "react";
-import { BottomSheet, Button, ResIcon, Stepper, type ResIconName } from "../../ui";
+import { BottomSheet, Button, ResIcon, Slider, Stepper, type ResIconName } from "../../ui";
 import { RES, fmtRes } from "../../lib/format";
-import { buildCosts, type Profile } from "../../lib/game";
+import { FORAGE_FREE_CAP, PER_ANT_PER_DAY, PER_ANT_PER_HOUR, buildCosts, type Profile } from "../../lib/game";
+import { forageTrip } from "./data";
 import { txUrl } from "../../lib/chain";
 import { assignResult, builtResult } from "../../lib/outcomes";
 import { useAction } from "../../lib/tx";
@@ -80,6 +81,17 @@ function UpgradeRow({ icon, count, name, effect, cost, verb, busyVerb, have, bus
   );
 }
 
+/** Live earnings for the ants on a slider: "+0.92 leaves an hour · 22 a day". */
+function Rate({ kind, ants }: { kind: "leaf" | "sugar"; ants: number }) {
+  const perHour = ants * PER_ANT_PER_HOUR;
+  return (
+    <div className="c0-rate" aria-live="polite">
+      <ResIcon name={kind} size={16} label={kind === "leaf" ? "leaves" : "sugar"} />
+      <b>+{perHour >= 10 ? perHour.toFixed(1) : perHour.toFixed(2)}</b> an hour · {ants * PER_ANT_PER_DAY} a day
+    </div>
+  );
+}
+
 export function BuildSheet({ open, onClose, profile }: { open: boolean; onClose: () => void; profile: Profile }) {
   const dig = useAction("Digging", { success: builtResult("nest chamber", "nest chambers") });
   const trail = useAction("Building", { success: builtResult("leafcutter trail", "leafcutter trails") });
@@ -96,10 +108,11 @@ export function BuildSheet({ open, onClose, profile }: { open: boolean; onClose:
     }
   }, [open, profile.trailWorkers, profile.farmWorkers]);
 
-  const costs = buildCosts(profile.chambers, profile.ants);
+  const costs = buildCosts(profile.chambers, profile.ants, profile.farms);
   const free = profile.ants - profile.soldiersOut - trailW - farmW;
   const trailMax = Math.min(profile.trails * 100, trailW + Math.max(0, free));
   const farmMax = Math.min(profile.farms * 100, farmW + Math.max(0, free));
+  const trip = forageTrip(free);
   const unchanged = trailW === profile.trailWorkers && farmW === profile.farmWorkers;
   const noJobs = profile.trails === 0 && profile.farms === 0;
   const plural = (n: number, one: string, many: string) => (n === 1 ? one : many);
@@ -144,8 +157,8 @@ export function BuildSheet({ open, onClose, profile }: { open: boolean; onClose:
             icon="farm"
             count={profile.farms}
             name="Aphid farm"
-            effect={`Each holds up to 100 ants herding aphids for sugar`}
-            cost={{ leaves: costs.farm, sugar: costs.farm }}
+            effect={profile.farms === 0 ? "Holds up to 100 ants herding aphids for sugar · your first farm costs no sugar" : "Each holds up to 100 ants herding aphids for sugar"}
+            cost={{ leaves: costs.farm, sugar: costs.farmSugar || undefined }}
             verb="Build"
             busyVerb="Building…"
             have={profile}
@@ -157,7 +170,7 @@ export function BuildSheet({ open, onClose, profile }: { open: boolean; onClose:
 
         <div className="c0-assign__head">
           <h3 className="c0-assign__title">Assign ants</h3>
-          <span className="c0-urow__gives">free · collects first</span>
+          <span className="c0-urow__gives">each ant brings {PER_ANT_PER_DAY} a day, every second</span>
         </div>
         {noJobs ? (
           <>
@@ -182,6 +195,12 @@ export function BuildSheet({ open, onClose, profile }: { open: boolean; onClose:
                 <Stepper value={trailW} min={0} max={trailMax} onChange={setTrailW} label="Ants on trails" decLabel="Fewer ants on trails" incLabel="More ants on trails" />
               </div>
             ) : null}
+            {profile.trails > 0 ? (
+              <>
+                <Slider value={trailW} max={trailMax} onChange={setTrailW} label="Ants on trails" />
+                <Rate kind="leaf" ants={trailW} />
+              </>
+            ) : null}
             {profile.farms > 0 ? (
               <div className="c0-assign__row">
                 <div>
@@ -192,10 +211,19 @@ export function BuildSheet({ open, onClose, profile }: { open: boolean; onClose:
                 <Stepper value={farmW} min={0} max={farmMax} onChange={setFarmW} label="Ants on farms" decLabel="Fewer ants on farms" incLabel="More ants on farms" />
               </div>
             ) : null}
+            {profile.farms > 0 ? (
+              <>
+                <Slider value={farmW} max={farmMax} onChange={setFarmW} label="Ants on farms" />
+                <Rate kind="sugar" ants={farmW} />
+              </>
+            ) : null}
             <div className="c0-assign__row">
               <div>
                 <div className="c0-assign__label">{Math.max(0, free)} free</div>
-                <div className="c0-assign__hint">can raid and guard</div>
+                <div className="c0-assign__hint">
+                  march on raids · each forage trip brings {trip.leaves} leaves and {trip.sugar} sugar
+                  {free > FORAGE_FREE_CAP ? ` (only ${FORAGE_FREE_CAP} free ants count)` : ""}
+                </div>
               </div>
             </div>
           </>

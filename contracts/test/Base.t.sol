@@ -45,6 +45,12 @@ contract ColonyGameHarness is ColonyGame {
         colonies[id].sugar = sugar;
     }
 
+    /// @dev Puts workers on trails and farms without building them, to control how many ants are free.
+    function setAssigned(uint64 id, uint32 trailWorkers, uint32 farmWorkers) external {
+        colonies[id].trailWorkers = trailWorkers;
+        colonies[id].farmWorkers = farmWorkers;
+    }
+
     function setWorkers(uint64 id, uint32 workers, uint32 chambers) external {
         colonies[id].workers = workers;
         colonies[id].chambers = chambers;
@@ -131,14 +137,15 @@ abstract contract Base is Test {
         return keccak256(abi.encode("salt", who, raidId));
     }
 
-    function _launch(address raider, uint64 raiderId, uint64 defenderId, uint32 soldiers, ColonyGame.Resource target)
+    /// @dev Every free ant marches; use setAssigned first to march fewer.
+    function _launch(address raider, uint64 raiderId, uint64 defenderId, ColonyGame.Resource target)
         internal
         returns (uint256 raidId)
     {
         raidId = game.nextRaidId(raiderId);
         bytes32 commitment = game.commitmentFor(target, _salt(raider, raidId), raidId);
         vm.prank(raider);
-        game.launchRaid(defenderId, soldiers, commitment);
+        game.launchRaid(defenderId, commitment);
     }
 
     /// @dev Warps so that reveal is assigned exactly `round`, then reveals.

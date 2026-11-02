@@ -12,7 +12,7 @@ contract RefundAccuracyTest is Base {
         uint64 b = _found(bob);
         uint64 round = ROUND_DAY0;
         vm.warp(DrandVerifier.roundTime(round) - 30 - 4 hours - 10 minutes);
-        uint256 raidId = _launch(alice, a, b, 3, ColonyGame.Resource.Sugar);
+        uint256 raidId = _launch(alice, a, b, ColonyGame.Resource.Sugar);
         _revealAtRound(alice, raidId, ColonyGame.Resource.Sugar, round);
         vm.warp(DrandVerifier.roundTime(round) + 60);
 

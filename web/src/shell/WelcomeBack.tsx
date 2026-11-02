@@ -157,7 +157,7 @@ export function WelcomeBack() {
               error={feed.error}
               onClick={() => void feed.run({ functionName: "feedQueen", args: [prices.proof], wif: feedPrice }).then((h) => { if (h) close(); })}
             >
-              Feed her · {feedPrice !== undefined ? fmtWif(feedPrice) : "…"} WIF
+              Feed the colony · {feedPrice !== undefined ? fmtWif(feedPrice) : "…"} WIF
             </Button>
           ) : null}
           {marching ? (

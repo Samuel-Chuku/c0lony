@@ -13,6 +13,7 @@ import { NeighbourItem } from "./NeighbourItem";
 import { RaidTrack } from "./RaidTrack";
 import { Tracker } from "./Tracker";
 import { SITE_URL, xIntent } from "./shared";
+import { fmtDuration } from "../../lib/format";
 import { demoCfg, demoData } from "./demo";
 
 export function RaidsScreen() {
@@ -62,6 +63,8 @@ export function RaidsScreen() {
   ];
   const collectFirst = (raids ?? []).some((r) => r.status === RaidStatus.Sealed && now >= Number(r.launchedAt) + guardWindow + revealWindow);
   const marchingOn = new Set(outgoing.map((r) => String(r.defender)));
+  const underAttack = incoming.some((r) => r.status === RaidStatus.Sealed || r.status === RaidStatus.Revealed);
+  const myRaidableIn = mine ? mine.raidableAt - now : 0;
 
   const neighbours = useMemo(() => {
     if (!colonies || !profile || !alive) return [];
@@ -104,6 +107,13 @@ export function RaidsScreen() {
       {gate}
       {gate === null && cfg ? (
         <>
+          <div className={`c0-safe${underAttack ? " c0-safe--raid" : ""}`} role="status">
+            {underAttack
+              ? "A raid is marching on you · 60% of your stock is held until it lands"
+              : myRaidableIn > 0
+                ? <>You can be raided again in <b>{fmtDuration(myRaidableIn)}</b></>
+                : "You can be raided now · one raid at a time, then 12h of peace"}
+          </div>
           {banners.map((r) => <IncomingBanner key={String(r.id)} raid={r} guardWindow={guardWindow} />)}
           {tracked.map(({ r, role }) => (
             <RaidTrack key={String(r.id)} raid={r} role={role} guardWindow={guardWindow} revealWindow={revealWindow} onClosed={(id) => setClosed((c) => [...c, id])} />
@@ -131,7 +141,7 @@ export function RaidsScreen() {
                 <NeighbourItem
                   key={String(row.id)}
                   row={row}
-                  ctx={{ me: myAddr!, cooldownLeft, collectFirst, marchingOn }}
+                  ctx={{ me: myAddr!, cooldownLeft, collectFirst, underAttack, marchingOn }}
                   onRaid={openRaid}
                   onProfile={(w) => router.push(`/colony?addr=${w}`)}
                 />

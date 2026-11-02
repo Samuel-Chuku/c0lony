@@ -106,9 +106,10 @@ export function QueenCard({ addr, profile, view, cfg, season, wif, now, onBuy }:
           error={feed.error}
           onClick={() => void feed.run({ functionName: "feedQueen", args: [prices.proof], wif: price })}
         >
-          Feed her · {price !== undefined ? fmtWif(price) : "…"} WIF
+          Feed the colony · {price !== undefined ? fmtWif(price) : "…"} WIF
         </Button>
       )}
+      {!waiting ? <p className="c0-qcard__note">The queen eats 3 leaves and every ant eats 1 sugar. Ants without sugar die; new ants hatch from what is left.</p> : null}
       {!waiting && prices.passApplies && price !== undefined ? <Hand size={15}>Voter&apos;s Pass price: {fmtWif(price)} WIF</Hand> : null}
     </Card>
   );

@@ -1,6 +1,6 @@
 "use client";
 // Shared reads and small derivations for the Colony screen and the Welcome-back pop-up.
-import { useGameConfig, usePrices, useProfile, readColony, type ColonyView, type GameConfig } from "../../lib/game";
+import { FORAGE_FREE_CAP, useGameConfig, usePrices, useProfile, readColony, type ColonyView, type GameConfig } from "../../lib/game";
 import { RES } from "../../lib/format";
 import { useQuery } from "../../lib/store";
 import { useVoterProof } from "../../lib/voter";
@@ -38,17 +38,28 @@ export type Waiting = {
   nothing: boolean;
 };
 
-const ready = (last: bigint, cooldown: number, now: number) => last === 0n || now >= Number(last) + cooldown;
+/** Forage trips waiting since `last`: the first is ready at once, missed trips wait, at most 2. */
+const tripsWaiting = (last: bigint, cooldown: number, now: number) =>
+  last === 0n ? 1 : Math.min(2, Math.max(0, Math.floor((now - Number(last)) / cooldown)));
+
+/** What one forage trip brings with `free` free ants (the first 30 count): leaves 6 + 0.5 each, sugar 4 + 0.3 each, rounded up. */
+export function forageTrip(free: number) {
+  const f = Math.min(Math.max(0, free), FORAGE_FREE_CAP);
+  return { leaves: 6 + Math.ceil((f * 5) / 10), sugar: 4 + Math.ceil((f * 3) / 10) };
+}
 
 /** What Tend would collect now: trail and farm output plus every hand forage that is home. */
 export function waitingNow(view: ColonyView, cfg: GameConfig, now: number): Waiting {
   const d = view.data;
   const leafCd = Number(cfg.leafForageCooldown);
   const sugarCd = Number(cfg.sugarForageCooldown);
-  const leafReady = ready(d.lastLeafForage, leafCd, now);
-  const sugarReady = ready(d.lastSugarForage, sugarCd, now);
-  const leaves = view.pendingLeaves + (leafReady ? 6n * RES : 0n);
-  const sugar = view.pendingSugar + (sugarReady ? BigInt(3 + Math.floor((d.workers * 8) / 100)) * RES : 0n);
+  const leafTrips = tripsWaiting(d.lastLeafForage, leafCd, now);
+  const sugarTrips = tripsWaiting(d.lastSugarForage, sugarCd, now);
+  const leafReady = leafTrips > 0;
+  const sugarReady = sugarTrips > 0;
+  const trip = forageTrip(view.idle);
+  const leaves = view.pendingLeaves + BigInt(leafTrips * trip.leaves) * RES;
+  const sugar = view.pendingSugar + BigInt(sugarTrips * trip.sugar) * RES;
   const waits: number[] = [];
   if (!leafReady) waits.push(Number(d.lastLeafForage) + leafCd - now);
   if (!sugarReady) waits.push(Number(d.lastSugarForage) + sugarCd - now);

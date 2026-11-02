@@ -10,6 +10,8 @@ export type NeighbourCtx = {
   cooldownLeft: number;
   /** I have a finished raid I haven't settled or collected yet. */
   collectFirst: boolean;
+  /** A raid is marching on me, so I can't launch one. */
+  underAttack: boolean;
   /** Colony ids I currently have a raid out against. */
   marchingOn: Set<string>;
 };
@@ -29,6 +31,7 @@ export function NeighbourItem({ row, ctx, onRaid, onProfile }: Props) {
   const isRaider = !!avenge?.ok;
   const sealedOn = ctx.marchingOn.has(String(row.id));
   const shieldLeft = row.shieldUntil - now;
+  const safeLeft = row.raidableAt - now;
 
   let note = `queen fed ${timeAgo(row.fedUntil - 72 * 3600, now)}`;
   if (isRaider && avenge) note = `raided you · free avenge, ${Math.max(1, Math.floor((avenge.expiresAt - now) / 3600))}h`;
@@ -40,8 +43,12 @@ export function NeighbourItem({ row, ctx, onRaid, onProfile }: Props) {
     right = <Button variant="raid" size="compact" icon="raids" onClick={() => onRaid(row, true)}>Avenge</Button>;
   } else if (shieldLeft > 0) {
     right = <div className="c0-nstate"><span>shielded</span><b>{fmtDuration(shieldLeft)}</b></div>;
-  } else if (row.openIncoming >= 2) {
-    right = <div className="c0-nstate"><span>busy</span><b>2 raids</b></div>;
+  } else if (row.openIncoming > 0) {
+    right = <div className="c0-nstate"><span>under raid</span><b>busy</b></div>;
+  } else if (safeLeft > 0) {
+    right = <div className="c0-nstate"><span>raid in</span><b>{fmtDuration(safeLeft)}</b></div>;
+  } else if (ctx.underAttack) {
+    right = <div className="c0-nstate"><span>you&apos;re</span><b>raided</b></div>;
   } else if (ctx.collectFirst) {
     right = <div className="c0-nstate"><span>busy</span><b>collect</b></div>;
   } else if (ctx.cooldownLeft > 0) {

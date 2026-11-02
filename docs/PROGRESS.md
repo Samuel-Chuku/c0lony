@@ -42,6 +42,20 @@
 - [x] Locked colony NFT (no transfers during a season); `unlockSeasonNfts` placeholder
 - [x] Third testnet deployment with all of the above, verified on Blockscout
 
+## Economy and raid redesign (2026-11-02)
+- [x] Trails and farms pay 2 a day per ant; hand forage trips scale with free ants (cap 30), stack up to 2, keep partial progress; first trip ready at once
+- [x] Speed-up collects waiting trips plus one; first aphid farm costs leaves only
+- [x] Feeding ignores the raid lock for the queen and the ants' meal; button reads "Feed the colony"
+- [x] Raids: all free ants march (no picker, `NoFreeAnts`), 12 h raider cooldown, one raid at a time, 12 h target protection (`raidProtection`, `raidableAt`), no raids while under attack (`UnderAttack`), Avenge ignores cooldown and protection
+- [x] No win odds: guaranteed win unguarded (30-60%), wrong guard 45-60%, right guard fails the raid (25% of ants lost, defender takes 10-15%); loot cap 8 per ant
+- [x] 60% raid lock on the defender, released on settle and collect; `getProfile` gains `raidableAt`, `nextRaidAt`, `lockedLeaves`, `lockedSugar`, `leafTrip`, `sugarTrip`
+- [x] 140 Foundry tests pass (was 127), including fuzzed loot maths; `settle` gas 314,958
+- [x] Fourth testnet deployment, verified on Blockscout (third retired), voter root posted
+- [x] App: ants slider with live earnings, first farm free of sugar shown in costs, marching-ants line on transaction buttons, raid protection and "under raid" timers on the Raids tab, launch sheet and raid reports show what is carried and the share taken
+- [ ] Switch the keeper on the VPS from the third to the fourth deployment (after the next push, with the event cursor reset)
+- [ ] Full testnet play-through of the new raid loop (docs/TESTNET_RUN.md still records the older rules)
+- [ ] Recheck the settle refund against a real receipt on the new deployment
+
 ## Quicknode
 - [x] RPC from env (ROBINHOOD_RPC_URL, ROBINHOOD_TESTNET_RPC_URL) in Foundry, keeper and web examples
 - [x] Keeper intake: one EventSource interface; Streams webhook (HMAC-checked) or eth_getLogs poller (15 s), switched by EVENT_SOURCE

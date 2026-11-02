@@ -164,11 +164,6 @@ export const colonyGameAbi = [
         "internalType": "address"
       },
       {
-        "name": "soldiers",
-        "type": "uint32",
-        "internalType": "uint32"
-      },
-      {
         "name": "commitment",
         "type": "bytes32",
         "internalType": "bytes32"
@@ -764,6 +759,11 @@ export const colonyGameAbi = [
                 "internalType": "uint64"
               },
               {
+                "name": "lastRaidedAt",
+                "type": "uint64",
+                "internalType": "uint64"
+              },
+              {
                 "name": "shieldUntil",
                 "type": "uint64",
                 "internalType": "uint64"
@@ -772,6 +772,16 @@ export const colonyGameAbi = [
                 "name": "lastShield",
                 "type": "uint64",
                 "internalType": "uint64"
+              },
+              {
+                "name": "lockedLeaves",
+                "type": "uint128",
+                "internalType": "uint128"
+              },
+              {
+                "name": "lockedSugar",
+                "type": "uint128",
+                "internalType": "uint128"
               },
               {
                 "name": "score",
@@ -871,6 +881,11 @@ export const colonyGameAbi = [
             "internalType": "uint64"
           },
           {
+            "name": "raidProtection",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
             "name": "guardWindow",
             "type": "uint64",
             "internalType": "uint64"
@@ -894,16 +909,6 @@ export const colonyGameAbi = [
             "name": "seasonLength",
             "type": "uint64",
             "internalType": "uint64"
-          },
-          {
-            "name": "winOddsUnguarded",
-            "type": "uint8",
-            "internalType": "uint8"
-          },
-          {
-            "name": "winOddsGuardedOther",
-            "type": "uint8",
-            "internalType": "uint8"
           },
           {
             "name": "voterDiscountPct",
@@ -1047,6 +1052,36 @@ export const colonyGameAbi = [
             "internalType": "uint64"
           },
           {
+            "name": "raidableAt",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "nextRaidAt",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "lockedLeaves",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "lockedSugar",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "leafTrip",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "sugarTrip",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
             "name": "hasVoterPass",
             "type": "bool",
             "internalType": "bool"
@@ -1183,6 +1218,11 @@ export const colonyGameAbi = [
             "internalType": "uint64"
           },
           {
+            "name": "raidProtection",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
             "name": "guardWindow",
             "type": "uint64",
             "internalType": "uint64"
@@ -1208,16 +1248,6 @@ export const colonyGameAbi = [
             "internalType": "uint64"
           },
           {
-            "name": "winOddsUnguarded",
-            "type": "uint8",
-            "internalType": "uint8"
-          },
-          {
-            "name": "winOddsGuardedOther",
-            "type": "uint8",
-            "internalType": "uint8"
-          },
-          {
             "name": "voterDiscountPct",
             "type": "uint8",
             "internalType": "uint8"
@@ -1235,11 +1265,6 @@ export const colonyGameAbi = [
         "name": "defenderId",
         "type": "uint64",
         "internalType": "uint64"
-      },
-      {
-        "name": "soldiers",
-        "type": "uint32",
-        "internalType": "uint32"
       },
       {
         "name": "commitment",
@@ -1379,6 +1404,25 @@ export const colonyGameAbi = [
         "name": "feedPrice",
         "type": "uint256",
         "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "raidableAt",
+    "inputs": [
+      {
+        "name": "colonyId",
+        "type": "uint64",
+        "internalType": "uint64"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "at",
+        "type": "uint64",
+        "internalType": "uint64"
       }
     ],
     "stateMutability": "view"
@@ -1680,6 +1724,11 @@ export const colonyGameAbi = [
             "internalType": "uint64"
           },
           {
+            "name": "raidProtection",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
             "name": "guardWindow",
             "type": "uint64",
             "internalType": "uint64"
@@ -1703,16 +1752,6 @@ export const colonyGameAbi = [
             "name": "seasonLength",
             "type": "uint64",
             "internalType": "uint64"
-          },
-          {
-            "name": "winOddsUnguarded",
-            "type": "uint8",
-            "internalType": "uint8"
-          },
-          {
-            "name": "winOddsGuardedOther",
-            "type": "uint8",
-            "internalType": "uint8"
           },
           {
             "name": "voterDiscountPct",
@@ -2269,6 +2308,11 @@ export const colonyGameAbi = [
             "internalType": "uint64"
           },
           {
+            "name": "raidProtection",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
             "name": "guardWindow",
             "type": "uint64",
             "internalType": "uint64"
@@ -2292,16 +2336,6 @@ export const colonyGameAbi = [
             "name": "seasonLength",
             "type": "uint64",
             "internalType": "uint64"
-          },
-          {
-            "name": "winOddsUnguarded",
-            "type": "uint8",
-            "internalType": "uint8"
-          },
-          {
-            "name": "winOddsGuardedOther",
-            "type": "uint8",
-            "internalType": "uint8"
           },
           {
             "name": "voterDiscountPct",
@@ -2372,6 +2406,11 @@ export const colonyGameAbi = [
             "internalType": "uint64"
           },
           {
+            "name": "raidProtection",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
             "name": "guardWindow",
             "type": "uint64",
             "internalType": "uint64"
@@ -2395,16 +2434,6 @@ export const colonyGameAbi = [
             "name": "seasonLength",
             "type": "uint64",
             "internalType": "uint64"
-          },
-          {
-            "name": "winOddsUnguarded",
-            "type": "uint8",
-            "internalType": "uint8"
-          },
-          {
-            "name": "winOddsGuardedOther",
-            "type": "uint8",
-            "internalType": "uint8"
           },
           {
             "name": "voterDiscountPct",
@@ -3090,11 +3119,6 @@ export const colonyGameAbi = [
   },
   {
     "type": "error",
-    "name": "BadSoldiers",
-    "inputs": []
-  },
-  {
-    "type": "error",
     "name": "BadVoterSignature",
     "inputs": []
   },
@@ -3238,6 +3262,11 @@ export const colonyGameAbi = [
   },
   {
     "type": "error",
+    "name": "NoFreeAnts",
+    "inputs": []
+  },
+  {
+    "type": "error",
     "name": "NotAlive",
     "inputs": []
   },
@@ -3356,6 +3385,11 @@ export const colonyGameAbi = [
   },
   {
     "type": "error",
+    "name": "StockLocked",
+    "inputs": []
+  },
+  {
+    "type": "error",
     "name": "StringTooLong",
     "inputs": [
       {
@@ -3372,6 +3406,11 @@ export const colonyGameAbi = [
   },
   {
     "type": "error",
+    "name": "TargetProtected",
+    "inputs": []
+  },
+  {
+    "type": "error",
     "name": "TargetShielded",
     "inputs": []
   },
@@ -3383,6 +3422,11 @@ export const colonyGameAbi = [
   {
     "type": "error",
     "name": "TooManyWorkers",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "UnderAttack",
     "inputs": []
   },
   {

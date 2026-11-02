@@ -39,7 +39,7 @@ contract FullWeekTest is Base {
         uint64 round
     ) internal returns (ColonyGame.Outcome outcome) {
         vm.warp(DrandVerifier.roundTime(round) - 30 - 4 hours - 5 minutes);
-        uint256 raidId = _launch(raider, raiderId, defenderId, 3, target);
+        uint256 raidId = _launch(raider, raiderId, defenderId, target);
         if (guardWith != ColonyGame.Resource.None) {
             vm.prank(defender);
             game.guard(raidId, guardWith);

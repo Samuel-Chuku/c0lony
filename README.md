@@ -25,13 +25,15 @@ _Screenshots are from the Robinhood Chain testnet deployment._
 
 You run an ant colony. A season lasts up to 21 days (7 by default). The daily loop:
 
-1. **Tend** the colony: collect leaves and sugar from forage, trails and farms.
-2. **Feed the queen** (WIF plus 3 leaves) at least once every 72 hours or she starves. Each feeding grows the colony and adds score.
+1. **Tend** the colony: collect leaves and sugar from forage trips, trails and farms. Every ant on a trail or farm earns 2 a day, and the rest of your ants (the free ones) bring extra on each forage trip.
+2. **Feed the colony** (WIF plus 3 leaves for the queen, and every ant eats 1 sugar) at least once every 72 hours or she starves. Each feeding grows the colony and adds score.
 3. **Build**: dig chambers, lay leafcutter trails, grow aphid farms, assign workers.
 4. **Raid** neighbours for leaves and sugar, and guard against raids on you.
 5. **Season end**: the WIF pot is shared among colonies that stayed alive, by score.
 
-Raids never move WIF. They only move leaves, sugar and soldiers.
+Raids never move WIF. They only move leaves, sugar and ants.
+
+**Gathering (launch values).** Trails and farms pay 2 per assigned ant per day, accrued every second and spendable at once. By hand, a leaf trip every 6 h brings 6 plus 0.5 per free ant, and a sugar trip every 3 h brings 4 plus 0.3 per free ant (rounded up, and only the first 30 free ants count). Missed trips wait: up to 2 of each kind stack. Your first trip after founding is ready at once.
 
 ## Why WIF is needed
 
@@ -41,7 +43,7 @@ Every paid action costs WIF, and 70% of each payment goes straight into the seas
 | --- | --- | --- |
 | Found a colony | 1,500 WIF | 1,200 WIF |
 | Feed the queen | 100 WIF | 80 WIF |
-| Speed up a hand forage | 300 WIF | |
+| Speed up a hand forage | 300 WIF | Collects any waiting trips plus one more |
 | Shield (no new raids for 8 h) | 1,000 WIF | |
 | Revive a starving queen | 2,000 WIF + 20 per worker | |
 
@@ -83,7 +85,7 @@ sequenceDiagram
   participant D as Defender
   participant Dr as drand evmnet
   participant K as Anyone (keeper)
-  R->>C: launchRaid(target colony, soldiers, hash of target + salt)
+  R->>C: launchRaid(target colony, hash of target + salt)
   Note over C: guard window (4 h at launch)
   D->>C: guard(leaves or sugar)
   R->>C: reveal(target, salt)
@@ -96,9 +98,11 @@ sequenceDiagram
 ```
 
 - **Sealed target:** the raider submits only a hash. The target is hidden until after the guard window.
-- **Odds** (launch values): the raider wins 65 in 100 if the defender did not guard, 75 in 100 if they guarded the wrong resource. If the defender guards the right one, the raid fails, half the soldiers are lost and the defender takes a share of the raider's stock.
-- **Loot** on a raider win is 20 to 30% of the defender's stock of the target resource, capped at 5 per soldier. A correct guard takes 10 to 15% of the raider's stock instead. Never WIF.
-- **If the raider never reveals,** the soldiers are lost. **If nobody settles within 48 h of the round,** the soldiers come home. `collect` closes both cases.
+- **All free ants march.** There is no soldier picker: every idle ant goes. They still count as workers (housed, fed) while away.
+- **No odds, only a guess.** If the defender did not guard, the raider wins and takes a random 30 to 60% of the target resource. If the defender guarded the other resource, the raider still wins and takes 45 to 60%, so a wrong guess is worse than no guard. If the defender guards the right resource, the raid fails: the raider loses 25% of the marching ants (rounded down) and the defender takes 10 to 15% of a random resource from the raider. Loot is capped at 8 per marching ant. Never WIF.
+- **Raid lock.** When a raid is launched, 60% of the defender's leaves and sugar are locked until it settles or is collected. Builds cannot dip into the lock, but feeding still works.
+- **Limits (launch values).** A raider can launch once per 12 h (Avenge skips this). A colony can face one raid at a time, and after a raid is launched on it, no normal raid can be launched on it for 12 h. So a colony is raided at most twice a day, three times with an Avenge. You cannot launch a raid while one is marching on you.
+- **If the raider never reveals,** every marching ant is lost. **If nobody settles within 48 h of the round,** the ants come home. `collect` closes both cases.
 
 ### Why drand evmnet
 
@@ -118,11 +122,12 @@ Every raid report links to its round. The format is:
 https://api.drand.sh/04f1e9062b8a81f848fded9c12306733282b2727ecced50032187751166ec8c3/public/<round>
 ```
 
-The `signature` in that response is exactly what was submitted to `settle`. The roll is `keccak256(signature, raidId)`, and the outcome is `roll % 100 + 1` compared with the odds above. The chain hash is in [`web/src/config.ts`](web/src/config.ts) and [docs/DEPLOYMENTS.md](docs/DEPLOYMENTS.md).
+The `signature` in that response is exactly what was submitted to `settle`. The roll is `keccak256(signature, raidId)`, and the share taken is derived from it as `lo + (roll % 1000) % (60 - lo + 1)` percent (`lo` is 30, 45 or 10 as above), and the raid report shows that percentage. The chain hash is in [`web/src/config.ts`](web/src/config.ts) and [docs/DEPLOYMENTS.md](docs/DEPLOYMENTS.md).
 
 ## Features
 
-- **Avenge:** when a raider beats you, you get one free counter-raid against that wallet for 24 hours. It skips your own raid cooldown and works once. It is not granted if the raid was guarded or the raider lost.
+- **Avenge:** when a raider beats you, you get one free counter-raid against that wallet for 24 hours. It skips your own raid cooldown (and does not restart it) and the target's 12 h raid protection, and works once. It is not granted if the raid was guarded or the raider lost.
+- **Clear in the app:** every transaction button shows a line of pixel ants marching along its edge while the transaction is out. The Raids tab says "You can be raided again in ..." (protection and shield) and shows a red line while a raid marches on you. Neighbour rows show "raid in 3h" and "under raid · busy", and the launch sheet says what your free ants can carry.
 - **Locked colony NFT:** each colony is an NFT ("C0LONY" / "C0L") minted at founding. It cannot be transferred during a season, so nobody can buy a way into the pot.
 - **Live feed:** the Live tab shows raids, results, new colonies and more in near real time. Sealed targets and guard choices never enter the feed.
 - **Push alerts:** opt in per type in Settings.
@@ -213,13 +218,13 @@ flowchart TB
 
 ## Contracts
 
-Current Robinhood Chain **testnet** (46630) deployment, all verified on Blockscout. Mainnet addresses are added here at launch.
+Current Robinhood Chain **testnet** (46630) deployment (fourth, 2026-11-02), all verified on Blockscout. Mainnet addresses are added here at launch.
 
 | Contract | Address |
 | --- | --- |
-| ColonyGame | [`0x6E9a1547eA9981428e1de95A00C9a4D6224a949B`](https://explorer.testnet.chain.robinhood.com/address/0x6E9a1547eA9981428e1de95A00C9a4D6224a949B) |
-| SeasonPot | [`0x70dDd0057b0E41A30F96690eeDFc4F35A9e10A14`](https://explorer.testnet.chain.robinhood.com/address/0x70dDd0057b0E41A30F96690eeDFc4F35A9e10A14) |
-| Treasury | [`0xB39eA612B09bc6DEdCE717E7e199D4a0bDD0A2C4`](https://explorer.testnet.chain.robinhood.com/address/0xB39eA612B09bc6DEdCE717E7e199D4a0bDD0A2C4) |
+| ColonyGame | [`0xb826C232193B2EF12fdf60E55EE341e3edE9D672`](https://explorer.testnet.chain.robinhood.com/address/0xb826C232193B2EF12fdf60E55EE341e3edE9D672) |
+| SeasonPot | [`0xDd1b353DF1AB32e6E2A601586e0446A7bAa60FAA`](https://explorer.testnet.chain.robinhood.com/address/0xDd1b353DF1AB32e6E2A601586e0446A7bAa60FAA) |
+| Treasury | [`0xe23673FA3A54F1C84c45c386400000194Bf52a26`](https://explorer.testnet.chain.robinhood.com/address/0xe23673FA3A54F1C84c45c386400000194Bf52a26) |
 | DrandVerifier (library) | [`0x2513832059bac29e5a5115634694F22B6B302Ae1`](https://explorer.testnet.chain.robinhood.com/address/0x2513832059bac29e5a5115634694F22B6B302Ae1) |
 | MockWIF (testnet only) | [`0xC7524F3D78E5f6150aff0Eac811e9Bd0D0Fd9B68`](https://explorer.testnet.chain.robinhood.com/address/0xC7524F3D78E5f6150aff0Eac811e9Bd0D0Fd9B68) |
 
@@ -229,9 +234,9 @@ Mainnet WIF is `0x5173b8eA6923c2d40267890D45C46a3480954773` (source and checks i
 
 1. Open [app.c0lony.xyz](https://app.c0lony.xyz) and sign in (or connect a wallet).
 2. Get WIF: use **Get WIF** to swap ETH, or bring your own. New wallets get a small gas drip when they found, and a new player's own C0LONY wallet gets a tiny starter top-up before that first transaction.
-3. **Found** your colony, then **tend** and **feed** the queen at least every 72 hours.
-4. **Build** chambers, trails and farms, and assign workers.
-5. **Raid** a neighbour, **guard** when you are raided, and **avenge** if you lose. Check the Live tab and claim your share when the season ends.
+3. **Found** your colony, then **tend** and **feed** the colony at least every 72 hours.
+4. **Build** chambers, trails and farms, and assign workers with the ants slider, which shows live earnings per hour and per day. The first aphid farm costs leaves only.
+5. **Raid** a neighbour (all your free ants march), **guard** when you are raided, and **avenge** if you lose. Check the Live tab and claim your share when the season ends.
 
 **Install on a phone:** iPhone Safari: Share, then Add to Home Screen. Android Chrome: menu, then Install app.
 
@@ -243,6 +248,8 @@ cd keeper && pnpm test                # intake, settle, feed, push, voter files
 cd web && pnpm test:functions         # feed and profile functions
 cd web && pnpm typecheck && pnpm typecheck:functions
 ```
+
+The Foundry suite has 140 tests, including fuzzed loot maths. The economy and raid rules above were added on 2026-11-02, after the recorded seasons below, which ran on the older rules.
 
 Two full seasons were played on testnet with real drand rounds: see [docs/TESTNET_RUN.md](docs/TESTNET_RUN.md).
 

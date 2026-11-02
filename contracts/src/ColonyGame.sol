@@ -34,13 +34,17 @@ contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView
     uint256 internal constant START_SUGAR = 20;
     uint32 internal constant WORKERS_PER_CHAMBER = 5;
 
-    // Hand foraging
+    // Hand foraging: a trip brings a base amount plus a bonus per free ant (tenths, rounded up), counting at most
+    // FORAGE_FREE_CAP free ants. Missed trips wait, up to FORAGE_BANK of each kind.
     uint256 internal constant LEAF_FORAGE = 6;
-    uint256 internal constant SUGAR_FORAGE = 3;
-    uint256 internal constant SUGAR_PER_WORKER_PCT = 8; // +0.08 sugar per worker, rounded down
+    uint256 internal constant LEAF_PER_FREE_TENTHS = 5; // +0.5 leaves per free ant
+    uint256 internal constant SUGAR_FORAGE = 4;
+    uint256 internal constant SUGAR_PER_FREE_TENTHS = 3; // +0.3 sugar per free ant
+    uint256 internal constant FORAGE_FREE_CAP = 30;
+    uint256 internal constant FORAGE_BANK = 2;
 
-    // Trails and farms: 0.0000115 per worker-second, up to 100 workers per building
-    uint256 internal constant PRODUCTION_PER_WORKER_SEC = 11_500; // 0.0000115 * RES
+    // Trails and farms: 2 per worker per day, accrued per second, up to 100 workers per building
+    uint256 internal constant PRODUCTION_PER_WORKER_SEC = 23_148; // 0.000023148 * RES
     uint32 internal constant WORKERS_PER_BUILDING = 100;
 
     // Feeding
@@ -60,9 +64,16 @@ contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView
 
     // Raids
     uint32 internal constant MIN_RAID_WORKERS = 10;
-    uint256 internal constant MAX_SOLDIER_PCT = 30;
-    uint8 internal constant MAX_OPEN_INCOMING = 2;
-    uint256 internal constant LOOT_CAP_PER_SOLDIER = 5;
+    uint8 internal constant MAX_OPEN_INCOMING = 1;
+    uint256 internal constant LOOT_CAP_PER_SOLDIER = 8;
+    // Loot in percent of the target stock: unguarded 30-60, wrong guard 45-60
+    uint256 internal constant LOOT_MIN_PCT = 30;
+    uint256 internal constant LOOT_WRONG_GUARD_MIN_PCT = 45;
+    uint256 internal constant LOOT_MAX_PCT = 60;
+    // While a raid marches on a colony, this share of its stock (at launch) cannot be spent
+    uint256 internal constant RAID_LOCK_PCT = 60;
+    // A correct guard costs the raider this share of the marching ants
+    uint256 internal constant GUARDED_LOSS_PCT = 25;
     uint256 public constant ROUND_DELAY = 30 seconds;
     uint256 public constant SETTLE_TIMEOUT = 48 hours;
     /// @dev Share of settle's measured execution gas that is refunded, in percent. Only the measured part counts
@@ -96,14 +107,12 @@ contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView
         uint64 feedMinInterval;
         uint64 speedUpCooldown;
         uint64 raidCooldown;
+        uint64 raidProtection; // after a raid is launched on a colony, how long before the next one can be
         uint64 guardWindow; // 1 h to 8 h
         uint64 revealWindow;
         uint64 shieldDuration;
         uint64 shieldCooldown;
         uint64 seasonLength; // default for new seasons; 1 to 21 days
-        // Raider win chance out of 100. Cap: 50 to 85.
-        uint8 winOddsUnguarded;
-        uint8 winOddsGuardedOther;
         // Voter's Pass discount on founding and feeding, in percent. Cap: 0 to 30.
         uint8 voterDiscountPct;
     }
@@ -119,14 +128,13 @@ contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView
         c.sugarForageCooldown = 3 hours;
         c.feedMinInterval = 24 hours;
         c.speedUpCooldown = 24 hours;
-        c.raidCooldown = 6 hours;
+        c.raidCooldown = 12 hours;
+        c.raidProtection = 12 hours;
         c.guardWindow = 4 hours;
         c.revealWindow = 24 hours;
         c.shieldDuration = 8 hours;
         c.shieldCooldown = 24 hours;
         c.seasonLength = 7 days;
-        c.winOddsUnguarded = 65;
-        c.winOddsGuardedOther = 75;
         c.voterDiscountPct = 20;
     }
 
@@ -199,8 +207,11 @@ contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView
         uint64 lastLeafSpeedUp;
         uint64 lastSugarSpeedUp;
         uint64 lastRaidLaunch;
+        uint64 lastRaidedAt; // last raid launched against this colony
         uint64 shieldUntil;
         uint64 lastShield;
+        uint128 lockedLeaves; // unspendable while a raid marches on this colony (RES units)
+        uint128 lockedSugar;
         uint256 score;
     }
 
@@ -350,7 +361,10 @@ contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView
     error OutOfRange();
     error TargetShielded();
     error TargetBusy();
-    error BadSoldiers();
+    error NoFreeAnts();
+    error UnderAttack();
+    error TargetProtected();
+    error StockLocked();
     error CollectFirst();
     error WrongStatus();
     error GuardWindowClosed();
@@ -419,11 +433,10 @@ contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView
                 || !_within4x(c.leafForageCooldown, l.leafForageCooldown)
                 || !_within4x(c.sugarForageCooldown, l.sugarForageCooldown)
                 || !_within4x(c.feedMinInterval, l.feedMinInterval) || !_within4x(c.speedUpCooldown, l.speedUpCooldown)
-                || !_within4x(c.raidCooldown, l.raidCooldown) || !_within4x(c.revealWindow, l.revealWindow)
-                || !_within4x(c.shieldDuration, l.shieldDuration) || !_within4x(c.shieldCooldown, l.shieldCooldown)
-                || c.guardWindow < 1 hours || c.guardWindow > 8 hours || c.seasonLength < MIN_SEASON_LENGTH
-                || c.seasonLength > MAX_SEASON_LENGTH || c.winOddsUnguarded < 50 || c.winOddsUnguarded > 85
-                || c.winOddsGuardedOther < 50 || c.winOddsGuardedOther > 85 || c.voterDiscountPct > 30
+                || !_within4x(c.raidCooldown, l.raidCooldown) || !_within4x(c.raidProtection, l.raidProtection)
+                || !_within4x(c.revealWindow, l.revealWindow) || !_within4x(c.shieldDuration, l.shieldDuration)
+                || !_within4x(c.shieldCooldown, l.shieldCooldown) || c.guardWindow < 1 hours || c.guardWindow > 8 hours
+                || c.seasonLength < MIN_SEASON_LENGTH || c.seasonLength > MAX_SEASON_LENGTH || c.voterDiscountPct > 30
         ) revert BadConfig();
         // A feed must stay possible before the queen starves.
         if (c.feedMinInterval >= STARVE_AFTER) revert BadConfig();
@@ -513,6 +526,7 @@ contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView
     function _spend(Colony storage c, uint256 leavesUnits, uint256 sugarUnits) internal {
         if (c.leaves < leavesUnits) revert NotEnoughLeaves();
         if (c.sugar < sugarUnits) revert NotEnoughSugar();
+        if (c.leaves - leavesUnits < c.lockedLeaves || c.sugar - sugarUnits < c.lockedSugar) revert StockLocked();
         c.leaves -= uint128(leavesUnits);
         c.sugar -= uint128(sugarUnits);
     }
@@ -645,19 +659,41 @@ contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView
         uint256 sugarBefore = c.sugar;
         _accrue(c);
         Config storage cfg = config;
-        if (_ready(c.lastLeafForage, cfg.leafForageCooldown)) _collectLeafForage(c);
-        if (_ready(c.lastSugarForage, cfg.sugarForageCooldown)) _collectSugarForage(c);
+        (uint256 leafTrips, uint64 leafClock) = _trips(c.lastLeafForage, cfg.leafForageCooldown);
+        (uint256 sugarTrips, uint64 sugarClock) = _trips(c.lastSugarForage, cfg.sugarForageCooldown);
+        if (leafTrips > 0) {
+            c.leaves += uint128(leafTrips * leafTrip(c) * RES);
+            c.lastLeafForage = leafClock;
+        }
+        if (sugarTrips > 0) {
+            c.sugar += uint128(sugarTrips * sugarTrip(c) * RES);
+            c.lastSugarForage = sugarClock;
+        }
         emit Tended(id, msg.sender, c.leaves - leavesBefore, c.sugar - sugarBefore);
     }
 
-    function _collectLeafForage(Colony storage c) internal {
-        c.leaves += uint128(LEAF_FORAGE * RES);
-        c.lastLeafForage = uint64(block.timestamp);
+    /// @dev Forage trips waiting since `last`, at most FORAGE_BANK, and the clock to store after collecting them.
+    ///      A partly grown trip keeps its progress unless the bank was full. The first trip is ready at once.
+    function _trips(uint64 last, uint64 cooldown) internal view returns (uint256 trips, uint64 clock) {
+        if (last == 0) return (1, uint64(block.timestamp));
+        trips = (block.timestamp - last) / cooldown;
+        if (trips >= FORAGE_BANK) return (FORAGE_BANK, uint64(block.timestamp));
+        clock = uint64(last + trips * cooldown);
     }
 
-    function _collectSugarForage(Colony storage c) internal {
-        c.sugar += uint128((SUGAR_FORAGE + uint256(c.workers) * SUGAR_PER_WORKER_PCT / 100) * RES);
-        c.lastSugarForage = uint64(block.timestamp);
+    function _bonusAnts(Colony storage c) internal view returns (uint256 free) {
+        free = _idle(c);
+        if (free > FORAGE_FREE_CAP) free = FORAGE_FREE_CAP;
+    }
+
+    /// @dev Leaves one forage trip brings now: 6 + 0.5 per free ant (up to 30), rounded up.
+    function leafTrip(Colony storage c) internal view returns (uint256) {
+        return LEAF_FORAGE + (_bonusAnts(c) * LEAF_PER_FREE_TENTHS + 9) / 10;
+    }
+
+    /// @dev Sugar one forage trip brings now: 4 + 0.3 per free ant (up to 30), rounded up.
+    function sugarTrip(Colony storage c) internal view returns (uint256) {
+        return SUGAR_FORAGE + (_bonusAnts(c) * SUGAR_PER_FREE_TENTHS + 9) / 10;
     }
 
     /// @notice Feed the queen: costs 3 leaves and the feed price. Every worker eats 1 sugar (a shortfall
@@ -667,7 +703,9 @@ contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView
         (uint64 id, Colony storage c) = _myAliveColony();
         if (!_ready(c.lastFeedAt, config.feedMinInterval)) revert NotReady();
         _accrue(c);
-        _spend(c, FEED_LEAVES * RES, 0);
+        // The queen's leaves and the ants' meal are never held back by a raid lock.
+        if (c.leaves < FEED_LEAVES * RES) revert NotEnoughLeaves();
+        c.leaves -= uint128(FEED_LEAVES * RES);
 
         uint32 died;
         uint256 need = uint256(c.workers) * RES;
@@ -682,7 +720,8 @@ contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView
         uint32 born;
         uint32 capacity = c.chambers * WORKERS_PER_CHAMBER;
         if (capacity > c.workers) {
-            uint256 affordable = c.sugar / (SUGAR_PER_NEW_WORKER * RES);
+            uint256 free = c.sugar > c.lockedSugar ? c.sugar - c.lockedSugar : 0;
+            uint256 affordable = free / (SUGAR_PER_NEW_WORKER * RES);
             uint256 space = capacity - c.workers;
             born = uint32(affordable < space ? affordable : space);
             c.sugar -= uint128(uint256(born) * SUGAR_PER_NEW_WORKER * RES);
@@ -720,7 +759,8 @@ contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView
         return _max3(50, 2 * uint256(c.chambers), uint256(c.workers) / 2);
     }
 
-    /// @notice Leaves (and the same amount of sugar) for the next aphid farm: max(25, chambers, 0.25 x workers).
+    /// @notice Leaves for the next aphid farm: max(25, chambers, 0.25 x workers). Every farm after the first also
+    ///         costs the same amount of sugar; the first is leaves only, so a new colony can start farming.
     function farmCost(uint64 colonyId) public view returns (uint256) {
         Colony storage c = colonies[colonyId];
         return _max3(25, c.chambers, uint256(c.workers) / 4);
@@ -748,9 +788,10 @@ contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView
         (uint64 id, Colony storage c) = _myAliveColony();
         _accrue(c);
         uint256 cost = farmCost(id);
-        _spend(c, cost * RES, cost * RES);
+        uint256 sugarCost = c.farms == 0 ? 0 : cost;
+        _spend(c, cost * RES, sugarCost * RES);
         c.farms += 1;
-        emit Built(id, msg.sender, "farm", cost, cost, c.farms);
+        emit Built(id, msg.sender, "farm", cost, sugarCost, c.farms);
     }
 
     /// @notice Set how many workers run trails and farms. Free; collects accrued output first.
@@ -766,7 +807,7 @@ contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView
         emit WorkersAssigned(id, msg.sender, trailWorkers, farmWorkers, _idle(c));
     }
 
-    /// @notice Pay to finish a hand forage now and collect it. Once per 24 h per forage type.
+    /// @notice Pay to finish a hand forage now: collects any waiting trips plus one more. Once per 24 h per type.
     function speedUp(Resource forage) external nonReentrant {
         (uint64 id, Colony storage c) = _myAliveColony();
         Config storage cfg = config;
@@ -774,11 +815,15 @@ contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView
         if (forage == Resource.Leaves) {
             if (!_ready(c.lastLeafSpeedUp, cfg.speedUpCooldown)) revert NotReady();
             c.lastLeafSpeedUp = uint64(block.timestamp);
-            _collectLeafForage(c);
+            (uint256 trips,) = _trips(c.lastLeafForage, cfg.leafForageCooldown);
+            c.leaves += uint128((trips + 1) * leafTrip(c) * RES);
+            c.lastLeafForage = uint64(block.timestamp);
         } else if (forage == Resource.Sugar) {
             if (!_ready(c.lastSugarSpeedUp, cfg.speedUpCooldown)) revert NotReady();
             c.lastSugarSpeedUp = uint64(block.timestamp);
-            _collectSugarForage(c);
+            (uint256 trips,) = _trips(c.lastSugarForage, cfg.sugarForageCooldown);
+            c.sugar += uint128((trips + 1) * sugarTrip(c) * RES);
+            c.lastSugarForage = uint64(block.timestamp);
         } else {
             revert BadResource();
         }
@@ -847,20 +892,20 @@ contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView
         return keccak256(abi.encode(target, salt, raidId));
     }
 
-    /// @notice Seal a raid. Soldiers (up to 30% of idle workers) are locked until it resolves.
-    function launchRaid(uint64 defenderId, uint32 soldiers, bytes32 commitment) external returns (uint256 raidId) {
-        return _launchRaid(defenderId, soldiers, commitment, false);
+    /// @notice Seal a raid. Every free ant marches and is away until the raid resolves.
+    function launchRaid(uint64 defenderId, bytes32 commitment) external returns (uint256 raidId) {
+        return _launchRaid(defenderId, commitment, false);
     }
 
     /// @notice Avenge: raid back the wallet that won a raid against you, within 24 h of that settle.
-    ///         Exactly like launchRaid against the raider's current colony (same soldier limits, range, shield,
-    ///         guard window, reveal and drand settle, no bonus), except it neither needs nor restarts your own raid
-    ///         cooldown. Usable once per grant.
-    function avenge(address raider, uint32 soldiers, bytes32 commitment) external returns (uint256 raidId) {
+    ///         Exactly like launchRaid against the raider's current colony (all free ants march; same range, shield,
+    ///         one-raid-at-a-time, guard window, reveal and drand settle, no bonus), except it neither needs nor
+    ///         restarts your own raid cooldown and ignores the target's raid protection. Usable once per grant.
+    function avenge(address raider, bytes32 commitment) external returns (uint256 raidId) {
         uint64 expires = avengeUntil[msg.sender][raider];
         if (expires == 0 || block.timestamp > expires) revert NoAvenge();
         delete avengeUntil[msg.sender][raider];
-        return _launchRaid(colonyOf[_syncSeason()][raider], soldiers, commitment, true);
+        return _launchRaid(colonyOf[_syncSeason()][raider], commitment, true);
     }
 
     /// @notice Whether `defender` can still avenge a raid won by `raider`, and until when.
@@ -869,27 +914,32 @@ contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView
         return (expiresAt != 0 && block.timestamp <= expiresAt, expiresAt);
     }
 
-    function _launchRaid(uint64 defenderId, uint32 soldiers, bytes32 commitment, bool isAvenge)
-        internal
-        returns (uint256 raidId)
-    {
+    function _launchRaid(uint64 defenderId, bytes32 commitment, bool isAvenge) internal returns (uint256 raidId) {
         (uint64 id, Colony storage c) = _myAliveColony();
         if (defenderId == id) revert CannotRaidSelf();
+        if (_hasUncollected(id)) revert CollectFirst();
         Colony storage d = colonies[defenderId];
         if (_status(d, seasonNumber) != Status.Alive) revert NotAlive();
         if (c.workers < MIN_RAID_WORKERS) revert TooFewWorkers();
         if (uint256(d.workers) * 2 < c.workers || d.workers > uint256(c.workers) * 2) revert OutOfRange();
+        if (c.openIncoming > 0) revert UnderAttack();
         if (block.timestamp < d.shieldUntil) revert TargetShielded();
         if (d.openIncoming >= MAX_OPEN_INCOMING) revert TargetBusy();
+        if (!isAvenge && !_ready(d.lastRaidedAt, config.raidProtection)) revert TargetProtected();
         if (!isAvenge && !_ready(c.lastRaidLaunch, config.raidCooldown)) revert NotReady();
-        if (soldiers == 0 || uint256(soldiers) * 100 > uint256(_idle(c)) * MAX_SOLDIER_PCT) revert BadSoldiers();
-        if (_hasUncollected(id)) revert CollectFirst();
+        uint32 soldiers = _idle(c);
+        if (soldiers == 0) revert NoFreeAnts();
 
         raidId = nextRaidId(id);
         c.raidNonce += 1;
         if (!isAvenge) c.lastRaidLaunch = uint64(block.timestamp);
         c.soldiersOut += soldiers;
         d.openIncoming += 1;
+        d.lastRaidedAt = uint64(block.timestamp);
+        // Lock the most a raid can take, so the defender cannot spend it away before the roll.
+        _accrue(d);
+        d.lockedLeaves = uint128(uint256(d.leaves) * RAID_LOCK_PCT / 100);
+        d.lockedSugar = uint128(uint256(d.sugar) * RAID_LOCK_PCT / 100);
 
         Raid storage r = raids[raidId];
         r.raider = id;
@@ -977,8 +1027,8 @@ contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView
         );
     }
 
-    /// @dev Applies a raid's outcome. One random number decides the roll, the percentage and (when guarded)
-    ///      which resource the defender takes.
+    /// @dev Applies a raid's outcome. One random number decides the percentage taken and (when guarded) which
+    ///      resource the defender takes. `roll` is that percentage.
     struct Result {
         Outcome outcome;
         uint256 roll;
@@ -994,37 +1044,35 @@ contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView
         bool dLive = !d.collapseMarked && d.owner != address(0);
         if (aLive) _accrue(a);
         if (dLive) _accrue(d);
-        if (d.openIncoming > 0) d.openIncoming -= 1;
+        _releaseIncoming(d);
 
-        res.roll = rand % 100 + 1;
-        uint256 pctRand = (rand / 100) % 1000;
+        uint256 pctRand = rand % 1000;
         d.raidsFaced += 1;
 
         if (r.guard == r.target) {
+            // Right guess: the raid fails, a quarter of the marching ants are lost, and the defender takes
+            // 10-15% of a random resource from the raider.
             res.outcome = Outcome.Guarded;
-            res.lost = r.soldiers / 2;
+            res.lost = uint32(uint256(r.soldiers) * GUARDED_LOSS_PCT / 100);
             if (aLive && dLive) {
-                res.lootRes = (rand / 100_000) % 2 == 0 ? Resource.Leaves : Resource.Sugar;
-                uint256 pct = 10 + pctRand % 6; // 10-15%
-                res.loot = _move(a, d, res.lootRes, pct, type(uint256).max);
+                res.lootRes = (rand / 1000) % 2 == 0 ? Resource.Leaves : Resource.Sugar;
+                res.roll = 10 + pctRand % 6;
+                res.loot = _move(a, d, res.lootRes, res.roll, type(uint256).max);
                 d.guardWinsPending += 1;
             }
         } else {
-            uint8 odds = r.guard == Resource.None ? config.winOddsUnguarded : config.winOddsGuardedOther;
-            if (res.roll <= odds) {
-                res.outcome = Outcome.RaiderWon;
-                if (aLive && dLive) {
-                    res.lootRes = r.target;
-                    uint256 pct = 20 + pctRand % 11; // 20-30%
-                    res.loot = _move(d, a, res.lootRes, pct, uint256(r.soldiers) * LOOT_CAP_PER_SOLDIER * RES);
-                }
-                if (aLive) a.raidWinsPending += 1;
-                uint64 expires = uint64(block.timestamp + AVENGE_WINDOW);
-                avengeUntil[d.owner][a.owner] = expires;
-                emit AvengeGranted(d.owner, a.owner, raidId, expires);
-            } else {
-                res.outcome = Outcome.RaiderLost;
+            // No guard: 30-60% of the target. Wrong guard: 45-60%. Capped at 8 per marching ant.
+            res.outcome = Outcome.RaiderWon;
+            uint256 lo = r.guard == Resource.None ? LOOT_MIN_PCT : LOOT_WRONG_GUARD_MIN_PCT;
+            res.roll = lo + pctRand % (LOOT_MAX_PCT - lo + 1);
+            if (aLive && dLive) {
+                res.lootRes = r.target;
+                res.loot = _move(d, a, res.lootRes, res.roll, uint256(r.soldiers) * LOOT_CAP_PER_SOLDIER * RES);
             }
+            if (aLive) a.raidWinsPending += 1;
+            uint64 expires = uint64(block.timestamp + AVENGE_WINDOW);
+            avengeUntil[d.owner][a.owner] = expires;
+            emit AvengeGranted(d.owner, a.owner, raidId, expires);
         }
         if (res.outcome == Outcome.RaiderWon) {
             a.raidsWon += 1;
@@ -1080,11 +1128,19 @@ contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView
             a.soldiersOut -= r.soldiers;
             a.workers -= lost;
         }
-        Colony storage d = colonies[r.defender];
-        if (d.openIncoming > 0) d.openIncoming -= 1;
+        _releaseIncoming(colonies[r.defender]);
         _removeActive(r.raider, raidId);
         _removeActive(r.defender, raidId);
         emit RaidCollected(raidId, r.status, lost);
+    }
+
+    /// @dev A raid on this colony has ended: free its slot and, with no raid left marching on it, its stock.
+    function _releaseIncoming(Colony storage d) internal {
+        if (d.openIncoming > 0) d.openIncoming -= 1;
+        if (d.openIncoming == 0) {
+            d.lockedLeaves = 0;
+            d.lockedSugar = 0;
+        }
     }
 
     /// @dev True if any of the colony's raids has ended but is not yet settled or collected.
@@ -1175,6 +1231,12 @@ contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView
         uint32 raidsFaced;
         uint64 fedUntil; // the queen starves after this
         uint64 shieldUntil;
+        uint64 raidableAt; // when another raid can be launched on this colony (shield and raid protection)
+        uint64 nextRaidAt; // when this colony can launch its next normal raid
+        uint256 lockedLeaves; // held back while a raid marches on this colony (RES units)
+        uint256 lockedSugar;
+        uint256 leafTrip; // what one forage trip brings right now
+        uint256 sugarTrip;
         bool hasVoterPass;
     }
 
@@ -1208,6 +1270,24 @@ contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView
         p.raidsFaced = c.raidsFaced;
         p.fedUntil = c.lastFed + uint64(STARVE_AFTER);
         p.shieldUntil = c.shieldUntil;
+        p.raidableAt = raidableAt(id);
+        p.nextRaidAt = c.lastRaidLaunch == 0 ? 0 : c.lastRaidLaunch + config.raidCooldown;
+        p.lockedLeaves = c.lockedLeaves;
+        p.lockedSugar = c.lockedSugar;
+        Colony storage cs = colonies[id];
+        p.leafTrip = leafTrip(cs);
+        p.sugarTrip = sugarTrip(cs);
+    }
+
+    /// @notice When a normal raid can next be launched on `colonyId`: the later of its shield's end and its raid
+    ///         protection's end (0 = now). Only one raid can march on a colony at a time.
+    function raidableAt(uint64 colonyId) public view returns (uint64 at) {
+        Colony storage c = colonies[colonyId];
+        at = c.shieldUntil;
+        if (c.lastRaidedAt != 0) {
+            uint64 safe = c.lastRaidedAt + config.raidProtection;
+            if (safe > at) at = safe;
+        }
     }
 
     function getActiveRaids(uint64 colonyId) external view returns (uint256[] memory) {

@@ -6,6 +6,7 @@ export { Avatar, shortAddress, type AvatarProps } from "./Avatar";
 export { Meter, type MeterProps } from "./Meter";
 export { StatTile, StatRow } from "./StatTile";
 export { Stepper, type StepperProps } from "./Stepper";
+export { Slider } from "./Slider";
 export { Switch, type SwitchProps } from "./Switch";
 export { SignLabel } from "./SignLabel";
 export { Chip, ChipRow } from "./Chip";

@@ -62,13 +62,13 @@ export function RaidReport() {
     const step = stepOf(raid, now, guardWindow);
     const copy =
       raid.status === RaidStatus.Failed
-        ? "The raider missed the reveal window, so the raid ended without a roll and the soldiers were lost."
+        ? "The raider missed the reveal window, so the raid ended without a roll and the marching ants were lost."
         : raid.status === RaidStatus.Refunded
-          ? "No roll came in within 48 hours, so the soldiers were sent home."
+          ? "No roll came in within 48 hours, so the marching ants were sent home."
           : step === "sealed"
             ? `Sealed. The target stays hidden and ${iDefended ? "you can still guard for " + fmtDuration(Number(raid.launchedAt) + guardWindow - now) : "the guard window is still open"}.`
             : step === "marching"
-              ? "The soldiers are marching. The raider reveals the target once the guard window closes."
+              ? "The ants are marching. The raider reveals the target once the guard window closes."
               : "Revealed. The roll comes from a public drand round and lands as soon as it is published.";
     return (
       <Screen back>
@@ -90,11 +90,9 @@ export function RaidReport() {
   const target = resName(raid.target);
   const lootRes = resName(row?.data.lootResource ?? raid.target);
   const lootAmt = row?.data.lootAmount != null ? BigInt(String(row.data.lootAmount)) : null;
-  const lost = row?.data.soldiersLost != null ? Number(row.data.soldiersLost) : guardedOut ? Math.floor(raid.soldiers / 2) : 0;
+  const lost = row?.data.soldiersLost != null ? Number(row.data.soldiersLost) : guardedOut ? Math.floor(raid.soldiers / 4) : 0;
   const roll = row?.data.roll != null ? Number(row.data.roll) : null;
-  const odds = raid.guard === Resource.None ? Number(cfg.winOddsUnguarded) : Number(cfg.winOddsGuardedOther);
   const round = row?.data.round != null ? String(row.data.round) : String(raid.round);
-  const guardWord = raid.guard === Resource.None ? "none" : resName(raid.guard);
 
   let title: string;
   let stamp: string;
@@ -114,10 +112,11 @@ export function RaidReport() {
   }
 
   let remark: string;
-  if (guardedOut) remark = iDefended ? "You guarded the right resource. They lost half their soldiers." : "They guarded the right resource. Half the soldiers did not come home.";
-  else if (won && raid.guard === Resource.None) remark = iDefended ? "No soldiers were on guard. Guarding the right resource would have cost them half their soldiers." : "No one was on guard. The roll went your way.";
-  else if (won) remark = iDefended ? "You guarded the other resource, so the odds were lower, but the roll still fell their way." : "They guarded the other resource, but the roll fell your way.";
-  else remark = iDefended ? "The roll fell your way this time." : "The roll missed. The soldiers came home lighter.";
+  const share = roll !== null ? `${roll}%` : "a share";
+  if (guardedOut) remark = iDefended ? "You guarded the right resource. A quarter of their marching ants fell." : "They guarded the right resource. A quarter of the marching ants did not come home.";
+  else if (won && raid.guard === Resource.None) remark = iDefended ? `Nobody was on guard, so they took ${share} of your ${target}. Guarding the right resource would have stopped them.` : `No one was on guard. You took ${share} of their ${target}.`;
+  else if (won) remark = iDefended ? `You guarded the other resource, so they took a bigger share: ${share}.` : `They guarded the other resource, so you took a bigger share: ${share}.`;
+  else remark = iDefended ? "The raid came home empty." : "The raid came home empty.";
 
   const when = row ? new Date(row.ts * 1000).toLocaleString([], { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : null;
 
@@ -128,7 +127,7 @@ export function RaidReport() {
     : iRaided
       ? won ? `I just raided ${defenderWho.name}'s colony on C0LONY${gotText}.` : `${defenderWho.name} held off my raid on C0LONY. Next time.`
       : `${raiderWho.name} raided ${defenderWho.name} on C0LONY.`;
-  const share = () => window.open(xIntent(shareText, profileUrl(me ?? defenderOwner ?? "")), "_blank", "noopener");
+  const shareOnX = () => window.open(xIntent(shareText, profileUrl(me ?? defenderOwner ?? "")), "_blank", "noopener");
   const hoursLeft = avenge ? Math.max(1, Math.floor((avenge.expiresAt - now) / 3600)) : 0;
 
   return (
@@ -149,12 +148,12 @@ export function RaidReport() {
             </div>
           ) : null}
           <div className={`c0-rrow${iRaided ? " c0-rrow--loss" : ""}`}>
-            <span>{iDefended ? "Raiders lost" : "Soldiers lost"}</span>
+            <span>{iDefended ? "Raiders lost" : "Ants lost"}</span>
             <b>{lost === 0 ? "0" : `−${lost}`}</b>
           </div>
           <div className="c0-rrow">
-            <span>{guardedOut ? "Guard" : iDefended ? "Their roll vs your guard" : "Roll vs odds"}</span>
-            <b>{guardedOut ? "held" : roll === null ? (raid.guard === Resource.None ? "no guard" : `guard ${guardWord}`) : iDefended ? `${roll} vs ${guardWord}` : `${roll} vs ${odds}`}</b>
+            <span>{guardedOut ? "Guard" : "Share taken"}</span>
+            <b>{guardedOut ? "held" : roll === null ? "·" : `${roll}%`}</b>
           </div>
         </div>
         <div className="c0-journal__remark">{remark}</div>
@@ -184,7 +183,7 @@ export function RaidReport() {
           </Button>
         ) : null}
         <div className="c0-below__row">
-          <Button variant="dark" onClick={share}>Share on X</Button>
+          <Button variant="dark" onClick={shareOnX}>Share on X</Button>
           {me ? <ShieldButton size="default" icon={false} /> : null}
         </div>
       </div>

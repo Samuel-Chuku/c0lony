@@ -6,7 +6,8 @@ export type ButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, "childre
   variant: "wif" | "raid" | "paper" | "dark";
   size?: "default" | "compact" | "hero";
   icon?: IconName;
-  /** Verb in progress, e.g. "Feeding…". Shows the dither state and disables the button. */
+  /** Verb in progress, e.g. "Feeding…". Shows the dither state with a line of ants marching along the bottom
+   *  edge while the transaction is out, and disables the button. */
   busy?: string;
   /** Why the button is disabled. Shows the hatch fill and one line under it. */
   disabledReason?: ReactNode;
@@ -34,7 +35,8 @@ export function Button({
         {...rest}
       >
         {icon && !isBusy ? <PixelIcon name={icon} /> : null}
-        {isBusy ? busy : children}
+        {isBusy ? <span className="c0-btn__busy">{busy}</span> : children}
+        {isBusy ? <span className="c0-btn__march" aria-hidden="true" /> : null}
       </button>
       {blocked ? <span className="c0-btn-note">{disabledReason}</span> : null}
       {error ? <div className="c0-blocked" role="alert">{error}</div> : null}
