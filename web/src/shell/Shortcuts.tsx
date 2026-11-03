@@ -10,6 +10,7 @@ export const SHORTCUTS: Array<{ keys: string; what: string }> = [
   { keys: "B", what: "Open Build (Colony)" },
   { keys: "T", what: "Tend: collect everything that is home" },
   { keys: "M", what: "Menu, wallet and Look" },
+  { keys: "S", what: "Sound on or off" },
   { keys: "?", what: "This list" },
   { keys: "Esc", what: "Close the open window" },
 ];

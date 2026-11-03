@@ -112,6 +112,8 @@ a { color: var(--c0-fg); }
 .c0-header__wif { display: inline-flex; align-items: center; gap: var(--c0-s1); font-family: var(--c0-f-display); font-size: var(--c0-fs-button); color: var(--c0-gold); }
 /* Daylight: gold text fails on sand, so the header WIF becomes a gold fill with ink text. */
 :root[data-theme="day"] .c0-header__wif { background: var(--c0-gold); color: var(--c0-ink); border: var(--c0-bw-thin) solid var(--c0-ink); padding: 0 var(--c0-s1); }
+.c0-header__sound { display: inline-flex; align-items: center; justify-content: center; background: none; border: 0; padding: 0; color: var(--c0-fg); }
+.c0-header__sound[aria-pressed="true"] { color: var(--c0-fg-muted); }
 .c0-header__avatar { background: none; border: 0; padding: 2px; display: inline-flex; }
 
 /* Bottom nav */

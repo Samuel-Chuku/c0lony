@@ -90,3 +90,5 @@
 
 .c0-rate { display: flex; align-items: center; gap: var(--c0-s1); font-size: var(--c0-fs-body); color: var(--c0-sub); margin-top: calc(var(--c0-s1) * -1); }
 .c0-rate b { font-family: var(--c0-f-display); font-size: 20px; color: var(--c0-ink); }
+/* Narrow phones: the sound button needs the room, so the day counter (also on the Season tab) steps aside. */
+@media (max-width: 420px) { .c0-colony__head .c0-header__sub { display: none; } }

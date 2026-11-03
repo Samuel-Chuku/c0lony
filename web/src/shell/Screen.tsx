@@ -11,6 +11,7 @@ import { useXProfile } from "../lib/useXProfile";
 import { fmtWif } from "../lib/format";
 import { useShell } from "./Providers";
 import { SideRail, tabHref } from "./SideRail";
+import { SoundToggle } from "./SoundToggle";
 
 export type ScreenProps = {
   title?: ReactNode;
@@ -45,6 +46,7 @@ export function Screen({ title, sub, tab, back, header, children }: ScreenProps)
           wifBalance={balances.data ? fmtWif(balances.data.wif) : undefined}
           avatar={{ src: me?.xAvatar ?? null, address: session.address ?? undefined }}
           onOpenMenu={shell.openMenu}
+          extra={<SoundToggle />}
           back={back ? { onClick: () => (history.length > 1 ? router.back() : router.push("/")) } : undefined}
         />
       )}

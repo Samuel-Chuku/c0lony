@@ -9,9 +9,11 @@ export type HeaderProps = {
   avatar: { src?: string | null; address?: string };
   onOpenMenu: () => void;
   back?: { label?: string; onClick: () => void };
+  /** Extra header control between the balance and the avatar (the sound toggle). */
+  extra?: ReactNode;
 };
 
-export function Header({ title, sub, wifBalance, avatar, onOpenMenu, back }: HeaderProps) {
+export function Header({ title, sub, wifBalance, avatar, onOpenMenu, back, extra }: HeaderProps) {
   return (
     <header className="c0-header">
       {back ? (
@@ -25,6 +27,7 @@ export function Header({ title, sub, wifBalance, avatar, onOpenMenu, back }: Hea
       {wifBalance ? (
         <span className="c0-header__wif"><PixelIcon name="wif" />{wifBalance}</span>
       ) : null}
+      {extra}
       <button type="button" className="c0-header__avatar" aria-label="Open menu and profile" onClick={onOpenMenu} data-shortcut="m" data-tip="Menu · M">
         <Avatar src={avatar.src} address={avatar.address} alt="Your avatar" />
       </button>

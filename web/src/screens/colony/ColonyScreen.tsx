@@ -1,11 +1,13 @@
 "use client";
 // The Colony tab: resource bar, the living world, the queen, production and today's orders.
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { wantAmbience } from "../../lib/sound";
 import { Screen } from "../../shell/Screen";
 import { useShell } from "../../shell/Providers";
 import { ColonyWorld } from "../../world/ColonyWorld";
 import { useFeed } from "../../lib/api";
-import { useBalances, useGameConfig, useNow, useProfile, useSeason, Status } from "../../lib/game";
+import { useBalances, useColonies, useGameConfig, useNow, useProfile, useSeason, Status } from "../../lib/game";
+import { ColonyGlance, RecentActivity } from "./DeskPanels";
 import { useSession } from "../../lib/session";
 import { BuildSheet } from "./BuildSheet";
 import { ColonyHeader } from "./ColonyHeader";
@@ -28,7 +30,13 @@ export function ColonyScreen() {
   const season = useSeason();
   const balances = useBalances(addr);
   const feed = useFeed("mine", addr, 50);
+  const colonies = useColonies();
   const [buildOpen, setBuildOpen] = useState(false);
+  // The underground hum and the ants' footsteps play while the colony is on screen.
+  useEffect(() => {
+    wantAmbience(true);
+    return () => wantAmbience(false);
+  }, []);
 
   const p = profile.data;
   const hasColony = !!p && p.colonyId !== 0n && p.status >= Status.Alive && p.status <= Status.Collapsed;
@@ -37,6 +45,8 @@ export function ColonyScreen() {
   const failed = !!addr && !p && !!profile.error;
   const wif = balances.data?.wif;
   const openBuild = () => setBuildOpen(true);
+  const ranked = [...(colonies.data ?? [])].sort((a, b) => (a.score === b.score ? (a.id < b.id ? -1 : 1) : a.score > b.score ? -1 : 1));
+  const rankIdx = addr ? ranked.findIndex((r) => r.owner === addr.toLowerCase()) : -1;
 
   return (
     <Screen header={<ColonyHeader />} tab="colony">
@@ -53,6 +63,7 @@ export function ColonyScreen() {
             onOpenBuild={alive ? openBuild : undefined}
           />
         </div>
+        {alive ? <ColonyGlance profile={p!} rank={rankIdx >= 0 ? rankIdx + 1 : null} /> : null}
         <div className="c0-colony__cards">
           {hasColony ? (
             <>
@@ -70,6 +81,7 @@ export function ColonyScreen() {
                 <ProductionCard view={view.data} cfg={cfg.data} now={now} wif={wif} onBuy={shell.openMenu} />
               ) : null}
               {alive ? <OrdersPanel rows={feed.data} now={now} /> : null}
+              {hasColony ? <RecentActivity rows={feed.data} me={addr} now={now} /> : null}
             </>
           ) : loading || failed ? null : (
             <FoundCard addr={addr} wif={wif} onBuy={shell.openMenu} />

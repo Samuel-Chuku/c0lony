@@ -14,12 +14,13 @@ import {
   type Hash,
   type TransactionReceipt,
 } from "viem";
-import { colonyGameAbi, erc20Abi } from "./abi";
+import { colonyGameAbi, erc20Abi, seasonPotAbi } from "./abi";
 import { chain, publicClient } from "./chain";
 import { GAME, WIF } from "./game";
 import { useSession } from "./session";
 import { invalidate } from "./store";
 import { showResult, type ResultContent } from "./result";
+import { cueForEvents, play } from "./sound";
 import type { ConnectedWallet } from "@privy-io/react-auth";
 
 const ERRORS: Record<string, string> = {
@@ -118,6 +119,15 @@ const advice = (reason: string) => {
 
 export type ActionState = { busy: boolean; error: string | null; hash: Hash | null };
 
+/** Which sound a landed transaction plays: from its events, and for a raid result, from this player's side. */
+function cueFor(receipt: TransactionReceipt, account: string) {
+  const logs = parseEventLogs({ abi: [...colonyGameAbi, ...seasonPotAbi], logs: receipt.logs }) as unknown as { eventName: string; args: Record<string, unknown> }[];
+  const settled = logs.find((l) => l.eventName === "RaidSettled")?.args;
+  const raiderWon = settled ? Number(settled.outcome) === 1 : false;
+  const iRaided = settled ? String(settled.raiderOwner).toLowerCase() === account.toLowerCase() : false;
+  return cueForEvents(logs.map((l) => l.eventName), settled ? raiderWon === iRaided : null);
+}
+
 /**
  * One action per button. `run` returns the receipt's hash, or null when it failed (the error is in state).
  * `failVerb` starts the Blocked line: "Feeding failed · not enough WIF".
@@ -162,6 +172,7 @@ export function useAction(failVerb: string, opts?: ActionOptions) {
         if (receipt.status !== "success") throw new Error("reverted");
         setState({ busy: false, error: null, hash });
         void invalidate();
+        try { play(cueFor(receipt, account)); } catch { /* sound is never worth an error */ }
         try {
           const spec = optsRef.current?.success;
           const content = typeof spec === "function" ? spec(receipt, hash) : spec;
@@ -171,6 +182,7 @@ export function useAction(failVerb: string, opts?: ActionOptions) {
       } catch (err) {
         const reason = reasonOf(err);
         setState({ busy: false, error: `${failVerb} failed · ${reason}`, hash: null });
+        play("fail");
         showResult({ title: `${failVerb} failed`, failed: true, lines: advice(reason) });
         return null;
       }

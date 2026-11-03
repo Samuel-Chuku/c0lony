@@ -170,7 +170,7 @@ function AppRows() {
           {install ? <Button variant="paper" size="compact" onClick={() => { void install.prompt(); setInstall(null); }}>Install</Button> : null}
         </div>
       ) : null}
-      <Switch id="a-sound" label="Sound effects" checked={shell.sound} onChange={shell.setSound} />
+      <Switch id="a-sound" label="Sound" hint="clicks, actions and the colony's hum · also in the top bar" checked={shell.sound} onChange={shell.setSound} />
       <Switch id="a-motion" label="Reduce motion" checked={shell.reduceMotion} onChange={shell.setReduceMotion} />
     </>
   );

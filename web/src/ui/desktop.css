@@ -9,6 +9,8 @@
 .c0-kbd { display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; box-sizing: border-box; padding: 0 4px; background: var(--c0-paper-hi); color: var(--c0-ink); border: var(--c0-bw-thin) solid var(--c0-ink); box-shadow: 2px 2px 0 var(--c0-shadow); font-family: var(--c0-f-body); font-size: var(--c0-fs-caption); line-height: 1; letter-spacing: 0; }
 .c0-btn__key { display: none; }
 .c0-split, .c0-split__main, .c0-split__side { display: contents; }
+.c0-desk { display: none; }
+.c0-safe__note::before { content: " · "; }
 
 /* Keyboard help */
 .c0-keys { margin: var(--c0-s3) 0 0; display: flex; flex-direction: column; }
@@ -75,11 +77,39 @@
   html .c0-split__main { grid-area: main; }
   html .c0-split__side { grid-area: side; position: sticky; top: calc(64px + var(--c0-s6)); max-height: calc(100vh - 64px - 48px); overflow-y: auto; padding: 0 6px 6px 0; }
 
+  /* Desktop-only panels */
+  html .c0-desk { display: block; }
+  html .c0-recent .c0-sect a { font-family: var(--c0-f-display); font-size: 18px; color: var(--c0-fg); }
+  html .c0-recent__empty { color: var(--c0-fg-muted); }
+  html .c0-recent .c0-feedlist { margin-top: var(--c0-s2); }
+
+  /* Raids: your status is the first thing on the page, full width, with the countdown large. */
+  html .c0-safe { display: flex; align-items: center; justify-content: center; gap: var(--c0-s4); flex-wrap: wrap; padding: var(--c0-s4) var(--c0-s6); border-width: var(--c0-bw); box-shadow: var(--c0-shadow-modal); }
+  html .c0-safe__label { font-family: var(--c0-f-display); font-size: 28px; letter-spacing: 1px; }
+  html .c0-safe .c0-safe__time { font-size: 44px; line-height: 1; padding: var(--c0-s1) var(--c0-s3); background: var(--c0-ink); color: var(--c0-paper); }
+  html .c0-safe__note { font-size: 16px; }
+  html .c0-safe__note::before { content: none; }
+  html .c0-safe--raid .c0-safe__label { font-size: 32px; }
+  html .c0-raiders { display: flex; flex-direction: column; gap: var(--c0-s2); }
+  html .c0-raiders__big { display: flex; align-items: center; gap: var(--c0-s2); font-family: var(--c0-f-display); font-size: 40px; line-height: 1; }
+  html .c0-raiders__big span { font-size: 20px; color: var(--c0-sub); }
+  html .c0-raiders__line { font-size: var(--c0-fs-body-lg); color: var(--c0-sub); }
+  html .c0-raiders__line b { font-family: var(--c0-f-display); font-size: 20px; color: var(--c0-ink); font-weight: 400; }
+  html .c0-raiders__status { align-self: flex-start; padding: var(--c0-s1) var(--c0-s2); border: var(--c0-bw-thin) solid var(--c0-ink); font-family: var(--c0-f-display); font-size: 20px; background: var(--c0-paper-hi); }
+  html .c0-raiders__status--wait { background: var(--c0-hatch); color: var(--c0-paper); }
+  html .c0-rules ul { margin: var(--c0-s2) 0 var(--c0-s3); padding-left: 18px; display: flex; flex-direction: column; gap: var(--c0-s1); font-size: var(--c0-fs-body); line-height: var(--c0-lh-body); }
+  html .c0-rules a { font-family: var(--c0-f-display); font-size: 18px; color: var(--c0-ink); }
+
   /* Colony: the living world is the play area and gets the most room; the queen and production sit beside it. */
-  html .c0-colony { --c0-world-scale: 1.5; margin: 0; display: grid; grid-template-columns: minmax(0, 1fr) 360px; grid-template-areas: "res cards" "world cards" ". cards"; grid-template-rows: auto auto 1fr; gap: 0 var(--c0-s6); align-items: start; }
+  html .c0-colony { --c0-world-scale: 1.5; margin: 0; display: grid; grid-template-columns: minmax(0, 1fr) 360px; grid-template-areas: "res cards" "world cards" "glance cards" ". cards"; grid-template-rows: auto auto auto 1fr; gap: 0 var(--c0-s6); align-items: start; }
   html .c0-resbar-wrap { grid-area: res; padding: 0 0 var(--c0-s3); border: 0; background: none; }
   html .c0-world-wrap, html .c0-world-wrap--top { grid-area: world; border: 4px solid var(--c0-ink); box-shadow: var(--c0-shadow-modal); }
   html .c0-colony__cards { grid-area: cards; padding: 0; }
+  html .c0-glance { grid-area: glance; margin-top: var(--c0-s6); }
+  html .c0-glance__row { grid-template-columns: repeat(3, 1fr); gap: var(--c0-s3); }
+  html .c0-glance .c0-stat { padding: var(--c0-s3) var(--c0-s2); }
+  html .c0-glance .c0-stat__value { font-size: 30px; }
+  html .c0-glance .c0-stat__cap { font-size: var(--c0-fs-caption); }
   html .c0-world-frame { height: calc(280px * var(--c0-world-scale, 1)); }
   html .c0-world { transform: scale(var(--c0-world-scale, 1)); transform-origin: top center; }
 
@@ -91,6 +121,7 @@
 
 @media (min-width: 1280px) {
   html .c0-colony { --c0-world-scale: 2; grid-template-columns: minmax(0, 1fr) 380px; }
+  html .c0-glance__row { grid-template-columns: repeat(6, 1fr); }
 }
 
 @media (min-width: 1440px) {

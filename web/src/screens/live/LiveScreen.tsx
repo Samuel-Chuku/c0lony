@@ -1,10 +1,12 @@
 "use client";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Button, Chip, ChipRow, Panel, Underway } from "../../ui";
 import { Screen } from "../../shell/Screen";
 import { fetchFeed, feedUrl, useFeed, useFeedStats, type FeedEvent, type FeedFilter } from "../../lib/api";
 import { fmtInt, fmtWif } from "../../lib/format";
-import { useNow, useSeason } from "../../lib/game";
+import { useColonies, useNow, useSeason } from "../../lib/game";
+import { LeaderRow } from "../leaderboard/LeaderRow";
 import { useSession } from "../../lib/session";
 import { QUIET_TYPES } from "./feedText";
 import { LiveRow } from "./LiveRow";
@@ -18,6 +20,9 @@ export function LiveScreen() {
   const [filter, setFilter] = useState<FeedFilter>("all");
   const stats = useFeedStats();
   const season = useSeason();
+  const colonies = useColonies();
+  const top = [...(colonies.data ?? [])].sort((a, b) => (a.score === b.score ? (a.id < b.id ? -1 : 1) : a.score > b.score ? -1 : 1)).slice(0, 5);
+  const meLower = session.address?.toLowerCase();
   const raids = stats.data?.raidsToday;
 
   const title = (
@@ -44,6 +49,17 @@ export function LiveScreen() {
           <div className="c0-potstrip__num">{stats.data ? `${fmtInt(Math.floor(Number(stats.data.burnedWif)))} WIF` : "·"}</div>
         </div>
       </Panel>
+      {top.length > 0 ? (
+        <section className="c0-desk c0-recent" aria-label="Top colonies">
+          <div className="c0-sect">
+            <h2>Top 5</h2>
+            <Link href="/leaderboard">leaderboard ›</Link>
+          </div>
+          <ol className="c0-feedlist">
+            {top.map((r, i) => <li key={String(r.id)}><LeaderRow row={r} rank={i + 1} mine={r.owner === meLower} /></li>)}
+          </ol>
+        </section>
+      ) : null}
       </div>
       <div className="c0-split__main">
       <ChipRow>

@@ -9,6 +9,7 @@ import { WelcomeBack } from "./WelcomeBack";
 import { ResultModal } from "./ResultModal";
 import { QueenAlert } from "./QueenAlert";
 import { ShortcutsHelp, useShortcuts } from "./Shortcuts";
+import { installSoundListeners, setSoundEnabled } from "../lib/sound";
 
 type Shell = {
   openMenu: () => void;
@@ -52,12 +53,12 @@ export function Providers({ children }: { children: ReactNode }) {
   const [lastOnline, setLastOnline] = useState<number | null>(null);
   const [waiting, setWaiting] = useState<ServiceWorker | null>(null);
   const [reduceMotion, setReduceMotionState] = useState(false);
-  const [sound, setSoundState] = useState(false);
+  const [sound, setSoundState] = useState(true);
   const [look, setLookState] = useState<Look>("auto");
 
   useEffect(() => {
     setReduceMotionState(localStorage.getItem(MOTION_KEY) === "1");
-    setSoundState(localStorage.getItem(SOUND_KEY) === "1");
+    setSoundState(localStorage.getItem(SOUND_KEY) !== "0"); // sound is on unless the player muted it
     const saved = localStorage.getItem(LOOK_KEY);
     if (saved === "soil" || saved === "day") setLookState(saved);
     const up = () => {
@@ -93,6 +94,9 @@ export function Providers({ children }: { children: ReactNode }) {
       window.removeEventListener("offline", down);
     };
   }, []);
+
+  useEffect(() => installSoundListeners(), []);
+  useEffect(() => setSoundEnabled(sound), [sound]);
 
   useEffect(() => {
     document.documentElement.classList.toggle("c0-reduce-motion", reduceMotion);

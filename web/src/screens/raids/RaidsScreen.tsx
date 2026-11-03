@@ -15,6 +15,7 @@ import { Tracker } from "./Tracker";
 import { SITE_URL, xIntent } from "./shared";
 import { fmtDuration } from "../../lib/format";
 import { demoCfg, demoData } from "./demo";
+import { RaidRules, RecentRaids, YourRaiders } from "./DeskRaidPanels";
 
 export function RaidsScreen() {
   const router = useRouter();
@@ -106,15 +107,19 @@ export function RaidsScreen() {
     <Screen title="RAIDS" tab="raids">
       {gate}
       {gate === null && cfg ? (
+        <>
+          <div className={`c0-safe${underAttack ? " c0-safe--raid" : myRaidableIn > 0 ? " c0-safe--calm" : ""}`} role="status">
+            {underAttack ? (
+              <><span className="c0-safe__label">A raid is marching on you</span><span className="c0-safe__note">60% of your stock is held until it lands</span></>
+            ) : myRaidableIn > 0 ? (
+              <><span className="c0-safe__label">You can be raided again in</span> <b className="c0-safe__time">{fmtDuration(myRaidableIn)}</b></>
+            ) : (
+              <><span className="c0-safe__label">You can be raided now</span><span className="c0-safe__note">one raid at a time, then 12h of peace</span></>
+            )}
+          </div>
         <div className="c0-split">
           <div className="c0-split__side">
-          <div className={`c0-safe${underAttack ? " c0-safe--raid" : ""}`} role="status">
-            {underAttack
-              ? "A raid is marching on you · 60% of your stock is held until it lands"
-              : myRaidableIn > 0
-                ? <>You can be raided again in <b>{fmtDuration(myRaidableIn)}</b></>
-                : "You can be raided now · one raid at a time, then 12h of peace"}
-          </div>
+          {profile ? <YourRaiders me={profile} cooldownLeft={cooldownLeft} underAttack={underAttack} /> : null}
           {banners.map((r) => <IncomingBanner key={String(r.id)} raid={r} guardWindow={guardWindow} />)}
           {tracked.map(({ r, role }) => (
             <RaidTrack key={String(r.id)} raid={r} role={role} guardWindow={guardWindow} revealWindow={revealWindow} onClosed={(id) => setClosed((c) => [...c, id])} />
@@ -125,6 +130,8 @@ export function RaidsScreen() {
               <Link href={`/report?raid=${id}`}><Hand size={17}>Raid is home · read the report ›</Hand></Link>
             </Panel>
           ))}
+          <RecentRaids rows={mineFeed} me={session.address} now={now} />
+          <RaidRules />
           </div>
           <div className="c0-split__main">
           <div className="c0-sect">
@@ -153,6 +160,7 @@ export function RaidsScreen() {
           )}
           </div>
         </div>
+        </>
       ) : null}
       {profile && myId ? (
         <LaunchSheet open={!!sheet} mode={sheet?.mode ?? "raid"} target={sheet?.target ?? null} me={profile} cooldownLeft={cooldownLeft} onClose={() => setSheet(null)} />

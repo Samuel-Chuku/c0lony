@@ -5,12 +5,15 @@ import type { ReactNode } from "react";
 import { Card, ResIcon, type ResIconName } from "../../ui";
 import { Screen } from "../../shell/Screen";
 import { fmtDuration, fmtWif } from "../../lib/format";
+import { NETWORK_NAME } from "../../config";
 import { useGameConfig, type GameConfig } from "../../lib/game";
+import { SHORTCUTS } from "../../shell/Shortcuts";
 
 const STARVE_HOURS = 72;
 const REVIVE_HOURS = 24;
 const AVENGE_HOURS = 24;
 const CLAIM_DAYS = 30;
+const REFUND_HOURS = 48;
 
 function Sec({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -38,10 +41,21 @@ function Guide({ c }: { c?: GameConfig }) {
         <P>Keep your queen alive, grow your colony, and finish the season with a high score. Colonies that finish high share the season pot in WIF.</P>
       </Sec>
 
+      <Sec title="Getting started">
+        <UL
+          items={[
+            <>Sign in with X or email. A wallet is made for you inside the game; you can also connect your own.</>,
+            <>New wallets get a little ETH for gas, once.{NETWORK_NAME === "testnet" ? " On testnet, Get test WIF in the Menu gives you free WIF once a day." : " Buy WIF in the Menu swaps ETH for WIF in one step."}</>,
+            <>Found your colony for {w(c?.foundPrice)}. You start with 10 ants, 2 chambers, and 20 <ResIcon name="leaf" size={16} label="leaves" /> and 20 <ResIcon name="sugar" size={16} label="sugar" />, and your queen is fed for {STARVE_HOURS} hours.</>,
+            <>A good day: tend, feed the colony, build, then raid a neighbour or guard against one. The three stamps on the Colony tab track today&apos;s orders.</>,
+          ]}
+        />
+      </Sec>
+
       <Sec title="Your queen">
         <UL
           items={[
-            <>Feed her at most once every {d(c?.feedMinInterval)}. Feeding costs {w(c?.feedPrice)} and 3 <ResIcon name="leaf" size={16} label="leaves" />.</>,
+            <>Feed the colony at most once every {d(c?.feedMinInterval)}. Feeding costs {w(c?.feedPrice)} and 3 <ResIcon name="leaf" size={16} label="leaves" />, which the queen eats. Leaves held back by a raid can still feed her.</>,
             <>She must be fed within {STARVE_HOURS} hours or she starves.</>,
             <>A starving queen can be revived for {REVIVE_HOURS} hours: {w(c?.reviveBasePrice)} plus {w(c?.revivePerWorkerPrice)} per ant. After that the colony falls.</>,
           ]}
@@ -92,6 +106,15 @@ function Guide({ c }: { c?: GameConfig }) {
             <>The share comes from a public drand round, so anyone can check it was fair.</>,
           ]}
         />
+        <P>How a raid plays out:</P>
+        <UL
+          items={[
+            <>After the guard window, the raider reveals the target within {d(c?.revealWindow)}. Miss it and the marching ants are lost.</>,
+            <>The roll uses the first drand round about 30 seconds after the reveal. Anyone can settle it then; the game&apos;s keeper settles every raid within about a minute, and the app offers one-tap settle too.</>,
+            <>If a raid is never settled, the ants come home after {REFUND_HOURS} hours with nothing.</>,
+            <>Finished raids must be settled or collected before you launch another. The Raids tab shows when you can raid, and when you can be raided again.</>,
+          ]}
+        />
       </Sec>
 
       <Sec title="Avenge">
@@ -106,8 +129,19 @@ function Guide({ c }: { c?: GameConfig }) {
         <UL
           items={[
             <>Of every WIF payment, 70% goes to the pot, 20% is burned and 10% goes to the treasury.</>,
-            <>When the season ends, half the pot is shared by score among every colony alive at the end and fed at least twice. The other half is shared by score among the top quarter.</>,
+            <>When the season ends, half the pot is shared by score among every colony that was fed at least twice and whose queen was fed within {STARVE_HOURS} hours of the end. The other half is shared by score among the top quarter.</>,
             <>Claim your share from the Season tab after it ends. Unclaimed shares roll into the next pot after {CLAIM_DAYS} days.</>,
+          ]}
+        />
+      </Sec>
+
+      <Sec title="The app">
+        <UL
+          items={[
+            <>Look: tap your picture for the Menu and pick Auto, Soil or Daylight. Auto follows your phone or computer.</>,
+            <>Sound: the speaker in the top bar mutes and unmutes clicks, action sounds and the colony&apos;s hum.</>,
+            <>Alerts: turn on notifications in Settings to hear when you are raided, a raid result is in, or the queen is getting hungry. On iPhone, add the app to your home screen first.</>,
+            <>On a computer the tabs sit on the left and these keys work: {SHORTCUTS.map((s) => `${s.keys} ${s.what.toLowerCase()}`).join(" · ")}. No key ever spends WIF.</>,
           ]}
         />
       </Sec>
@@ -127,7 +161,7 @@ export function HowToPlayScreen() {
     <Screen back>
       <div className="c0-ht__logo"><img src="/logo.svg" alt="C0LONY" width={244} height={92} /></div>
       <Guide c={cfg} />
-      {cfg ? <Card className="c0-ht__card"><P>Founding a colony costs {fmtWif(cfg.foundPrice)} WIF. Prices can change within limits set in the contract.</P></Card> : null}
+      <Card className="c0-ht__card"><P>Prices can change within limits set in the contract, and every change is public onchain.</P></Card>
     </Screen>
   );
 }
