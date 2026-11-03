@@ -25,7 +25,7 @@ const MORE: Array<{ href: string; label: string; icon: IconName }> = [
 
 export const tabHref = (tab: NavTab) => (tab === "colony" ? "/" : `/?tab=${tab}`);
 
-export function SideRail({ active, alert }: { active?: NavTab; alert?: NavTab | null }) {
+export function SideRail({ active, alerts }: { active?: NavTab; alerts?: NavTab[] }) {
   const path = usePathname();
   const shell = useShell();
   return (
@@ -46,7 +46,7 @@ export function SideRail({ active, alert }: { active?: NavTab; alert?: NavTab | 
           >
             <span className="c0-nav__icon">
               <PixelIcon name={t.icon} size={30} />
-              {alert === t.id ? <span className="c0-raiddot" role="img" aria-label="raid underway" /> : null}
+              {alerts?.includes(t.id) ? <span className="c0-raiddot" role="img" aria-label={t.id === "raids" ? "raid underway" : "new activity"} /> : null}
             </span>
             <span className="c0-rail__label">{t.label}</span>
             <kbd className="c0-kbd c0-rail__key">{t.key}</kbd>

@@ -164,11 +164,25 @@ export const guardResult = (resource: number): SuccessContent => ({
   lines: [<>{iconOf(resource)} You&apos;re guarding {resName(resource)}.</>, "If they aim there, the raid fails and a quarter of their ants fall."],
 });
 
-export const sealedResult = (handle: string, soldiers: number, avenged: boolean) => (): SuccessContent => ({
-  title: avenged ? `Avenge sealed on ${handle}` : `Raid sealed on ${handle}`,
-  tone: "raid",
-  lines: [`${soldiers} ${soldiers === 1 ? "ant" : "ants"} marching`, "Target hidden until the roll.", "Reveal it after their guard window closes."],
-});
+/** Raid launched: who marches, when the guard window closes and when it must be revealed. */
+export const sealedResult = (handle: string, soldiers: number, avenged: boolean, guardWindow = 0, revealWindow = 0, cooldown = 0) => (): SuccessContent => {
+  const at = (sec: number) => {
+    const d = new Date(Date.now() + sec * 1000);
+    const sameDay = d.toDateString() === new Date().toDateString();
+    return d.toLocaleString([], sameDay ? { hour: "2-digit", minute: "2-digit" } : { weekday: "short", hour: "2-digit", minute: "2-digit" });
+  };
+  return {
+    title: avenged ? `Avenge sealed on ${handle}` : `Raid sealed on ${handle}`,
+    tone: "raid",
+    link: { href: "/?tab=raids", label: "Follow it on the Raids tab" },
+    lines: [
+      <span className="c0-deltas" key="m"><span className="c0-delta"><b>{soldiers}</b><ResIcon name="ant" size={20} label="ants" /></span> marching out</span>,
+      "Your target stays hidden until the roll",
+      guardWindow > 0 ? `They can guard until ${at(guardWindow)} · reveal by ${at(guardWindow + revealWindow)}` : "Reveal it after their guard window closes",
+      avenged ? "Free raid back · no cooldown used" : cooldown > 0 ? `Next raid in ${fmtDuration(cooldown)}` : null,
+    ].filter((l) => l !== null),
+  };
+};
 
 export const revealResult = (): SuccessContent => ({
   title: "Raid revealed",

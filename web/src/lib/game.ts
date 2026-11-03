@@ -47,7 +47,7 @@ export function useNow(ms = 1000): number {
 }
 
 export function useProfile(player: string | null | undefined) {
-  return useQuery(player ? `profile:${player.toLowerCase()}` : null, () => readProfile(player as Address), 30_000);
+  return useQuery(player ? `profile:${player.toLowerCase()}` : null, () => readProfile(player as Address), 10_000);
 }
 
 export function useGameConfig() {
@@ -183,7 +183,7 @@ export function useActiveRaids(colonyId: bigint | null | undefined) {
       const ids = await publicClient.readContract({ ...game, functionName: "getActiveRaids", args: [colonyId!] });
       return Promise.all(ids.map(readRaid));
     },
-    20_000,
+    6_000, // cheap, and the app refreshes everything when these change (see RaidWatcher)
   );
 }
 

@@ -4,6 +4,8 @@
 // player, so without this the result would only show up in the feed. Away-time results go to WelcomeBack.
 import { useEffect, useRef } from "react";
 import { useFeed, type FeedEvent } from "../lib/api";
+import { useActiveRaids, useProfile } from "../lib/game";
+import { invalidate } from "../lib/store";
 import { collectedResult, raidResult, raidShown } from "../lib/outcomes";
 import { showResult, useResult } from "../lib/result";
 import { useSession } from "../lib/session";
@@ -36,9 +38,40 @@ function resultOf(ev: FeedEvent, me: string) {
 export function RaidWatcher() {
   const session = useSession();
   const me = session.address?.toLowerCase() ?? null;
-  const feed = useFeed("mine", me, 20).data;
+  const feed = useFeed("mine", me, 20, 8_000).data;
   const open = useResult();
   const since = useRef(Math.floor(Date.now() / 1000) - 5);
+
+  // Fast refresh across devices: my open raids are read every 6 s (one cheap call). When they change, or
+  // when a new row about me lands in the feed, every cached read refreshes at once instead of on its own timer.
+  const colonyId = useProfile(me).data?.colonyId;
+  const raids = useActiveRaids(colonyId || null).data;
+  const raidSig = raids ? raids.map((r) => `${r.id}:${r.status}:${r.guard}`).join(",") : null;
+  const feedTop = feed?.[0]?.id ?? null;
+  const lastSig = useRef<string | null>(null);
+  const lastTop = useRef<number | null>(null);
+  useEffect(() => {
+    const changed = (lastSig.current !== null && raidSig !== null && raidSig !== lastSig.current) || (lastTop.current !== null && feedTop !== null && feedTop !== lastTop.current);
+    if (raidSig !== null) lastSig.current = raidSig;
+    if (feedTop !== null) lastTop.current = feedTop;
+    if (changed) void invalidate();
+  }, [raidSig, feedTop]);
+
+  // Coming back to the app (switching tabs or apps) refreshes everything, at most every 3 s.
+  useEffect(() => {
+    let last = 0;
+    const onBack = () => {
+      if (document.visibilityState !== "visible" || Date.now() - last < 3000) return;
+      last = Date.now();
+      void invalidate();
+    };
+    document.addEventListener("visibilitychange", onBack);
+    window.addEventListener("focus", onBack);
+    return () => {
+      document.removeEventListener("visibilitychange", onBack);
+      window.removeEventListener("focus", onBack);
+    };
+  }, []);
 
   useEffect(() => {
     if (!me || !feed || open) return;

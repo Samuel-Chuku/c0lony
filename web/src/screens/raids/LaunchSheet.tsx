@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { BottomSheet, Button, ResIcon } from "../../ui";
-import { LOOT, MIN_RAID_WORKERS, Resource, useNow, type ColonyRow, type Profile } from "../../lib/game";
+import { LOOT, MIN_RAID_WORKERS, Resource, useGameConfig, useNow, type ColonyRow, type Profile } from "../../lib/game";
 import { fmtDuration, fmtInt } from "../../lib/format";
 import { avenge, launchRaid } from "../../lib/raids";
 import { useSession } from "../../lib/session";
@@ -19,7 +19,10 @@ export function LaunchSheet({ open, mode, target, me, cooldownLeft, onClose }: P
   const now = useNow(5000);
   const who = useWho(target?.wallet);
   const [sealed, setSealed] = useState<{ soldiers: number; avenged: boolean }>({ soldiers: 1, avenged: false });
-  const action = useAction("Raid", { success: () => sealedResult(who.name, sealed.soldiers, sealed.avenged)() });
+  const cfg = useGameConfig().data;
+  const action = useAction("Raid", {
+    success: () => sealedResult(who.name, sealed.soldiers, sealed.avenged, Number(cfg?.guardWindow ?? 0), Number(cfg?.revealWindow ?? 0), Number(cfg?.raidCooldown ?? 0))(),
+  });
   const [res, setRes] = useState<number>(Resource.Sugar);
   const soldiers = me.freeAnts;
 

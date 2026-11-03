@@ -121,7 +121,6 @@ export function RaidsScreen() {
           </div>
         <div className="c0-split">
           <div className="c0-split__side">
-          {profile ? <YourRaiders me={profile} cooldownLeft={cooldownLeft} underAttack={underAttack} /> : null}
           {banners.map((r) => <IncomingBanner key={String(r.id)} raid={r} guardWindow={guardWindow} />)}
           {tracked.map(({ r, role }) => (
             <RaidTrack key={String(r.id)} raid={r} role={role} guardWindow={guardWindow} revealWindow={revealWindow} onClosed={(id) => setClosed((c) => [...c, id])} />
@@ -132,6 +131,7 @@ export function RaidsScreen() {
               <Link href={`/report?raid=${id}`}><Hand size={17}>Raid is home · read the report ›</Hand></Link>
             </Panel>
           ))}
+          {profile ? <YourRaiders me={profile} cooldownLeft={cooldownLeft} underAttack={underAttack} /> : null}
           <RecentRaids rows={mineFeed} me={session.address} now={now} />
           <RaidRules />
           </div>

@@ -138,3 +138,10 @@
 }
 
 @media (min-width: 1440px) and (hover: none) { .c0-rail__key { display: none; } }
+
+/* Active raids lead the right column on a desk and wear a red frame, so they never get buried (2026-11-03). */
+@media (min-width: 1024px) {
+  html .c0-rtrack { border: var(--c0-bw) solid var(--c0-red); box-shadow: 5px 5px 0 var(--c0-red); padding: var(--c0-s4); gap: var(--c0-s3); }
+  html .c0-rtrack__title { font-size: 26px; }
+  html .c0-rtrack__time { font-size: 14px; color: var(--c0-paper); }
+}
