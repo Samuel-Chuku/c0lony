@@ -20,3 +20,9 @@
 .c0-copybtn { flex: none; width: var(--c0-tap); min-height: var(--c0-tap); display: inline-flex; align-items: center; justify-content: center; padding: 0; background: var(--c0-paper-hi); color: var(--c0-ink); border: var(--c0-bw) solid var(--c0-ink); box-shadow: var(--c0-shadow-card); }
 .c0-copybtn:active { box-shadow: none; transform: var(--c0-press); }
 .c0-copybtn__done { font-family: var(--c0-f-display); font-size: 14px; }
+
+/* Withdraw sheet */
+.c0-wd__label { display: flex; justify-content: space-between; gap: var(--c0-s2); font-size: var(--c0-fs-caption); color: var(--c0-sub); }
+.c0-wd__addr { font-size: 16px !important; }
+.c0-wd__mini { flex: none; min-height: 40px; padding: 0 var(--c0-s2); background: var(--c0-loam); color: var(--c0-paper); border: 2px solid var(--c0-ink); font-family: var(--c0-f-display); font-size: 16px; }
+.c0-wd__cancel { align-self: center; min-height: var(--c0-tap); background: none; border: 0; padding: 0 var(--c0-s3); color: var(--c0-ink); font-family: var(--c0-f-display); font-size: 18px; text-decoration: underline; }

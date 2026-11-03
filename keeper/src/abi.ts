@@ -490,6 +490,25 @@ export const colonyGameAbi = [
   },
   {
     "type": "function",
+    "name": "farmSugarCost",
+    "inputs": [
+      {
+        "name": "colonyId",
+        "type": "uint64",
+        "internalType": "uint64"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "fedTwiceCount",
     "inputs": [
       {
@@ -914,6 +933,26 @@ export const colonyGameAbi = [
             "name": "voterDiscountPct",
             "type": "uint8",
             "internalType": "uint8"
+          },
+          {
+            "name": "chamberBase",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "trailBase",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "farmLeafBase",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "farmSugarBase",
+            "type": "uint32",
+            "internalType": "uint32"
           }
         ]
       }
@@ -1251,6 +1290,26 @@ export const colonyGameAbi = [
             "name": "voterDiscountPct",
             "type": "uint8",
             "internalType": "uint8"
+          },
+          {
+            "name": "chamberBase",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "trailBase",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "farmLeafBase",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "farmSugarBase",
+            "type": "uint32",
+            "internalType": "uint32"
           }
         ]
       }
@@ -1757,6 +1816,26 @@ export const colonyGameAbi = [
             "name": "voterDiscountPct",
             "type": "uint8",
             "internalType": "uint8"
+          },
+          {
+            "name": "chamberBase",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "trailBase",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "farmLeafBase",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "farmSugarBase",
+            "type": "uint32",
+            "internalType": "uint32"
           }
         ]
       }
@@ -2341,6 +2420,26 @@ export const colonyGameAbi = [
             "name": "voterDiscountPct",
             "type": "uint8",
             "internalType": "uint8"
+          },
+          {
+            "name": "chamberBase",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "trailBase",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "farmLeafBase",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "farmSugarBase",
+            "type": "uint32",
+            "internalType": "uint32"
           }
         ]
       },
@@ -2439,6 +2538,26 @@ export const colonyGameAbi = [
             "name": "voterDiscountPct",
             "type": "uint8",
             "internalType": "uint8"
+          },
+          {
+            "name": "chamberBase",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "trailBase",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "farmLeafBase",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "farmSugarBase",
+            "type": "uint32",
+            "internalType": "uint32"
           }
         ]
       }

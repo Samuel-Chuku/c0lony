@@ -92,3 +92,24 @@
 .c0-rate b { font-family: var(--c0-f-display); font-size: 20px; color: var(--c0-ink); }
 /* Narrow phones: the sound button needs the room, so the day counter (also on the Season tab) steps aside. */
 @media (max-width: 420px) { .c0-colony__head .c0-header__sub { display: none; } }
+
+/* Build: ants working in a building, its output line, and the confirm step before spending */
+.c0-urow__working { font-size: 12px; line-height: 16px; color: var(--c0-ink); }
+.c0-urow__makes { display: flex; align-items: center; justify-content: center; gap: var(--c0-s1); padding-top: var(--c0-s1); border-top: var(--c0-bw-thin) dashed var(--c0-rule); font-size: 12px; color: var(--c0-sub); }
+.c0-urow__makes b { font-family: var(--c0-f-display); font-size: 17px; font-weight: 400; color: var(--c0-ink); }
+.c0-confirm { display: flex; flex-direction: column; gap: var(--c0-s2); padding: var(--c0-s2); background: var(--c0-paper-hi); border: var(--c0-bw-thin) solid var(--c0-ink); }
+.c0-confirm__line { display: flex; align-items: center; flex-wrap: wrap; gap: var(--c0-s2); }
+.c0-confirm__cap { font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--c0-sub); }
+.c0-confirm__get { font-family: var(--c0-f-display); font-size: 20px; font-weight: 400; }
+.c0-confirm__gives { font-size: 12px; color: var(--c0-sub); }
+.c0-confirm__btns { display: flex; align-items: center; gap: var(--c0-s4); }
+.c0-confirm__cancel { font-size: 18px; text-decoration: underline; min-height: var(--c0-tap); }
+
+/* Put ants to work: two job buttons, then the editor for the one picked */
+.c0-jobs { display: grid; grid-template-columns: 1fr 1fr; gap: var(--c0-s2); }
+.c0-job { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: var(--c0-s2); box-sizing: border-box; background: var(--c0-paper); color: var(--c0-ink); border: var(--c0-bw) solid var(--c0-ink); box-shadow: 2px 2px 0 var(--c0-shadow); font-family: var(--c0-f-display); }
+.c0-job[aria-pressed="true"] { background: var(--c0-loam); color: var(--c0-paper); box-shadow: inset 0 0 0 2px var(--c0-clay); }
+.c0-job__name { font-size: 18px; line-height: 1; }
+.c0-job__count { font-family: var(--c0-f-body); font-size: 11px; opacity: .85; }
+.c0-jobedit { display: flex; flex-direction: column; gap: var(--c0-s2); }
+.c0-assign__row--free { border-top: var(--c0-bw-thin) dashed var(--c0-rule); padding-top: var(--c0-s2); }

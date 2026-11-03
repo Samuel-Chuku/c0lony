@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Avatar, Card, StatRow, StatTile, Underway } from "../../ui";
 import { Screen } from "../../shell/Screen";
-import { displayName, fmtDuration, fmtInt, shortAddress } from "../../lib/format";
+import { displayName, fmtDuration, fmtInt, fmtRes, shortAddress } from "../../lib/format";
 import { useColonies, useNow, useProfile, useSeason } from "../../lib/game";
 import { useSession } from "../../lib/session";
 import { useXProfile } from "../../lib/useXProfile";
@@ -68,6 +68,10 @@ export function ProfileScreen() {
         <StatTile res="trail" value={fmtInt(p.trails)} caption="trails" />
         <StatTile res="farm" value={fmtInt(p.farms)} caption="farms" />
         <StatTile res="ant" value={fmtInt(p.freeAnts)} caption="free ants" />
+      </StatRow>
+      <StatRow className="c0-statrow--store">
+        <StatTile res="leaf" value={`~${fmtRes(p.leaves)}`} caption="leaves in store" />
+        <StatTile res="sugar" value={`~${fmtRes(p.sugar)}`} caption="sugar in store" />
       </StatRow>
       {isMe ? <ClaimButton wallet={addr} season={season.data?.season} /> : null}
       <RaidRecord addr={addr} profile={p} me={session.address} isMe={isMe} />

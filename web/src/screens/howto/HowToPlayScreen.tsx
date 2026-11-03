@@ -85,9 +85,9 @@ function Guide({ c }: { c?: GameConfig }) {
         <table className="c0-ht__table">
           <thead><tr><th>Building</th><th>Holds</th><th>Cost</th></tr></thead>
           <tbody>
-            <tr><td><Ico name="chamber">Chamber</Ico></td><td>5 ants</td><td>the most of 10, your chambers, or ants ÷ 5, in leaves</td></tr>
-            <tr><td><Ico name="trail">Trail</Ico></td><td>up to 100 ants, makes leaves</td><td>the most of 50, 2 × chambers, or ants ÷ 2, in leaves</td></tr>
-            <tr><td><Ico name="farm">Farm</Ico></td><td>up to 100 ants, makes sugar</td><td>the most of 25, chambers, or ants ÷ 4, in leaves; from the second farm on, the same in sugar too</td></tr>
+            <tr><td><Ico name="chamber">Chamber</Ico></td><td>5 ants</td><td>the most of {c?.chamberBase ?? "…"}, your chambers, or ants ÷ 5, in leaves</td></tr>
+            <tr><td><Ico name="trail">Trail</Ico></td><td>up to 100 ants, makes leaves</td><td>the most of {c?.trailBase ?? "…"}, 2 × chambers, or ants ÷ 2, in leaves</td></tr>
+            <tr><td><Ico name="farm">Farm</Ico></td><td>up to 100 ants, makes sugar</td><td>the most of {c?.farmLeafBase ?? "…"}, chambers, or ants ÷ 4, in leaves; from the second farm on, also the most of {c?.farmSugarBase ?? "…"}, chambers, or ants ÷ 4, in sugar</td></tr>
           </tbody>
         </table>
         <P>Costs grow as your colony grows. Ants not assigned to a trail or farm are free ants: they can raid and guard.</P>

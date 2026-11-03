@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { Avatar, Button, Card, Drawer, PixelIcon, type IconName } from "../ui";
 import { displayName, fmtEth, fmtWif, shortAddress } from "../lib/format";
 import { useStarterGas } from "../lib/starterGas";
+import { NETWORK } from "../config";
 import { useBalances, useColonies, useProfile } from "../lib/game";
 import { useSession } from "../lib/session";
 import { useShell, type Look } from "./Providers";
@@ -97,6 +98,7 @@ export function MenuDrawer({ open, onClose }: { open: boolean; onClose: () => vo
           {link("/leaderboard", "trophy", "Leaderboard", rank ? `#${rank}` : undefined)}
           {link("/invite", "invite", "Invite friends")}
           {link("/how-to-play", "book", "How to play")}
+          {link("/about", "colony", "About")}
           {link("/settings", "gear", "Settings")}
         </nav>
         <div className="c0-menu__look" role="group" aria-label="Look">
@@ -109,6 +111,22 @@ export function MenuDrawer({ open, onClose }: { open: boolean; onClose: () => vo
             ))}
           </div>
         </div>
+        {session.signedIn && me ? (
+          <div className="c0-menu__assets" role="group" aria-label="Balances">
+            <span className="c0-menu__look-cap">BALANCES</span>
+            <div className="c0-menu__asset">
+              <PixelIcon name="eth" />
+              <span className="c0-menu__asset-name">ETH</span>
+              <span className="c0-menu__asset-amt">{balances.data ? fmtEth(balances.data.eth) : "…"}</span>
+            </div>
+            <div className="c0-menu__asset">
+              <PixelIcon name="wif" />
+              <span className="c0-menu__asset-name">WIF</span>
+              <span className="c0-menu__asset-amt">{balances.data ? fmtWif(balances.data.wif) : "…"}</span>
+            </div>
+            <span className="c0-menu__asset-cap">on {NETWORK.name}</span>
+          </div>
+        ) : null}
         {session.signedIn ? (
           <div className="c0-menu__foot">
             <span>{profile.data?.hasVoterPass ? "Voter's Pass linked" : "No Voter's Pass"}</span>

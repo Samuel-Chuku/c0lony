@@ -27,15 +27,26 @@ export const foundedResult = (): SuccessContent => ({
   ],
 });
 
+/** The feeding breakdown, in the order the contract does it: the queen eats, the ants eat, new ants hatch. */
 export const fedResult = (r: Rec): SuccessContent => {
   const e = eventsOf(r, "QueenFed")[0];
-  if (!e) return { title: "The queen is fed", lines: ["Fed for 72 hours."] };
-  const lines: ReactNode[] = ["Fed for 72 hours."];
+  if (!e) return { title: "The colony is fed", lines: ["Fed for 72 hours."] };
   const born = Number(e.born);
   const died = Number(e.died);
-  lines.push(`${born} ${born === 1 ? "ant" : "ants"} born · ${died} died · ${Number(e.workersAfter)} in the colony`);
-  if (BigInt(e.scoreAdded ?? 0) > 0n) lines.push(`+${String(e.scoreAdded)} score`);
-  return { title: "The queen is fed", lines };
+  const after = Number(e.workersAfter);
+  const before = after - born + died;
+  const ate = before - died;
+  const ants = (n: number) => `${n} ${n === 1 ? "ant" : "ants"}`;
+  const lines: ReactNode[] = [
+    <>The queen ate 3 <ResIcon name="leaf" size={20} label="leaves" /> and is fed for 72 hours</>,
+    <>{ants(ate)} ate {ate} <ResIcon name="sugar" size={20} label="sugar" /></>,
+  ];
+  if (died > 0) lines.push(`${ants(died)} went hungry and died`);
+  lines.push(born > 0 ? <>{ants(born)} hatched from {born * 2} leftover <ResIcon name="sugar" size={20} label="sugar" /></> : "No new ants: no room left in your chambers, or no sugar left over");
+  lines.push(`${ants(after)} in the colony now${BigInt(e.scoreAdded ?? 0) > 0n ? ` · +${String(e.scoreAdded)} score` : ""}`);
+  const paid = eventsOf(r, "Paid")[0];
+  if (paid) lines.push(`Paid ${fmtWif(BigInt(paid.amount))} WIF · ${fmtWif(BigInt(paid.toPot))} to the pot · ${fmtWif(BigInt(paid.burned))} burned`);
+  return { title: "The colony is fed", lines };
 };
 
 export const tendResult = (r: Rec): SuccessContent => {

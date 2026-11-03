@@ -114,7 +114,7 @@ export function RaidsScreen() {
             ) : myRaidableIn > 0 ? (
               <><span className="c0-safe__label">You can be raided again in</span> <b className="c0-safe__time">{fmtDuration(myRaidableIn)}</b></>
             ) : (
-              <><span className="c0-safe__label">You can be raided now</span><span className="c0-safe__note">one raid at a time, then 12h of peace</span></>
+              <><span className="c0-safe__label">You can be raided now</span><span className="c0-safe__note">{outgoing.length > 0 ? "even while your own raid is out" : "one raid at a time, then 12h of peace"}</span></>
             )}
           </div>
         <div className="c0-split">

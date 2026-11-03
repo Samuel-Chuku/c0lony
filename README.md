@@ -222,9 +222,9 @@ Current Robinhood Chain **testnet** (46630) deployment (fourth, 2026-11-02), all
 
 | Contract | Address |
 | --- | --- |
-| ColonyGame | [`0xb826C232193B2EF12fdf60E55EE341e3edE9D672`](https://explorer.testnet.chain.robinhood.com/address/0xb826C232193B2EF12fdf60E55EE341e3edE9D672) |
-| SeasonPot | [`0xDd1b353DF1AB32e6E2A601586e0446A7bAa60FAA`](https://explorer.testnet.chain.robinhood.com/address/0xDd1b353DF1AB32e6E2A601586e0446A7bAa60FAA) |
-| Treasury | [`0xe23673FA3A54F1C84c45c386400000194Bf52a26`](https://explorer.testnet.chain.robinhood.com/address/0xe23673FA3A54F1C84c45c386400000194Bf52a26) |
+| ColonyGame | [`0x4B63783671A416eC4Db8A31A337512a1D23B091B`](https://explorer.testnet.chain.robinhood.com/address/0x4B63783671A416eC4Db8A31A337512a1D23B091B) |
+| SeasonPot | [`0x584d8A1067E154DE1887D9fbab7e3F47cefa5451`](https://explorer.testnet.chain.robinhood.com/address/0x584d8A1067E154DE1887D9fbab7e3F47cefa5451) |
+| Treasury | [`0x0be8aade8821A44776e872E6a13F06FacF35E325`](https://explorer.testnet.chain.robinhood.com/address/0x0be8aade8821A44776e872E6a13F06FacF35E325) |
 | DrandVerifier (library) | [`0x2513832059bac29e5a5115634694F22B6B302Ae1`](https://explorer.testnet.chain.robinhood.com/address/0x2513832059bac29e5a5115634694F22B6B302Ae1) |
 | MockWIF (testnet only) | [`0xC7524F3D78E5f6150aff0Eac811e9Bd0D0Fd9B68`](https://explorer.testnet.chain.robinhood.com/address/0xC7524F3D78E5f6150aff0Eac811e9Bd0D0Fd9B68) |
 
@@ -235,7 +235,7 @@ Mainnet WIF is `0x5173b8eA6923c2d40267890D45C46a3480954773` (source and checks i
 1. Open [app.c0lony.xyz](https://app.c0lony.xyz) and sign in (or connect a wallet).
 2. Get WIF: use **Get WIF** to swap ETH, or bring your own. New wallets get a small gas drip when they found, and a new player's own C0LONY wallet gets a tiny starter top-up before that first transaction.
 3. **Found** your colony, then **tend** and **feed** the colony at least every 72 hours.
-4. **Build** chambers, trails and farms, and assign workers with the ants slider, which shows live earnings per hour and per day. The first aphid farm costs leaves only.
+4. **Build** chambers, trails and farms, and assign workers with the ants slider, which shows live earnings per hour and per day. The first aphid farm costs leaves only (40 at launch).
 5. **Raid** a neighbour (all your free ants march), **guard** when you are raided, and **avenge** if you lose. Check the Live tab and claim your share when the season ends.
 
 **Install on a phone:** iPhone Safari: Share, then Add to Home Screen. Android Chrome: menu, then Install app.

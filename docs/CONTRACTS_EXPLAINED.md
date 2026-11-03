@@ -45,7 +45,7 @@ sponsors ──sponsor()──▶ SeasonPot (100% to the chosen season)
 | Shield | 1,000 WIF | No new raids against you for 8 h, at most once per 24 h. |
 | Revive a starving queen | 2,000 + 20 per worker | Only in the 24 h after the queen has gone 72 h unfed. |
 
-**Free actions.** `tend` (collect hand forage trips and trail/farm output in one go), `digChamber`, `buildTrail`, `buildFarm` and `assignWorkers` (paid in leaves and sugar, never below the raid lock), plus the raid actions. The first aphid farm costs leaves only; every later farm costs the same amount in sugar too.
+**Free actions.** `tend` (collect hand forage trips and trail/farm output in one go), `digChamber`, `buildTrail`, `buildFarm` and `assignWorkers` (paid in leaves and sugar, never below the raid lock), plus the raid actions. Build costs grow with the colony from a base the owner can tune within 0.25× to 4× of launch (chamber 10 leaves, trail 50 leaves, farm 40 leaves, and from the second farm on 25 sugar as well; the first farm costs no sugar). Changing a base only changes how many leaves and sugar a building takes; it can never touch WIF.
 
 **Gathering.**
 - **Trails and farms:** each assigned ant earns 2 a day (23,148 per second in 1e-9 units), accrued every second and spendable at once.

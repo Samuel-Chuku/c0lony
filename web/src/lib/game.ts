@@ -212,16 +212,15 @@ export function inRange(myWorkers: number, theirWorkers: number): boolean {
 }
 
 /**
- * Building costs, from the contract formulas (whole leaves). Every farm after the first costs the same amount
- * of sugar too; the first farm is leaves only.
+ * Building costs in whole leaves and sugar, from the contract formulas and the live config's base costs (owner-
+ * tunable within 0.25x to 4x). The first farm costs no sugar.
  */
-export function buildCosts(chambers: number, ants: number, farms = 0) {
-  const farm = Math.max(25, chambers, Math.floor(ants / 4));
+export function buildCosts(cfg: Pick<GameConfig, "chamberBase" | "trailBase" | "farmLeafBase" | "farmSugarBase">, chambers: number, ants: number, farms = 0) {
   return {
-    chamber: Math.max(10, chambers, Math.floor(ants / 5)),
-    trail: Math.max(50, 2 * chambers, Math.floor(ants / 2)),
-    farm,
-    farmSugar: farms === 0 ? 0 : farm,
+    chamber: Math.max(cfg.chamberBase, chambers, Math.floor(ants / 5)),
+    trail: Math.max(cfg.trailBase, 2 * chambers, Math.floor(ants / 2)),
+    farm: Math.max(cfg.farmLeafBase, chambers, Math.floor(ants / 4)),
+    farmSugar: farms === 0 ? 0 : Math.max(cfg.farmSugarBase, chambers, Math.floor(ants / 4)),
   };
 }
 

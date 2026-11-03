@@ -1,0 +1,5 @@
+/* About page */
+.c0-about__logo { display: flex; justify-content: center; padding: var(--c0-s2) 0; }
+.c0-about__logo img { width: 244px; height: 92px; image-rendering: pixelated; }
+.c0-about__link { display: inline-flex; align-items: center; min-height: var(--c0-tap); align-self: flex-start; font-family: var(--c0-f-display); font-size: 20px; color: var(--c0-ink); text-decoration: underline; }
+.c0-about__soon { margin: 0; text-align: center; color: var(--c0-fg-muted); font-size: var(--c0-fs-body); line-height: var(--c0-lh-body); }

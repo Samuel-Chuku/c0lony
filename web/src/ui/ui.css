@@ -76,6 +76,7 @@ a { color: var(--c0-fg); }
 
 /* Stat tile */
 .c0-statrow { display: grid; grid-template-columns: repeat(5, 1fr); gap: var(--c0-s2); }
+.c0-statrow--store { grid-template-columns: 1fr 1fr; }
 .c0-stat { display: flex; flex-direction: column; align-items: center; gap: var(--c0-s1); padding: var(--c0-s2) 2px; text-align: center; min-width: 0; }
 .c0-stat .c0-icon { color: var(--c0-muted); }
 .c0-stat__value { font-family: var(--c0-f-display); font-size: 22px; line-height: var(--c0-lh-tight); color: var(--c0-paper); }
@@ -123,7 +124,7 @@ a { color: var(--c0-fg); }
 
 /* Dialogs */
 .c0-dialog-root { position: fixed; inset: 0; z-index: 50; display: flex; justify-content: center; }
-.c0-dim { position: absolute; inset: 0; background: var(--c0-dim); }
+.c0-dim { position: absolute; inset: 0; background: var(--c0-dim); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); } /* owner's call (2026-11-03): the page behind any window is blurred */
 .c0-dialog-col { position: relative; width: 100%; max-width: var(--c0-col-max); height: 100%; pointer-events: none; }
 .c0-dialog-col > * { pointer-events: auto; }
 .c0-dialog:focus { outline: none; }

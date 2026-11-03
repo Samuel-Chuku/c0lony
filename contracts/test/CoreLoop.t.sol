@@ -188,7 +188,7 @@ contract CoreLoopTest is Base {
         game.setStock(id, uint128(100 * RES), uint128(10 * RES));
         vm.prank(alice);
         game.buildFarm();
-        assertEq(_leaves(id), 75 * RES);
+        assertEq(_leaves(id), 60 * RES, "the first farm costs 40 leaves");
         assertEq(_sugar(id), 10 * RES, "no sugar for the first farm");
         vm.prank(alice);
         vm.expectRevert(ColonyGame.NotEnoughSugar.selector);
@@ -196,7 +196,8 @@ contract CoreLoopTest is Base {
         game.setStock(id, uint128(100 * RES), uint128(100 * RES));
         vm.prank(alice);
         game.buildFarm();
-        assertEq(_sugar(id), 75 * RES, "the second farm costs sugar too");
+        assertEq(_leaves(id), 60 * RES);
+        assertEq(_sugar(id), 75 * RES, "the second farm costs 25 sugar too");
     }
 
     function test_assign_limits() public {
@@ -216,11 +217,30 @@ contract CoreLoopTest is Base {
         uint64 id = _found(alice);
         assertEq(game.chamberCost(id), 10);
         assertEq(game.trailCost(id), 50);
-        assertEq(game.farmCost(id), 25);
+        assertEq(game.farmCost(id), 40);
+        assertEq(game.farmSugarCost(id), 0, "the first farm costs no sugar");
         game.setWorkers(id, 200, 40);
         assertEq(game.chamberCost(id), 40); // 0.2 x 200
         assertEq(game.trailCost(id), 100); // max(2 x 40, 0.5 x 200)
         assertEq(game.farmCost(id), 50); // 0.25 x 200
+    }
+
+    function test_buildCosts_followTheConfigBases() public {
+        uint64 id = _found(alice);
+        ColonyGame.Config memory c = game.getConfig();
+        c.chamberBase = 20;
+        c.trailBase = 100;
+        c.farmLeafBase = 60;
+        c.farmSugarBase = 30;
+        vm.prank(owner);
+        game.setConfig(c);
+        assertEq(game.chamberCost(id), 20);
+        assertEq(game.trailCost(id), 100);
+        assertEq(game.farmCost(id), 60);
+        game.setStock(id, uint128(1_000 * RES), uint128(1_000 * RES));
+        vm.prank(alice);
+        game.buildFarm();
+        assertEq(game.farmSugarCost(id), 30);
     }
 
     function test_digChamber_spendsLeaves() public {
@@ -399,6 +419,30 @@ contract CoreLoopTest is Base {
         game.setConfig(bad);
 
         bad = game.getConfig();
+        bad.farmLeafBase = c.farmLeafBase * 4 + 1;
+        vm.prank(owner);
+        vm.expectRevert(ColonyGame.BadConfig.selector);
+        game.setConfig(bad);
+
+        bad = game.getConfig();
+        bad.chamberBase = c.chamberBase / 4 - 1;
+        vm.prank(owner);
+        vm.expectRevert(ColonyGame.BadConfig.selector);
+        game.setConfig(bad);
+
+        bad = game.getConfig();
+        bad.trailBase = 0;
+        vm.prank(owner);
+        vm.expectRevert(ColonyGame.BadConfig.selector);
+        game.setConfig(bad);
+
+        bad = game.getConfig();
+        bad.farmSugarBase = c.farmSugarBase * 4 + 1;
+        vm.prank(owner);
+        vm.expectRevert(ColonyGame.BadConfig.selector);
+        game.setConfig(bad);
+
+        bad = game.getConfig();
         bad.raidCooldown = c.raidCooldown * 4 + 1;
         vm.prank(owner);
         vm.expectRevert(ColonyGame.BadConfig.selector);
@@ -408,6 +452,7 @@ contract CoreLoopTest is Base {
         ColonyGame.Config memory ok = game.getConfig();
         ok.foundPrice = c.foundPrice * 4;
         ok.raidProtection = c.raidProtection * 4;
+        ok.farmLeafBase = c.farmLeafBase * 4;
         vm.expectEmit(address(game));
         emit ColonyGame.ConfigUpdated(c, ok);
         vm.prank(owner);

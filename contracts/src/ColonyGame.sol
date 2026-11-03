@@ -115,6 +115,11 @@ contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView
         uint64 seasonLength; // default for new seasons; 1 to 21 days
         // Voter's Pass discount on founding and feeding, in percent. Cap: 0 to 30.
         uint8 voterDiscountPct;
+        // Base build costs in whole leaves/sugar (the minimum; costs grow with the colony). Cap: 0.25x to 4x launch.
+        uint32 chamberBase;
+        uint32 trailBase;
+        uint32 farmLeafBase;
+        uint32 farmSugarBase; // from the second farm on; the first farm costs leaves only
     }
 
     function launchConfig() public pure returns (Config memory c) {
@@ -136,6 +141,10 @@ contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView
         c.shieldCooldown = 24 hours;
         c.seasonLength = 7 days;
         c.voterDiscountPct = 20;
+        c.chamberBase = 10;
+        c.trailBase = 50;
+        c.farmLeafBase = 40;
+        c.farmSugarBase = 25;
     }
 
     Config internal config;
@@ -437,6 +446,8 @@ contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView
                 || !_within4x(c.revealWindow, l.revealWindow) || !_within4x(c.shieldDuration, l.shieldDuration)
                 || !_within4x(c.shieldCooldown, l.shieldCooldown) || c.guardWindow < 1 hours || c.guardWindow > 8 hours
                 || c.seasonLength < MIN_SEASON_LENGTH || c.seasonLength > MAX_SEASON_LENGTH || c.voterDiscountPct > 30
+                || !_within4x(c.chamberBase, l.chamberBase) || !_within4x(c.trailBase, l.trailBase)
+                || !_within4x(c.farmLeafBase, l.farmLeafBase) || !_within4x(c.farmSugarBase, l.farmSugarBase)
         ) revert BadConfig();
         // A feed must stay possible before the queen starves.
         if (c.feedMinInterval >= STARVE_AFTER) revert BadConfig();
@@ -747,23 +758,29 @@ contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView
         if (c > m) m = c;
     }
 
-    /// @notice Leaves needed for the next nest chamber: max(10, chambers, 0.2 x workers).
+    /// @notice Leaves needed for the next nest chamber: max(chamberBase, chambers, 0.2 x workers).
     function chamberCost(uint64 colonyId) public view returns (uint256) {
         Colony storage c = colonies[colonyId];
-        return _max3(10, c.chambers, uint256(c.workers) / 5);
+        return _max3(config.chamberBase, c.chambers, uint256(c.workers) / 5);
     }
 
-    /// @notice Leaves needed for the next leafcutter trail: max(50, 2 x chambers, 0.5 x workers).
+    /// @notice Leaves needed for the next leafcutter trail: max(trailBase, 2 x chambers, 0.5 x workers).
     function trailCost(uint64 colonyId) public view returns (uint256) {
         Colony storage c = colonies[colonyId];
-        return _max3(50, 2 * uint256(c.chambers), uint256(c.workers) / 2);
+        return _max3(config.trailBase, 2 * uint256(c.chambers), uint256(c.workers) / 2);
     }
 
-    /// @notice Leaves for the next aphid farm: max(25, chambers, 0.25 x workers). Every farm after the first also
-    ///         costs the same amount of sugar; the first is leaves only, so a new colony can start farming.
+    /// @notice Leaves for the next aphid farm: max(farmLeafBase, chambers, 0.25 x workers).
     function farmCost(uint64 colonyId) public view returns (uint256) {
         Colony storage c = colonies[colonyId];
-        return _max3(25, c.chambers, uint256(c.workers) / 4);
+        return _max3(config.farmLeafBase, c.chambers, uint256(c.workers) / 4);
+    }
+
+    /// @notice Sugar for the next aphid farm: none for the first (so a new colony can start farming), then
+    ///         max(farmSugarBase, chambers, 0.25 x workers).
+    function farmSugarCost(uint64 colonyId) public view returns (uint256) {
+        Colony storage c = colonies[colonyId];
+        return c.farms == 0 ? 0 : _max3(config.farmSugarBase, c.chambers, uint256(c.workers) / 4);
     }
 
     function digChamber() external {
@@ -788,7 +805,7 @@ contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView
         (uint64 id, Colony storage c) = _myAliveColony();
         _accrue(c);
         uint256 cost = farmCost(id);
-        uint256 sugarCost = c.farms == 0 ? 0 : cost;
+        uint256 sugarCost = farmSugarCost(id);
         _spend(c, cost * RES, sugarCost * RES);
         c.farms += 1;
         emit Built(id, msg.sender, "farm", cost, sugarCost, c.farms);

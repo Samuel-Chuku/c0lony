@@ -178,7 +178,21 @@ Environment variable names (see `keeper/.env.example`): `FEED_API_BASE`, `FEED_I
 
 ## Deployed contracts
 
-### Robinhood Chain testnet (46630), current deployment (2026-11-02, fourth)
+### Robinhood Chain testnet (46630), current deployment (2026-11-03, fifth)
+
+Redeployed so the base build costs live in the owner-tunable config (`chamberBase`, `trailBase`, `farmLeafBase`, `farmSugarBase`, each capped at 0.25× to 4× launch, every change emits `ConfigUpdated`). The aphid farm now costs 40 leaves at launch (was 25), and from the second farm on 25 sugar as well, read from the new `farmSugarCost` view. Blocks 147,433,303–147,433,344, 10,326,131 gas in total. ColonyGame, SeasonPot and Treasury are verified on Blockscout; the DrandVerifier library and MockWIF are reused.
+
+| Contract | Address |
+| --- | --- |
+| ColonyGame | [`0x4B63783671A416eC4Db8A31A337512a1D23B091B`](https://explorer.testnet.chain.robinhood.com/address/0x4B63783671A416eC4Db8A31A337512a1D23B091B) |
+| SeasonPot | [`0x584d8A1067E154DE1887D9fbab7e3F47cefa5451`](https://explorer.testnet.chain.robinhood.com/address/0x584d8A1067E154DE1887D9fbab7e3F47cefa5451) |
+| Treasury | [`0x0be8aade8821A44776e872E6a13F06FacF35E325`](https://explorer.testnet.chain.robinhood.com/address/0x0be8aade8821A44776e872E6a13F06FacF35E325) |
+| DrandVerifier (linked library, reused) | [`0x2513832059bac29e5a5115634694F22B6B302Ae1`](https://explorer.testnet.chain.robinhood.com/address/0x2513832059bac29e5a5115634694F22B6B302Ae1) |
+| MockWIF (testnet only, reused) | [`0xC7524F3D78E5f6150aff0Eac811e9Bd0D0Fd9B68`](https://explorer.testnet.chain.robinhood.com/address/0xC7524F3D78E5f6150aff0Eac811e9Bd0D0Fd9B68) |
+
+Owner: `0x4B11611CF7C90aEc2003721d71107d7E1cBf37c2`. Treasury funded with 0.002 testnet ETH. The keeper wallet `0x1A5285D03dF06089119a093756Da5D36852C09f0` is the voter-root setter and posted the Voter's Pass root itself. Live check after deploy: a new colony's farm cost reads 40 leaves.
+
+### Robinhood Chain testnet (46630), fourth deployment (retired)
 
 Redeployed with the economy and raid redesign (2 a day per assigned ant, stacking forage trips, all free ants march, 12 h cooldown and protection, one raid at a time, the 60% raid lock, no win odds). Blocks 147,191,275–147,191,385, 10,112,688 gas in total. ColonyGame, SeasonPot and Treasury are verified on Blockscout; the DrandVerifier library and MockWIF are reused.
 
@@ -190,7 +204,7 @@ Redeployed with the economy and raid redesign (2 a day per assigned ant, stackin
 | DrandVerifier (linked library, reused) | [`0x2513832059bac29e5a5115634694F22B6B302Ae1`](https://explorer.testnet.chain.robinhood.com/address/0x2513832059bac29e5a5115634694F22B6B302Ae1) |
 | MockWIF (testnet only, reused) | [`0xC7524F3D78E5f6150aff0Eac811e9Bd0D0Fd9B68`](https://explorer.testnet.chain.robinhood.com/address/0xC7524F3D78E5f6150aff0Eac811e9Bd0D0Fd9B68) |
 
-Owner: `0x4B11611CF7C90aEc2003721d71107d7E1cBf37c2`. Treasury funded with 0.002 testnet ETH. The keeper wallet `0x1A5285D03dF06089119a093756Da5D36852C09f0` is the voter-root setter, and the existing Voter's Pass root was posted. Live check after deploy: a new colony's first tend brought 11 leaves and 7 sugar (10 free ants), and its first farm cost 25 leaves and no sugar. The keeper was still pointed at the third deployment at the time of writing.
+Owner: `0x4B11611CF7C90aEc2003721d71107d7E1cBf37c2`. Treasury funded with 0.002 testnet ETH. The keeper wallet `0x1A5285D03dF06089119a093756Da5D36852C09f0` is the voter-root setter, and the existing Voter's Pass root was posted. Live check after deploy: a new colony's first tend brought 11 leaves and 7 sugar (10 free ants), and its first farm cost 25 leaves and no sugar.
 
 ### Robinhood Chain testnet (46630), third deployment (retired)
 

@@ -12,6 +12,7 @@ import {
   currentEndpoint, DEFAULT_PREFS, disablePush, enablePush, isIos, isStandalone, pushSupport, savePushPrefs,
   type PushPrefs, type PushSupport,
 } from "../../lib/push";
+import { WithdrawSheet } from "../wallet/WithdrawSheet";
 import { VoterPass } from "./VoterPass";
 import "./settings.css";
 
@@ -180,12 +181,22 @@ export function SettingsScreen() {
   const session = useSession();
   const profile = useProfile(session.address);
   const [pass, setPass] = useState(false);
+  const [withdraw, setWithdraw] = useState(false);
   return (
     <Screen back title="Settings">
       <div className="c0-set">
         <h2 className="c0-set__label">Account</h2>
         <XRow />
         <WalletRow />
+        {session.signedIn && session.wallet ? (
+          <div className="c0-srow">
+            <div className="c0-srow__text">
+              <span>Withdraw</span>
+              <span className="c0-srow__hint">send ETH or WIF to another address</span>
+            </div>
+            <Button variant="paper" size="compact" onClick={() => setWithdraw(true)}>Withdraw</Button>
+          </div>
+        ) : null}
         <div className="c0-srow">
           <div className="c0-srow__text">
             <span>Voter's Pass</span>
@@ -198,6 +209,7 @@ export function SettingsScreen() {
         <h2 className="c0-set__label">App</h2>
         <AppRows />
       </div>
+      <WithdrawSheet open={withdraw} onClose={() => setWithdraw(false)} />
       <VoterPass open={pass} onClose={() => setPass(false)} />
     </Screen>
   );

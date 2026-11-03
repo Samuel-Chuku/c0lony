@@ -63,7 +63,7 @@ export function NeighbourItem({ row, ctx, onRaid, onProfile }: Props) {
         <Avatar src={who.avatar} address={row.owner} alt={who.name} size={40} />
         <span className="c0-nrow__col">
           <span className="c0-nrow__handle">{who.name}</span>
-          <span className="c0-nrow__line"><ResIcon name="ant" size={16} label="ants" /> {fmtInt(row.workers)} · <ResIcon name="sugar" size={16} label="sugar" /> ~{fmtRes(row.sugar)}</span>
+          <span className="c0-nrow__line"><ResIcon name="ant" size={16} label="ants" /> {fmtInt(row.workers)} · <ResIcon name="leaf" size={16} label="leaves" /> ~{fmtRes(row.leaves)} · <ResIcon name="sugar" size={16} label="sugar" /> ~{fmtRes(row.sugar)}</span>
           <Hand size={15} className={isRaider ? "c0-nrow__note c0-nrow__note--raider" : "c0-nrow__note"}>{note}</Hand>
         </span>
       </button>
