@@ -356,3 +356,9 @@ a { color: var(--c0-fg); }
 .c0-feed__verify { font-size: 11px; color: var(--c0-sub); text-decoration: underline; white-space: nowrap; }
 .c0-nav__icon { position: relative; display: inline-flex; line-height: 0; }
 .c0-raiddot { position: absolute; top: -2px; right: -6px; width: 12px; height: 12px; box-sizing: border-box; background: var(--c0-red); border: 2px solid var(--c0-ink); }
+/* Incoming raid banner folds to its title line (owner's call, 2026-11-03). */
+.c0-banner__fold { width: 100%; padding: 0; margin: 0; background: none; border: 0; color: inherit; text-align: left; cursor: pointer; align-items: center; min-height: var(--c0-tap); }
+.c0-banner__fold .c0-banner__title { flex: 1; }
+.c0-banner__chev { font-family: var(--c0-f-display); font-size: 24px; line-height: 1; transform: rotate(90deg); flex: none; }
+.c0-banner__fold[aria-expanded="true"] .c0-banner__chev { transform: rotate(-90deg); }
+.c0-banner__sum { display: flex; align-items: center; gap: 4px; font-size: 13px; }

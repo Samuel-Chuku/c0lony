@@ -1,6 +1,6 @@
 "use client";
 import { ResIcon } from "../../ui/ResIcon";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Resource, useNow, type Raid } from "../../lib/game";
 import { fmtDuration } from "../../lib/format";
 import { guard } from "../../lib/raids";
@@ -19,6 +19,24 @@ export function IncomingBanner({ raid, guardWindow }: { raid: Raid; guardWindow:
   const left = Number(raid.launchedAt) + guardWindow - now;
   const guarded = raid.guard === Resource.Leaves ? "leaves" : raid.guard === Resource.Sugar ? "sugar" : null;
 
+  // The banner can fold down to its title line. It starts open until you guard, then folds; the choice sticks per raid.
+  const foldKey = `c0lony:bannerOpen:${raid.id}`;
+  const [open, setOpen] = useState<boolean>(() => {
+    try {
+      const v = localStorage.getItem(foldKey);
+      if (v !== null) return v === "1";
+    } catch { /* storage blocked */ }
+    return !guarded;
+  });
+  const toggle = (next: boolean) => {
+    setOpen(next);
+    try { localStorage.setItem(foldKey, next ? "1" : "0"); } catch { /* ignore */ }
+  };
+  useEffect(() => {
+    if (action.hash) toggle(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [action.hash]);
+
   const pick = (res: number) => {
     setWhich(res);
     void action.run(guard(raid.id, res));
@@ -26,10 +44,17 @@ export function IncomingBanner({ raid, guardWindow }: { raid: Raid; guardWindow:
 
   return (
     <section className="c0-banner" aria-label={`${who.name} is marching on you`}>
-      <div className="c0-banner__top">
-        <h2 className="c0-banner__title">{who.name} is marching on you</h2>
+      <button type="button" className="c0-banner__top c0-banner__fold" aria-expanded={open} onClick={() => toggle(!open)}>
+        <span className="c0-banner__title">{who.name} is marching on you</span>
         <span className="c0-banner__time">{fmtDuration(left)}</span>
-      </div>
+        <span className="c0-banner__chev" aria-hidden="true">›</span>
+      </button>
+      {!open ? (
+        <div className="c0-banner__sum">
+          {guarded ? <><ResIcon name={guarded === "leaves" ? "leaf" : "sugar"} size={16} /> Guarding {guarded}</> : "Not guarded yet"} · tap to {guarded ? "see options" : "choose"}
+        </div>
+      ) : null}
+      {open ? (<>
       <div className="c0-opts" role="radiogroup" aria-label={guarded ? "You are guarding" : "Pick what to guard"}>
         {([Resource.Leaves, Resource.Sugar] as const).map((res) => {
           const name = res === Resource.Leaves ? "Leaves" : "Sugar";
@@ -61,6 +86,7 @@ export function IncomingBanner({ raid, guardWindow }: { raid: Raid; guardWindow:
       )}
       {action.error ? <div className="c0-blocked" role="alert">{action.error}</div> : null}
       <ShieldButton full />
+      </>) : null}
     </section>
   );
 }
