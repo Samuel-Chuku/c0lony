@@ -5,7 +5,7 @@
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { BlockedStrip, BottomNav, BrandName, Button, Header, type NavTab } from "../ui";
-import { useBalances } from "../lib/game";
+import { useActiveRaids, useBalances, useProfile } from "../lib/game";
 import { useSession } from "../lib/session";
 import { useXProfile } from "../lib/useXProfile";
 import { fmtWif } from "../lib/format";
@@ -33,11 +33,15 @@ export function Screen({ title, sub, tab, back, header, children }: ScreenProps)
   const session = useSession();
   const balances = useBalances(session.address);
   const me = useXProfile(session.address);
+  // A red dot on the Raids tab while any raid involving the player is underway.
+  const colonyId = useProfile(session.address).data?.colonyId;
+  const raidsUnderway = (useActiveRaids(colonyId || null).data ?? []).length > 0;
+  const alert = raidsUnderway ? ("raids" as const) : null;
   const timeOf = (ts: number) => new Date(ts * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
   return (
     <div className="c0-app">
-      <SideRail active={tab} />
+      <SideRail active={tab} alert={alert} />
       <div className="c0-app__body">
       {header ?? (
         <Header
@@ -64,7 +68,7 @@ export function Screen({ title, sub, tab, back, header, children }: ScreenProps)
         </div>
       )}
       <main className={tab ? "c0-main" : "c0-main c0-main--narrow"}>{children}</main>
-      {tab && <BottomNav active={tab} onSelect={(t) => router.push(tabHref(t))} />}
+      {tab && <BottomNav active={tab} alert={alert} onSelect={(t) => router.push(tabHref(t))} />}
       </div>
     </div>
   );

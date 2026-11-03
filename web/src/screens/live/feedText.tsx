@@ -7,6 +7,7 @@ import type { FeedEvent } from "../../lib/api";
 import { ResIcon } from "../../ui/ResIcon";
 import { displayName, fmtInt, fmtRes, fmtWif } from "../../lib/format";
 import { useXProfile } from "../../lib/useXProfile";
+import { drandRoundUrl } from "../../lib/raids";
 
 export type FeedLine = {
   kind: string;
@@ -82,7 +83,12 @@ export function describeEvent(ev: FeedEvent, me?: string | null): FeedLine | nul
       return { ...base, actor: defender, kind: "GUARDING", tone: "sub", sentence: guardFor && guardFor.toLowerCase() !== defender?.toLowerCase() ? <>{S(defender, "are guarding against", "is guarding against")} {H(guardFor)}</> : <>{S(defender, "are guarding", "is guarding")}</> };
     case "revealed":
       return { ...base, actor: raider, kind: "ROLLING", tone: "raid",
-        sentence: <>{isMe(raider) ? "Your raid" : <>The raid of {H(raider)}</>} on {H(defender ?? raider)} is out. Waiting for drand round {num(d.round)}.</> };
+        sentence: (
+          <>
+            {isMe(raider) ? "Your raid" : <>The raid of {H(raider)}</>} on {isMe(defender) ? "you" : H(defender ?? raider)} is revealed. The result lands shortly.
+            {num(d.round) > 0 ? <> <a className="c0-feed__verify" href={drandRoundUrl(BigInt(num(d.round)))} target="_blank" rel="noopener noreferrer">verify roll ›</a></> : null}
+          </>
+        ) };
     case "settled": {
       const out = str(d.outcome);
       const lost = num(d.soldiersLost);

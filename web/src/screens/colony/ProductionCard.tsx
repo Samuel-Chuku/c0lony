@@ -17,7 +17,7 @@ export function ProductionCard({ view, cfg, now, wif, onBuy }: Props) {
   const [forage, setForage] = useState<number>(Resource.Leaves);
   const tendSnap = useRef<TendSnapshot | null>(null);
   const tend = useAction("Tending", { success: (r) => tendResult(r, tendSnap.current) });
-  const speed = useAction("Speeding up", { success: (r) => speedUpResult(forage)(r) });
+  const speed = useAction("Speeding up", { success: (r) => speedUpResult(forage, tendSnap.current)(r) });
   const [pantry, setPantry] = useState(false);
   const w = waitingNow(view, cfg, now);
   const inPantry = w.leafTrips + w.sugarTrips;
@@ -116,7 +116,7 @@ export function ProductionCard({ view, cfg, now, wif, onBuy }: Props) {
                   busy={speed.busy && forage === o.res ? "Speeding up…" : undefined}
                   disabled={speed.busy}
                   disabledReason={reason}
-                  onClick={() => { setForage(o.res); void speed.run({ functionName: "speedUp", args: [o.res], wif: price }); }}
+                  onClick={() => { setForage(o.res); tendSnap.current = w; void speed.run({ functionName: "speedUp", args: [o.res], wif: price }); }}
                 >
                   <ResIcon name={o.kind} size={20} /> {o.name} foragers · {fmtWif(price)} WIF
                 </Button>

@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import type { TransactionReceipt } from "viem";
 import { ResIcon } from "../ui/ResIcon";
-import { RES, fmtDuration, fmtRes, fmtWif } from "./format";
+import { RES, displayName, fmtDuration, fmtRes, fmtWif } from "./format";
 import { Outcome, Resource } from "./game";
 import { eventsOf, type SuccessContent } from "./tx";
 
@@ -13,16 +13,12 @@ const resName = (r: unknown) => (Number(r) === Resource.Leaves ? "leaves" : "sug
 const iconOf = (r: unknown, size = 20) => (
   <ResIcon name={Number(r) === Resource.Leaves ? "leaf" : "sugar"} size={size} label={resName(r)} />
 );
-const amt = (units: bigint, kind: "leaf" | "sugar"): ReactNode => (
-  <>{fmtRes(units)} <ResIcon name={kind} size={20} label={kind === "leaf" ? "leaves" : "sugar"} /></>
-);
-
-export const foundedResult = (): SuccessContent => ({
+export const foundedResult = () => (r?: Rec): SuccessContent => ({
   title: "Colony founded",
   lines: [
-    "10 ants and 2 nest chambers dug in.",
-    "20 leaves and 20 sugar in the store.",
-    "Your queen is fed for 72 hours.",
+    deltas(delta(10n, "ant"), delta(whole(20), "leaf"), delta(whole(20), "sugar")),
+    "2 nest chambers dug · queen fed for 72 hours",
+    ...(r ? [paidLine(r)].filter(Boolean) : []),
     "New wallets also get a little gas ETH sent to them.",
   ],
 });
@@ -36,6 +32,12 @@ const delta = (n: bigint, kind: "leaf" | "sugar" | "ant"): ReactNode => (
 );
 const deltas = (...parts: Array<ReactNode | null>): ReactNode => <span className="c0-deltas">{parts}</span>;
 const whole = (n: unknown) => BigInt(String(n ?? 0)) * RES; // events carry ant counts and build costs in whole units
+
+/** "−100 WIF · 70 to the pot · 20 burned", from the transaction's Paid event. */
+const paidLine = (r: Rec): ReactNode => {
+  const paid = eventsOf(r, "Paid")[0];
+  return paid ? `−${fmtWif(BigInt(paid.amount))} WIF · ${fmtWif(BigInt(paid.toPot))} to the pot · ${fmtWif(BigInt(paid.burned))} burned` : null;
+};
 
 /** The feeding result: gains and losses as + and −, then the queen, the colony, the score and the WIF. */
 export const fedResult = (r: Rec): SuccessContent => {
@@ -57,8 +59,8 @@ export const fedResult = (r: Rec): SuccessContent => {
     `Queen fed · feed her again by ${by}`,
     `${after} ${after === 1 ? "ant" : "ants"} in the colony · +${String(e.scoreAdded ?? 0)} score`,
   ];
-  const paid = eventsOf(r, "Paid")[0];
-  if (paid) lines.push(`−${fmtWif(BigInt(paid.amount))} WIF · ${fmtWif(BigInt(paid.toPot))} to the pot · ${fmtWif(BigInt(paid.burned))} burned`);
+  const paid = paidLine(r);
+  if (paid) lines.push(paid);
   return { title: "The colony is fed", lines };
 };
 
@@ -98,14 +100,23 @@ export const tendResult = (r: Rec, snap?: TendSnapshot | null): SuccessContent =
   return { title: "Tended", lines };
 };
 
-export const speedUpResult = (forage: number) => (r: Rec): SuccessContent => {
-  const e = eventsOf(r, "Tended")[0];
-  const kind = forage === Resource.Leaves ? "leaf" : "sugar";
-  const got = e ? BigInt((forage === Resource.Leaves ? e.leavesGained : e.sugarGained) ?? 0) : 0n;
-  return {
-    title: `${forage === Resource.Leaves ? "Leaf" : "Sugar"} foragers are home`,
-    lines: [got > 0n ? deltas(delta(got, kind)) : "Collected what they carried.", `Next ${forage === Resource.Leaves ? "leaf" : "sugar"} speed-up in 24h.`],
-  };
+/** Speed-up: everything waiting in that side of the pantry plus one extra trip, paid in WIF. */
+export const speedUpResult = (forage: number, snap?: TendSnapshot | null) => (r: Rec): SuccessContent => {
+  const leaf = forage === Resource.Leaves;
+  const kind = leaf ? "leaf" : "sugar";
+  const waiting = snap ? (leaf ? snap.leafTrips : snap.sugarTrips) : null;
+  const per = snap ? (leaf ? snap.trip.leaves : snap.trip.sugar) : null;
+  const lines: ReactNode[] = [];
+  if (waiting !== null && per !== null) {
+    lines.push(deltas(delta(whole((waiting + 1) * per), kind)));
+    lines.push(waiting > 0 ? `${waiting} ${waiting === 1 ? "trip" : "trips"} from the pantry + 1 extra trip` : "1 extra trip");
+  } else {
+    lines.push("Your foragers brought one extra trip home.");
+  }
+  const paid = paidLine(r);
+  if (paid) lines.push(paid);
+  lines.push(`Next ${leaf ? "leaf" : "sugar"} speed-up in 24h`);
+  return { title: `${leaf ? "Leaf" : "Sugar"} foragers are home`, lines };
 };
 
 export const builtResult = (noun: string, plural: string) => (r: Rec): SuccessContent => {
@@ -139,13 +150,13 @@ export const shieldResult = (r: Rec, duration: number): SuccessContent => {
   const t = until.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   return {
     title: `Shielded for ${fmtDuration(duration)}`,
-    lines: [`No new raids can be sealed on you until ${t}.`, "Raids already marching still land."],
+    lines: [`No new raids can be sealed on you until ${t}.`, "Raids already marching still land.", paidLine(r)].filter(Boolean),
   };
 };
 
-export const revivedResult = (): SuccessContent => ({
+export const revivedResult = () => (r?: Rec): SuccessContent => ({
   title: "The queen is back",
-  lines: ["She is alive and fed again."],
+  lines: ["She is alive and fed for 72 hours.", ...(r ? [paidLine(r)].filter(Boolean) : [])],
 });
 
 export const guardResult = (resource: number): SuccessContent => ({
@@ -165,38 +176,87 @@ export const revealResult = (): SuccessContent => ({
   lines: ["Your target is out. The roll comes from a public drand round.", "Settle it as soon as the round is published."],
 });
 
+/** A settled raid, from the chain event or a feed row, told from one side. */
+export type RaidOutcome = {
+  raidId: string;
+  outcome: "won" | "guarded" | "held";
+  raider: string;
+  defender: string;
+  lootKind: "leaf" | "sugar";
+  loot: bigint; // resource units
+  pct: number;
+  lost: number;
+};
+
+// Raids whose result window has already been shown in this app load, so the raid watcher doesn't repeat it.
+const shownRaids = new Set<string>();
+export const raidShown = (id: string) => shownRaids.has(id);
+export const markRaidShown = (id: string) => void shownRaids.add(id);
+
+/** The raid result window: + and − first, then what happened, then the score it earns. */
+export function raidResult(o: RaidOutcome, me: string | null): SuccessContent {
+  markRaidShown(o.raidId);
+  const meL = me?.toLowerCase() ?? "";
+  const asRaider = o.raider.toLowerCase() === meL;
+  const asDefender = o.defender.toLowerCase() === meL;
+  const them = displayName(asRaider ? o.defender : o.raider);
+  const lostAnts = o.lost > 0 ? delta(-BigInt(o.lost), "ant") : null;
+  const report = { href: `/report?raid=${o.raidId}`, label: "Read the raid report" };
+  if (o.outcome === "won") {
+    if (asRaider) {
+      return { title: "Raid won", tone: "raid", link: report, lines: [
+        deltas(o.loot >= RES ? delta(o.loot, o.lootKind) : null, lostAnts),
+        `Your ants raided ${them} and took ${o.pct}% of the ${o.lootKind === "leaf" ? "leaves" : "sugar"}`,
+        "+25 score at your next feeding",
+      ] };
+    }
+    if (asDefender) {
+      return { title: "You were raided", tone: "raid", link: { href: `/?tab=raids&avenge=${o.raider.toLowerCase()}`, label: "Avenge · raid them back for free" }, lines: [
+        deltas(o.loot >= RES ? delta(-o.loot, o.lootKind) : null),
+        `${them} took ${o.pct}% of your ${o.lootKind === "leaf" ? "leaves" : "sugar"}`,
+      ] };
+    }
+  }
+  if (o.outcome === "guarded") {
+    if (asRaider) return { title: "Raid lost", tone: "raid", link: report, lines: [deltas(lostAnts), `${them} guarded the right store`, `${o.lost} of your marching ants fell`] };
+    if (asDefender) return { title: "Your guard held", tone: "raid", link: report, lines: [`You guarded the right store against ${them}`, o.lost > 0 ? `${o.lost} of their ants fell` : "Their ants went home empty", "+10 score at your next feeding"] };
+  }
+  if (asRaider) return { title: "Raid lost", tone: "raid", link: report, lines: [lostAnts ? deltas(lostAnts) : "No loot this time", `${them} held your ants off`] };
+  if (asDefender) return { title: "Raid held off", tone: "raid", link: report, lines: ["Nothing taken", `Your colony held off ${them}`] };
+  return { title: "Raid settled", tone: "raid", link: report, lines: [o.outcome === "won" ? `${displayName(o.raider)} raided ${displayName(o.defender)}` : `${displayName(o.defender)} held`] };
+}
+
 export const settleResult = (r: Rec, myOwner: string | null): SuccessContent => {
   const e = eventsOf(r, "RaidSettled")[0];
   if (!e) return { title: "Raid settled" };
-  const outcome = Number(e.outcome);
-  const mineAsRaider = !!myOwner && String(e.raiderOwner).toLowerCase() === myOwner.toLowerCase();
-  const lootKind = Number(e.lootResource) === Resource.Leaves ? "leaf" : "sugar";
-  const loot = BigInt(e.lootAmount ?? 0);
-  const lost = Number(e.soldiersLost);
-  const lines: ReactNode[] = [];
-  let title = "Raid settled";
-  if (outcome === Outcome.RaiderWon) {
-    title = mineAsRaider ? "Raid won" : "Raid settled: the raider won";
-    lines.push(loot > 0n ? <>{mineAsRaider ? "Carried home" : "Taken"} {amt(loot, lootKind)} · {String(e.roll)}% of the store</> : "No loot this time.");
-  } else if (outcome === Outcome.Guarded) {
-    title = mineAsRaider ? "Raid lost" : "Raid stopped";
-    lines.push("The guard held the right store.");
-  } else {
-    title = mineAsRaider ? "Raid lost" : "Raid held off";
-    lines.push("The defenders held.");
-  }
-  if (lost > 0) lines.push(`${lost} marching ${lost === 1 ? "ant" : "ants"} fell`);
-  return { title, tone: "raid", lines };
+  const out = Number(e.outcome);
+  return raidResult({
+    raidId: String(e.raidId),
+    outcome: out === Outcome.RaiderWon ? "won" : out === Outcome.Guarded ? "guarded" : "held",
+    raider: String(e.raiderOwner),
+    defender: String(e.defenderOwner),
+    lootKind: Number(e.lootResource) === Resource.Leaves ? "leaf" : "sugar",
+    loot: BigInt(e.lootAmount ?? 0),
+    pct: Number(e.roll),
+    lost: Number(e.soldiersLost),
+  }, myOwner);
 };
 
-export const collectResult = (r: Rec): SuccessContent => {
-  const e = eventsOf(r, "RaidCollected")[0];
-  const lost = e ? Number(e.soldiersLost) : 0;
+/** A raid closed without a roll: missed reveal (raiders lost) or no settle in 48h (raiders home). */
+export function collectedResult(raidId: string, lost: number, asRaider: boolean): SuccessContent {
+  markRaidShown(raidId);
   return {
     title: "Raid closed",
     tone: "raid",
-    lines: [lost > 0 ? `${lost} marching ${lost === 1 ? "ant was" : "ants were"} lost for missing the reveal.` : "Your ants are home."],
+    lines: asRaider
+      ? [lost > 0 ? deltas(delta(-BigInt(lost), "ant")) : "Your ants are home.", lost > 0 ? "Lost for missing the reveal" : "No roll came, so nothing was taken"]
+      : ["The raid on you ended without a roll", "Nothing was taken"],
   };
+}
+
+export const collectResult = (r: Rec): SuccessContent => {
+  const e = eventsOf(r, "RaidCollected")[0];
+  return collectedResult(e ? String(e.raidId) : "", e ? Number(e.soldiersLost) : 0, true);
 };
 
 export const claimResult = (amount: bigint, season: number): SuccessContent => ({

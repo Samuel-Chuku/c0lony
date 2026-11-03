@@ -200,12 +200,18 @@ a { color: var(--c0-fg); }
 .c0-rtrack__time { font-size: var(--c0-fs-caption); color: var(--c0-muted); flex: none; }
 .c0-rtrack__acts { display: flex; gap: var(--c0-s2); flex-wrap: wrap; align-items: flex-start; }
 .c0-rtrack a, .c0-rtrack .c0-hand { color: var(--c0-paper); }
-.c0-track { list-style: none; margin: 0; padding: 0; display: flex; justify-content: space-between; font-size: var(--c0-fs-caption); }
-.c0-track__step { display: inline-flex; align-items: center; gap: var(--c0-s2); }
-.c0-track__box { width: 12px; height: 12px; box-sizing: border-box; border: 2px solid var(--c0-ink); display: inline-block; }
+/* Raid rail (owner's call, 2026-11-03): four stages joined by one track; red fill and the ant move in real time. */
+.c0-track { position: relative; padding-top: var(--c0-s4); font-size: var(--c0-fs-caption); }
+.c0-track__rail { position: absolute; left: 12.5%; right: 12.5%; top: calc(var(--c0-s4) + 4px); height: 8px; box-sizing: border-box; background: var(--c0-soil); border: 2px solid var(--c0-ink); }
+.c0-track__fill { position: absolute; left: 0; top: 0; bottom: 0; background: var(--c0-red); }
+.c0-track__ant { position: absolute; top: -22px; transform: translateX(-50%); line-height: 0; }
+.c0-track__steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); position: relative; }
+.c0-track__step { display: flex; flex-direction: column; align-items: center; gap: var(--c0-s1); }
+.c0-track__box { width: 16px; height: 16px; box-sizing: border-box; border: 3px solid var(--c0-ink); display: inline-block; }
 .c0-track__box--done { background: var(--c0-paper); }
 .c0-track__box--now { background: var(--c0-dither); }
 .c0-track__box--next { background: var(--c0-soil); }
+.c0-track__step[aria-current="step"] span:last-child { color: var(--c0-paper); }
 .c0-sect { display: flex; justify-content: space-between; align-items: baseline; gap: var(--c0-s2); margin-top: var(--c0-s1); }
 .c0-sect h2 { margin: 0; font-family: var(--c0-f-display); font-weight: 400; font-size: 24px; color: var(--c0-fg); }
 .c0-sect span { font-size: 12px; color: var(--c0-fg-muted); }
@@ -344,3 +350,9 @@ a { color: var(--c0-fg); }
 .c0-delta { display: inline-flex; align-items: center; gap: var(--c0-s1); }
 .c0-delta b { font-family: var(--c0-f-display); font-weight: 400; font-size: 24px; line-height: var(--c0-lh-tight); }
 .c0-sheet__have { display: inline-flex; align-items: center; gap: 4px; }
+.c0-raidtabs { margin-top: var(--c0-s1); }
+.c0-raidslist { display: flex; flex-direction: column; gap: var(--c0-s3); }
+.c0-raidslist__filter .c0-chip { height: 36px; font-size: 16px; }
+.c0-feed__verify { font-size: 11px; color: var(--c0-sub); text-decoration: underline; white-space: nowrap; }
+.c0-nav__icon { position: relative; display: inline-flex; line-height: 0; }
+.c0-raiddot { position: absolute; top: -2px; right: -6px; width: 12px; height: 12px; box-sizing: border-box; background: var(--c0-red); border: 2px solid var(--c0-ink); }

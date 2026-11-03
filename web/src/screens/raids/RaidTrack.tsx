@@ -41,7 +41,8 @@ export function RaidTrack({ raid, role, guardWindow, revealWindow, onClosed }: P
   const revealBy = windowEnd + revealWindow;
   const revealed = raid.status === RaidStatus.Revealed;
   const ready = useRoundReady(revealed ? raid.round : null);
-  const roundTime = Number(feed?.find((e) => e.type === "revealed" && e.data.raidId === String(raid.id))?.data.roundTime ?? 0);
+  const revealRow = feed?.find((e) => e.type === "revealed" && e.data.raidId === String(raid.id));
+  const roundTime = Number(revealRow?.data.roundTime ?? 0);
   const expired = revealed && roundTime > 0 && now >= roundTime + SETTLE_TIMEOUT;
   const missedReveal = raid.status === RaidStatus.Sealed && now >= revealBy;
 
@@ -49,7 +50,18 @@ export function RaidTrack({ raid, role, guardWindow, revealWindow, onClosed }: P
   let timeText = "";
   if (step === "sealed") timeText = `guard window · ${fmtDuration(windowEnd - now)}`;
   else if (step === "marching") timeText = missedReveal ? "reveal window closed" : role === "raider" ? `reveal within ${fmtDuration(revealBy - now)}` : "waiting for their roll";
-  else if (step === "roll") timeText = ready ? "roll is ready" : "waiting for drand";
+  else if (step === "roll") timeText = ready ? "result lands in about a minute" : roundTime > now ? `rolling in ${fmtDuration(roundTime - now)}` : "rolling";
+
+  // How far through the current stage the raid is, for the moving rail.
+  const SETTLE_AFTER = 60; // the keeper settles about a minute after the round is published
+  let progress = 0;
+  if (step === "sealed") progress = (now - Number(raid.launchedAt)) / guardWindow;
+  else if (step === "marching") progress = missedReveal ? 1 : (now - windowEnd) / revealWindow;
+  else if (step === "roll") {
+    const from = revealRow?.ts ?? 0;
+    const to = roundTime + SETTLE_AFTER;
+    progress = from > 0 && to > from ? Math.min(0.95, (now - from) / (to - from)) : 0.5;
+  }
 
   const done = async (run: Promise<unknown>) => {
     if (await run) onClosed(raid.id);
@@ -61,7 +73,7 @@ export function RaidTrack({ raid, role, guardWindow, revealWindow, onClosed }: P
         <h2 className="c0-rtrack__title">{title}</h2>
         <span className="c0-rtrack__time">{timeText}</span>
       </div>
-      <Tracker at={step} />
+      <Tracker at={step} progress={progress} />
       <div className="c0-rtrack__acts">
         {step === "marching" && role === "raider" && !missedReveal ? (
           <Button variant="raid" size="compact" busy={revealAct.busy ? "Revealing…" : undefined} error={revealAct.error} onClick={() => void revealAct.run(reveal(raid.id, raid.commitment))}>

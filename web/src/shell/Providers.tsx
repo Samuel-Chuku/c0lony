@@ -7,6 +7,7 @@ import { registerServiceWorker } from "../lib/push";
 import { MenuDrawer } from "./MenuDrawer";
 import { WelcomeBack } from "./WelcomeBack";
 import { ResultModal } from "./ResultModal";
+import { RaidWatcher } from "./RaidWatcher";
 import { QueenAlert } from "./QueenAlert";
 import { ShortcutsHelp, useShortcuts } from "./Shortcuts";
 import { installSoundListeners, setSoundEnabled } from "../lib/sound";
@@ -156,6 +157,7 @@ export function Providers({ children }: { children: ReactNode }) {
         <WelcomeBack />
         <QueenAlert />
         <ResultModal />
+        <RaidWatcher />
       </ShellContext.Provider>
     </SessionProvider>
   );

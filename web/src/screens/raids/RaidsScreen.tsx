@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { Button, Card, Hand, Panel, Underway } from "../../ui";
+import { Button, Card, Chip, Hand, Panel, Underway } from "../../ui";
 import { Screen } from "../../shell/Screen";
 import { RaidStatus, Status, inRange, useActiveRaids, useColonies, useGameConfig, useNow, useProfile, type ColonyRow } from "../../lib/game";
 import { useFeed } from "../../lib/api";
@@ -16,6 +16,7 @@ import { SITE_URL, xIntent } from "./shared";
 import { fmtDuration } from "../../lib/format";
 import { demoCfg, demoData } from "./demo";
 import { RaidRules, RecentRaids, YourRaiders } from "./DeskRaidPanels";
+import { RaidsList } from "./RaidsList";
 
 export function RaidsScreen() {
   const router = useRouter();
@@ -36,6 +37,7 @@ export function RaidsScreen() {
 
   const [sheet, setSheet] = useState<{ mode: "raid" | "avenge"; target: LaunchTarget } | null>(null);
   const [closed, setClosed] = useState<bigint[]>([]);
+  const [view, setView] = useState<"neighbours" | "raids">("neighbours");
 
   // "/?tab=raids&avenge=<wallet>" opens the launch sheet in avenge mode.
   const avengeParam = params.get("avenge");
@@ -134,6 +136,12 @@ export function RaidsScreen() {
           <RaidRules />
           </div>
           <div className="c0-split__main">
+          <div className="c0-chiprow c0-raidtabs" role="group" aria-label="Show">
+            <Chip selected={view === "neighbours"} onClick={() => setView("neighbours")}>Neighbours</Chip>
+            <Chip selected={view === "raids"} onClick={() => setView("raids")}>Raids</Chip>
+          </div>
+          {view === "raids" ? <RaidsList me={session.address} now={now} /> : (
+          <>
           <div className="c0-sect">
             <h2>Neighbours</h2>
             <span>sorted by sugar · {ordered.length} nearby</span>
@@ -157,6 +165,8 @@ export function RaidsScreen() {
                 />
               ))}
             </div>
+          )}
+          </>
           )}
           </div>
         </div>

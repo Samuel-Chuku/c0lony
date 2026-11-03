@@ -1,5 +1,6 @@
 "use client";
 // The result of the last action: what happened, the key numbers, and a link to the transaction.
+import Link from "next/link";
 import { Button, Modal } from "../ui";
 import { txUrl } from "../lib/chain";
 import { closeResult, useResult } from "../lib/result";
@@ -16,6 +17,9 @@ export function ResultModal() {
               <li key={i} className={r.tone === "raid" && i === 0 ? "c0-result__line c0-result__line--raid" : "c0-result__line"}>{l}</li>
             ))}
           </ul>
+        ) : null}
+        {r.link ? (
+          <Link className="c0-result__tx" href={r.link.href} onClick={closeResult}>{r.link.label} ›</Link>
         ) : null}
         {r.hash ? (
           <a className="c0-result__tx" href={txUrl(r.hash)} target="_blank" rel="noreferrer">View transaction</a>

@@ -10,6 +10,8 @@ export type ResultContent = {
   tone?: "wif" | "raid" | "plain";
   failed?: boolean;
   hash?: Hash | null;
+  /** An in-app follow-up, e.g. "Read the report" or "Avenge · raid them back". */
+  link?: { href: string; label: string };
 };
 
 let current: ResultContent | null = null;
