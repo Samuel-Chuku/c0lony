@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { Button, Card, Chip, Hand, Panel, Underway } from "../../ui";
+import { Button, Card, Hand, Panel, Underway } from "../../ui";
 import { Screen } from "../../shell/Screen";
 import { RaidStatus, Status, inRange, useActiveRaids, useColonies, useGameConfig, useNow, useProfile, type ColonyRow } from "../../lib/game";
 import { useFeed } from "../../lib/api";
@@ -136,9 +136,12 @@ export function RaidsScreen() {
           <RaidRules />
           </div>
           <div className="c0-split__main">
-          <div className="c0-chiprow c0-raidtabs" role="group" aria-label="Show">
-            <Chip selected={view === "neighbours"} onClick={() => setView("neighbours")}>Neighbours</Chip>
-            <Chip selected={view === "raids"} onClick={() => setView("raids")}>Raids</Chip>
+          <div className="c0-tabs" role="tablist" aria-label="Raids screen">
+            {(["neighbours", "raids"] as const).map((v) => (
+              <button key={v} type="button" role="tab" aria-selected={view === v} className="c0-tab" onClick={() => setView(v)}>
+                {v === "neighbours" ? "Neighbours" : "Raids"}
+              </button>
+            ))}
           </div>
           {view === "raids" ? <RaidsList me={session.address} now={now} /> : (
           <>
