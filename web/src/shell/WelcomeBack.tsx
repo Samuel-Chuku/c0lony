@@ -2,13 +2,13 @@
 // "While you were away": shown once per app load when something happened since the player was last here.
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { BlockedStrip, Button, Modal, ResIcon } from "../ui";
 import { fetchSummary, type Summary } from "../lib/api";
 import { fmtDuration, fmtRes } from "../lib/format";
 import { Status, useNow, useProfile } from "../lib/game";
 import { useSession } from "../lib/session";
-import { fedResult, tendResult } from "../lib/outcomes";
+import { fedResult, tendResult, type TendSnapshot } from "../lib/outcomes";
 import { useAction } from "../lib/tx";
 import { fmtWif } from "../lib/format";
 import { Handle } from "../screens/live/feedText";
@@ -82,7 +82,8 @@ export function WelcomeBack() {
   const view = useColonyView(profile.data && profile.data.colonyId ? profile.data.colonyId : null);
   const prices = usePlayerPrices(wallet);
   const feed = useAction("Feeding", { success: fedResult });
-  const tend = useAction("Tending", { success: tendResult });
+  const tendSnap = useRef<TendSnapshot | null>(null);
+  const tend = useAction("Tending", { success: (r) => tendResult(r, tendSnap.current) });
   const [summary, setSummary] = useState<Summary | null>(null);
   const [lastSeen, setLastSeen] = useState(0);
 
@@ -177,7 +178,10 @@ export function WelcomeBack() {
                   variant="paper"
                   busy={tend.busy ? "Tending…" : undefined}
                   error={tend.error}
-                  onClick={() => void tend.run({ functionName: "tend" })}
+                  onClick={() => {
+                    tendSnap.current = view.data && cfg.data ? waitingNow(view.data, cfg.data, Math.floor(Date.now() / 1000)) : null;
+                    void tend.run({ functionName: "tend" });
+                  }}
                 >
                   Tend · collect all
                 </Button>

@@ -62,14 +62,39 @@ export const fedResult = (r: Rec): SuccessContent => {
   return { title: "The colony is fed", lines };
 };
 
-export const tendResult = (r: Rec): SuccessContent => {
+/** What was waiting when the player tapped Tend, used to split the totals by source. */
+export type TendSnapshot = { leafTrips: number; sugarTrips: number; trip: { leaves: number; sugar: number } };
+
+const icon = (kind: "leaf" | "sugar") => <ResIcon name={kind} size={16} label={kind === "leaf" ? "leaves" : "sugar"} />;
+
+/** The tend result: totals as + amounts, then where they came from (trails, farms, forage trips). */
+export const tendResult = (r: Rec, snap?: TendSnapshot | null): SuccessContent => {
   const e = eventsOf(r, "Tended")[0];
   if (!e) return { title: "Tended", lines: ["Everything that was home is in the store."] };
   const l = BigInt(e.leavesGained ?? 0);
   const s = BigInt(e.sugarGained ?? 0);
-  const lines: ReactNode[] = [];
-  if (l > 0n || s > 0n) lines.push(deltas(l > 0n ? delta(l, "leaf") : null, s > 0n ? delta(s, "sugar") : null));
-  else lines.push("Nothing was ready yet.");
+  if (l < RES && s < RES) return { title: "Tended", lines: ["Nothing was ready yet."] };
+  const lines: ReactNode[] = [deltas(l >= RES ? delta(l, "leaf") : null, s >= RES ? delta(s, "sugar") : null)];
+  if (snap) {
+    // Forage trips are whole amounts; whatever is left over came from trails and farms.
+    const fl = whole(snap.leafTrips * snap.trip.leaves);
+    const fs = whole(snap.sugarTrips * snap.trip.sugar);
+    const trails = l > fl ? l - fl : 0n;
+    const farms = s > fs ? s - fs : 0n;
+    if (trails >= RES) lines.push(<>Trails · +{fmtRes(trails)} {icon("leaf")}</>);
+    if (farms >= RES) lines.push(<>Farms · +{fmtRes(farms)} {icon("sugar")}</>);
+    const trips = snap.leafTrips + snap.sugarTrips;
+    if (trips > 0) {
+      lines.push(
+        <>
+          Foragers · {trips} {trips === 1 ? "trip" : "trips"}
+          {fl > 0n ? <> · +{fmtRes(fl)} {icon("leaf")}</> : null}
+          {fs > 0n ? <> · +{fmtRes(fs)} {icon("sugar")}</> : null}
+        </>,
+      );
+      lines.push("Pantry emptied");
+    }
+  }
   return { title: "Tended", lines };
 };
 
