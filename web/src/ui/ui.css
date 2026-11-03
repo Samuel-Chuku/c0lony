@@ -130,7 +130,7 @@ a { color: var(--c0-fg); }
 .c0-dialog:focus { outline: none; }
 .c0-close { width: var(--c0-tap); height: var(--c0-tap); padding: 0; background: none; border: 0; color: inherit; font-family: var(--c0-f-display); font-size: 32px; line-height: var(--c0-lh-tight); }
 /* Sheets open as centred dialogs (owner's call, 2026-11-01), so they sit in reach on tall phones. */
-.c0-sheet { position: absolute; left: 6%; right: 6%; top: 50%; transform: translateY(-50%); max-height: 80%; overflow-y: auto; box-sizing: border-box; background: var(--c0-paper); color: var(--c0-ink); border: var(--c0-bw) solid var(--c0-ink); box-shadow: var(--c0-shadow-modal); padding: var(--c0-s3) var(--c0-s4) var(--c0-s4); }
+.c0-sheet { position: absolute; left: var(--c0-s4); right: var(--c0-s4); top: 50%; transform: translateY(-50%); max-height: 80%; overflow-y: auto; box-sizing: border-box; background: var(--c0-paper); color: var(--c0-ink); border: var(--c0-bw) solid var(--c0-ink); box-shadow: var(--c0-shadow-modal); padding: var(--c0-s3) var(--c0-s4) var(--c0-s4); }
 .c0-sheet__grab { display: none; }
 .c0-sheet__head { display: flex; align-items: center; gap: var(--c0-s2); }
 .c0-sheet__title { margin: 0; flex: 1; font-family: var(--c0-f-display); font-weight: 400; font-size: var(--c0-fs-h1); }

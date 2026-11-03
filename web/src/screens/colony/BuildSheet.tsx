@@ -95,9 +95,9 @@ function UpgradeRow({ icon, count, name, effect, gives, working, makes, cost, ve
               {verb}
             </Button>
           ) : null}
+          {short ? <div className="c0-urow__need" role="note">{missing}</div> : null}
         </div>
       </div>
-      {short ? <div className="c0-urow__need" role="note">{missing}</div> : null}
       {confirming && !short ? (
         <div className="c0-confirm" role="group" aria-label={`Confirm ${name.toLowerCase()}`}>
           <div className="c0-confirm__line">
@@ -118,9 +118,9 @@ function UpgradeRow({ icon, count, name, effect, gives, working, makes, cost, ve
       ) : null}
       {makes ? (
         <div className="c0-urow__makes">
-          each ant assigned here brings <b>+{PER_ANT_PER_DAY}</b>
+          <b>+{PER_ANT_PER_DAY}</b>
           <ResIcon name={makes} size={16} label={makes === "leaf" ? "leaves" : "sugar"} />
-          a day · {perHour(1)} an hour
+          a day per assigned ant · {perHour(1)}/h
         </div>
       ) : null}
       {action.error ? <div className="c0-blocked" role="alert">{action.error}</div> : null}
@@ -225,7 +225,7 @@ export function BuildSheet({ open, onClose, profile }: { open: boolean; onClose:
               icon="chamber"
               count={profile.chambers}
               name="Nest chamber"
-              effect={`Houses 5 ants each · room for ${profile.chambers * 5} now, ${profile.ants} used`}
+              effect={`Houses 5 ants · ${profile.ants}/${profile.chambers * 5} used`}
               gives="room for 5 more ants · new ants hatch into empty room when you feed"
               cost={{ leaves: costs.chamber }}
               verb="Dig"
@@ -238,7 +238,7 @@ export function BuildSheet({ open, onClose, profile }: { open: boolean; onClose:
               icon="trail"
               count={profile.trails}
               name="Leafcutter trail"
-              effect="Ants on a trail cut leaves all day"
+              effect="Ants cut leaves all day"
               gives={`room for ${WORKERS_PER_BUILDING} more ants to cut leaves`}
               working={{ ants: profile.trailWorkers, room: profile.trails * WORKERS_PER_BUILDING }}
               makes="leaf"
@@ -253,7 +253,7 @@ export function BuildSheet({ open, onClose, profile }: { open: boolean; onClose:
               icon="farm"
               count={profile.farms}
               name="Aphid farm"
-              effect={profile.farms === 0 ? "Ants herd aphids for sugar · your first farm costs no sugar" : "Ants herd aphids for sugar"}
+              effect="Ants herd aphids for sugar"
               gives={`room for ${WORKERS_PER_BUILDING} more ants to make sugar`}
               working={{ ants: profile.farmWorkers, room: profile.farms * WORKERS_PER_BUILDING }}
               makes="sugar"
