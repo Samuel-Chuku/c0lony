@@ -19,7 +19,7 @@ const MORE: Array<{ href: string; label: string; icon: IconName }> = [
   { href: "/leaderboard", label: "Leaderboard", icon: "board" },
   { href: "/how-to-play", label: "How to play", icon: "book" },
   { href: "/invite", label: "Invite", icon: "invite" },
-  { href: "/about", label: "About", icon: "colony" },
+  { href: "/about", label: "About", icon: "globe" },
   { href: "/settings", label: "Settings", icon: "gear" },
 ];
 

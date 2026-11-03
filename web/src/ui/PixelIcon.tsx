@@ -3,7 +3,7 @@ import { cx } from "./cx";
 
 export const ICON_NAMES = [
   "ant-head", "ant", "board", "book", "chamber", "colony", "copy", "gear", "invite",
-  "eth", "leaf", "live", "funnel", "mute", "pantry", "raids", "shield", "sound", "sugar", "swap", "trophy", "wif",
+  "eth", "funnel", "github", "globe", "leaf", "live", "mute", "pantry", "raids", "shield", "sound", "sugar", "swap", "trophy", "wif", "x",
 ] as const;
 export type IconName = (typeof ICON_NAMES)[number];
 

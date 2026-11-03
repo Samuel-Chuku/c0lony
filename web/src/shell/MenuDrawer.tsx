@@ -98,7 +98,7 @@ export function MenuDrawer({ open, onClose }: { open: boolean; onClose: () => vo
           {link("/leaderboard", "trophy", "Leaderboard", rank ? `#${rank}` : undefined)}
           {link("/invite", "invite", "Invite friends")}
           {link("/how-to-play", "book", "How to play")}
-          {link("/about", "colony", "About")}
+          {link("/about", "globe", "About")}
           {link("/settings", "gear", "Settings")}
         </nav>
         <div className="c0-menu__look" role="group" aria-label="Look">
