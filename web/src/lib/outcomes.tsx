@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import type { TransactionReceipt } from "viem";
 import { ResIcon } from "../ui/ResIcon";
-import { fmtDuration, fmtRes, fmtWif } from "./format";
+import { RES, fmtDuration, fmtRes, fmtWif } from "./format";
 import { Outcome, Resource } from "./game";
 import { eventsOf, type SuccessContent } from "./tx";
 
@@ -27,25 +27,38 @@ export const foundedResult = (): SuccessContent => ({
   ],
 });
 
-/** The feeding breakdown, in the order the contract does it: the queen eats, the ants eat, new ants hatch. */
+/** A gain or a loss: "+8 [ant]" or "−3 [leaf]". */
+const delta = (n: bigint, kind: "leaf" | "sugar" | "ant"): ReactNode => (
+  <span className="c0-delta" key={kind + String(n)}>
+    <b>{n < 0n ? "−" : "+"}{kind === "ant" ? String(n < 0n ? -n : n) : fmtRes(n < 0n ? -n : n)}</b>
+    <ResIcon name={kind} size={20} label={kind === "leaf" ? "leaves" : kind === "sugar" ? "sugar" : "ants"} />
+  </span>
+);
+const deltas = (...parts: Array<ReactNode | null>): ReactNode => <span className="c0-deltas">{parts}</span>;
+const whole = (n: unknown) => BigInt(String(n ?? 0)) * RES; // events carry ant counts and build costs in whole units
+
+/** The feeding result: gains and losses as + and −, then the queen, the colony, the score and the WIF. */
 export const fedResult = (r: Rec): SuccessContent => {
   const e = eventsOf(r, "QueenFed")[0];
   if (!e) return { title: "The colony is fed", lines: ["Fed for 72 hours."] };
   const born = Number(e.born);
   const died = Number(e.died);
   const after = Number(e.workersAfter);
-  const before = after - born + died;
-  const ate = before - died;
-  const ants = (n: number) => `${n} ${n === 1 ? "ant" : "ants"}`;
+  const ate = after - born; // every ant that lived through the meal ate 1 sugar
+  const sugarUsed = whole(ate + born * 2);
+  const by = new Date(Number(e.fedUntil) * 1000).toLocaleString([], { weekday: "short", hour: "2-digit", minute: "2-digit" });
   const lines: ReactNode[] = [
-    <>The queen ate 3 <ResIcon name="leaf" size={20} label="leaves" /> and is fed for 72 hours</>,
-    <>{ants(ate)} ate {ate} <ResIcon name="sugar" size={20} label="sugar" /></>,
+    deltas(
+      delta(-whole(3), "leaf"),
+      sugarUsed > 0n ? delta(-sugarUsed, "sugar") : null,
+      born > 0 ? delta(BigInt(born), "ant") : null,
+      died > 0 ? delta(-BigInt(died), "ant") : null,
+    ),
+    `Queen fed · feed her again by ${by}`,
+    `${after} ${after === 1 ? "ant" : "ants"} in the colony · +${String(e.scoreAdded ?? 0)} score`,
   ];
-  if (died > 0) lines.push(`${ants(died)} went hungry and died`);
-  lines.push(born > 0 ? <>{ants(born)} hatched from {born * 2} leftover <ResIcon name="sugar" size={20} label="sugar" /></> : "No new ants: no room left in your chambers, or no sugar left over");
-  lines.push(`${ants(after)} in the colony now${BigInt(e.scoreAdded ?? 0) > 0n ? ` · +${String(e.scoreAdded)} score` : ""}`);
   const paid = eventsOf(r, "Paid")[0];
-  if (paid) lines.push(`Paid ${fmtWif(BigInt(paid.amount))} WIF · ${fmtWif(BigInt(paid.toPot))} to the pot · ${fmtWif(BigInt(paid.burned))} burned`);
+  if (paid) lines.push(`−${fmtWif(BigInt(paid.amount))} WIF · ${fmtWif(BigInt(paid.toPot))} to the pot · ${fmtWif(BigInt(paid.burned))} burned`);
   return { title: "The colony is fed", lines };
 };
 
@@ -55,9 +68,8 @@ export const tendResult = (r: Rec): SuccessContent => {
   const l = BigInt(e.leavesGained ?? 0);
   const s = BigInt(e.sugarGained ?? 0);
   const lines: ReactNode[] = [];
-  if (l > 0n) lines.push(<>Collected {amt(l, "leaf")}</>);
-  if (s > 0n) lines.push(<>Collected {amt(s, "sugar")}</>);
-  if (lines.length === 0) lines.push("Nothing was ready yet.");
+  if (l > 0n || s > 0n) lines.push(deltas(l > 0n ? delta(l, "leaf") : null, s > 0n ? delta(s, "sugar") : null));
+  else lines.push("Nothing was ready yet.");
   return { title: "Tended", lines };
 };
 
@@ -67,7 +79,7 @@ export const speedUpResult = (forage: number) => (r: Rec): SuccessContent => {
   const got = e ? BigInt((forage === Resource.Leaves ? e.leavesGained : e.sugarGained) ?? 0) : 0n;
   return {
     title: `${forage === Resource.Leaves ? "Leaf" : "Sugar"} foragers are home`,
-    lines: [got > 0n ? <>Collected {amt(got, kind)}</> : "Collected what they carried.", `Next ${forage === Resource.Leaves ? "leaf" : "sugar"} speed-up in 24h.`],
+    lines: [got > 0n ? deltas(delta(got, kind)) : "Collected what they carried.", `Next ${forage === Resource.Leaves ? "leaf" : "sugar"} speed-up in 24h.`],
   };
 };
 
@@ -76,9 +88,9 @@ export const builtResult = (noun: string, plural: string) => (r: Rec): SuccessCo
   const n = e ? Number(e.newCount) : null;
   const lines: ReactNode[] = [n !== null ? `You now have ${n} ${n === 1 ? noun : plural}.` : `Built.`];
   if (e) {
-    const l = BigInt(e.leavesCost ?? 0);
-    const s = BigInt(e.sugarCost ?? 0);
-    if (l > 0n || s > 0n) lines.push(<>Cost {l > 0n ? amt(l, "leaf") : null} {s > 0n ? amt(s, "sugar") : null}</>);
+    const l = whole(e.leavesCost);
+    const s = whole(e.sugarCost);
+    if (l > 0n || s > 0n) lines.unshift(deltas(l > 0n ? delta(-l, "leaf") : null, s > 0n ? delta(-s, "sugar") : null));
   }
   return { title: noun === "nest chamber" ? "Chamber dug" : noun === "leafcutter trail" ? "Trail built" : "Farm built", lines };
 };

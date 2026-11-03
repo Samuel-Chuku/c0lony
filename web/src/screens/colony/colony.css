@@ -77,7 +77,8 @@
 .c0-urow__text { padding-left: 4px; }
 .c0-urow__gives { font-size: 12px; line-height: 16px; }
 .c0-urow__buy { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
-.c0-urow__chips { white-space: nowrap; display: flex; gap: 6px; }
+.c0-urow__chips { white-space: nowrap; display: flex; align-items: center; gap: 6px; }
+.c0-urow__costcap { font-size: 12px; color: var(--c0-sub); }
 .c0-cost { white-space: nowrap; display: inline-flex; align-items: center; gap: 2px; font-family: var(--c0-f-display); font-size: 20px; line-height: 1; }
 .c0-urow__need { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; font-size: 12px; color: var(--c0-sub); }
 .c0-urow__need svg { vertical-align: middle; }
@@ -95,7 +96,7 @@
 
 /* Build: ants working in a building, its output line, and the confirm step before spending */
 .c0-urow__working { font-size: 12px; line-height: 16px; color: var(--c0-ink); }
-.c0-urow__makes { display: flex; align-items: center; justify-content: center; gap: var(--c0-s1); padding-top: var(--c0-s1); border-top: var(--c0-bw-thin) dashed var(--c0-rule); font-size: 12px; color: var(--c0-sub); }
+.c0-urow__makes { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: var(--c0-s1); padding-top: var(--c0-s1); border-top: var(--c0-bw-thin) dashed var(--c0-rule); font-size: 12px; color: var(--c0-sub); }
 .c0-urow__makes b { font-family: var(--c0-f-display); font-size: 17px; font-weight: 400; color: var(--c0-ink); }
 .c0-confirm { display: flex; flex-direction: column; gap: var(--c0-s2); padding: var(--c0-s2); background: var(--c0-paper-hi); border: var(--c0-bw-thin) solid var(--c0-ink); }
 .c0-confirm__line { display: flex; align-items: center; flex-wrap: wrap; gap: var(--c0-s2); }

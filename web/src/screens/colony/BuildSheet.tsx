@@ -81,6 +81,7 @@ function UpgradeRow({ icon, count, name, effect, gives, working, makes, cost, ve
         </div>
         <div className="c0-urow__buy">
           <div className="c0-urow__chips" aria-label="Cost">
+            <span className="c0-urow__costcap">Cost:</span>
             {cost.leaves ? <CostChip kind="leaf" n={cost.leaves} /> : null}
             {cost.sugar ? <CostChip kind="sugar" n={cost.sugar} /> : null}
           </div>
@@ -117,8 +118,9 @@ function UpgradeRow({ icon, count, name, effect, gives, working, makes, cost, ve
       ) : null}
       {makes ? (
         <div className="c0-urow__makes">
+          each ant assigned here brings <b>+{PER_ANT_PER_DAY}</b>
           <ResIcon name={makes} size={16} label={makes === "leaf" ? "leaves" : "sugar"} />
-          each ant brings <b>+{PER_ANT_PER_DAY} {makes === "leaf" ? "leaves" : "sugar"} a day</b> · {perHour(1)} an hour
+          a day · {perHour(1)} an hour
         </div>
       ) : null}
       {action.error ? <div className="c0-blocked" role="alert">{action.error}</div> : null}
@@ -211,7 +213,11 @@ export function BuildSheet({ open, onClose, profile }: { open: boolean; onClose:
   };
 
   return (
-    <BottomSheet open={open} onClose={onClose} title="Build" meta={`${fmtRes(profile.leaves)} leaves · ${fmtRes(profile.sugar)} sugar`}>
+    <BottomSheet open={open} onClose={onClose} title="Build" meta={
+        <span className="c0-sheet__have">
+          {fmtRes(profile.leaves)} <ResIcon name="leaf" size={16} label="leaves" /> · {fmtRes(profile.sugar)} <ResIcon name="sugar" size={16} label="sugar" />
+        </span>
+      }>
       <div className="c0-build">
         {!costs ? null : (
           <ul className="c0-build__list">
