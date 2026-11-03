@@ -114,3 +114,21 @@
 .c0-job__count { font-family: var(--c0-f-body); font-size: 11px; opacity: .85; }
 .c0-jobedit { display: flex; flex-direction: column; gap: var(--c0-s2); }
 .c0-assign__row--free { border-top: var(--c0-bw-thin) dashed var(--c0-rule); padding-top: var(--c0-s2); }
+
+/* Tend + pantry split button (owner's call, 2026-11-03). The pantry holds missed forage trips, two of each. */
+.c0-tendsplit { display: flex; flex: none; }
+.c0-tendsplit .c0-btn { border-right-width: 0; }
+.c0-pantrybtn { position: relative; width: var(--c0-btn-h-compact); height: var(--c0-btn-h-compact); flex: none; display: inline-flex; align-items: center; justify-content: center; padding: 0; box-sizing: border-box; border: var(--c0-bw) solid var(--c0-ink); background: var(--c0-paper-hi); color: var(--c0-ink); box-shadow: var(--c0-bevel), var(--c0-shadow-card); }
+.c0-badge { position: absolute; top: -10px; right: -10px; min-width: 20px; height: 20px; box-sizing: border-box; padding: 0 4px; display: inline-flex; align-items: center; justify-content: center; background: var(--c0-ink); color: var(--c0-paper-hi); border: 2px solid var(--c0-paper-hi); font-family: var(--c0-f-display); font-weight: 400; font-size: 14px; line-height: 1; }
+.c0-badge--full { background: var(--c0-paper-hi); color: var(--c0-ink); border-color: var(--c0-ink); }
+
+.c0-pantry { display: flex; flex-direction: column; gap: var(--c0-s3); margin-top: var(--c0-s3); }
+.c0-pantry__shelves { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: var(--c0-s2); }
+.c0-shelf { display: flex; align-items: center; gap: var(--c0-s3); padding: var(--c0-s2) var(--c0-s3); border: var(--c0-bw-thin) solid var(--c0-ink); background: var(--c0-paper-hi); }
+.c0-shelf--full { border-width: var(--c0-bw); }
+.c0-shelf__text { display: flex; flex-direction: column; gap: 2px; }
+.c0-shelf__amt { font-family: var(--c0-f-display); font-size: 24px; line-height: var(--c0-lh-tight); }
+.c0-shelf__trips { font-family: var(--c0-f-body); font-size: 12px; color: var(--c0-sub); margin-left: var(--c0-s1); }
+.c0-shelf__note { font-size: 12px; color: var(--c0-sub); }
+.c0-shelf--full .c0-shelf__note { color: var(--c0-ink); }
+.c0-pantry__also { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; font-size: 12px; color: var(--c0-sub); }

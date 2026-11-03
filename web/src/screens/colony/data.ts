@@ -36,11 +36,23 @@ export type Waiting = {
   /** Seconds until the next hand forage is ready; null when both are home. */
   nextIn: number | null;
   nothing: boolean;
+  /** The pantry: forage trips waiting, per kind (0 to PANTRY_TRIPS), and what one trip brings. */
+  leafTrips: number;
+  sugarTrips: number;
+  trip: { leaves: number; sugar: number };
+  /** Seconds until the next trip of each kind lands in the pantry; null when that side is full. */
+  leafNext: number | null;
+  sugarNext: number | null;
+  /** Trail and farm output waiting, collected by the same Tend. */
+  built: { leaves: bigint; sugar: bigint };
 };
+
+/** Missed forage trips wait in the pantry, at most this many of each kind; more are lost (contract FORAGE_BANK). */
+export const PANTRY_TRIPS = 2;
 
 /** Forage trips waiting since `last`: the first is ready at once, missed trips wait, at most 2. */
 const tripsWaiting = (last: bigint, cooldown: number, now: number) =>
-  last === 0n ? 1 : Math.min(2, Math.max(0, Math.floor((now - Number(last)) / cooldown)));
+  last === 0n ? 1 : Math.min(PANTRY_TRIPS, Math.max(0, Math.floor((now - Number(last)) / cooldown)));
 
 /** What one forage trip brings with `free` free ants (the first 30 count): leaves 6 + 0.5 each, sugar 4 + 0.3 each, rounded up. */
 export function forageTrip(free: number) {
@@ -70,5 +82,11 @@ export function waitingNow(view: ColonyView, cfg: GameConfig, now: number): Wait
     sugarReady,
     nextIn: waits.length ? Math.max(0, Math.min(...waits)) : null,
     nothing: leaves < RES && sugar < RES,
+    leafTrips,
+    sugarTrips,
+    trip,
+    leafNext: leafTrips >= PANTRY_TRIPS || d.lastLeafForage === 0n ? null : Math.max(0, Number(d.lastLeafForage) + (leafTrips + 1) * leafCd - now),
+    sugarNext: sugarTrips >= PANTRY_TRIPS || d.lastSugarForage === 0n ? null : Math.max(0, Number(d.lastSugarForage) + (sugarTrips + 1) * sugarCd - now),
+    built: { leaves: view.pendingLeaves, sugar: view.pendingSugar },
   };
 }

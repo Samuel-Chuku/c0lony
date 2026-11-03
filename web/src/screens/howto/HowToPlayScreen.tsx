@@ -74,7 +74,7 @@ function Guide({ c }: { c?: GameConfig }) {
         <UL
           items={[
             <>Hand foragers bring <ResIcon name="leaf" size={16} label="leaves" /> every {d(c?.leafForageCooldown)}: 6, plus 0.5 for each free ant. And <ResIcon name="sugar" size={16} label="sugar" /> every {d(c?.sugarForageCooldown)}: 4, plus 0.3 for each free ant. Only your first 30 free ants count. Tend collects them.</>,
-            <>If you are away, up to two trips of each wait for you.</>,
+            <>If you are away, up to two trips of each wait in your pantry (the jar next to Tend). Once it is full, new trips are lost, so claim it.</>,
             <>Speed up collects what is home plus one more trip for {w(c?.speedUpPrice)}, once per {d(c?.speedUpCooldown)}.</>,
             <>Every ant on a trail or farm brings 2 a day, earned every second. Your first farm costs leaves only.</>,
           ]}

@@ -1,12 +1,13 @@
 "use client";
-import { useState } from "react";
-import { Button, Card, ResIcon } from "../../ui";
+import { useEffect, useState } from "react";
+import { Button, Card, PixelIcon, ResIcon } from "../../ui";
 import { fmtDuration, fmtRes, fmtWif } from "../../lib/format";
 import type { ColonyView, GameConfig } from "../../lib/game";
 import { FORAGE_FREE_CAP, Resource } from "../../lib/game";
 import { speedUpResult, tendResult } from "../../lib/outcomes";
 import { useAction } from "../../lib/tx";
-import { forageTrip, waitingNow } from "./data";
+import { PANTRY_TRIPS, forageTrip, waitingNow } from "./data";
+import { PantrySheet } from "./PantrySheet";
 
 type Props = { view: ColonyView; cfg: GameConfig; now: number; wif: bigint | undefined; onBuy: () => void };
 
@@ -16,7 +17,15 @@ export function ProductionCard({ view, cfg, now, wif, onBuy }: Props) {
   const [forage, setForage] = useState<number>(Resource.Leaves);
   const tend = useAction("Tending", { success: tendResult });
   const speed = useAction("Speeding up", { success: (r) => speedUpResult(forage)(r) });
+  const [pantry, setPantry] = useState(false);
   const w = waitingNow(view, cfg, now);
+  const inPantry = w.leafTrips + w.sugarTrips;
+  const pantryFull = w.leafTrips >= PANTRY_TRIPS && w.sugarTrips >= PANTRY_TRIPS;
+  const doTend = () => void tend.run({ functionName: "tend" });
+  // The pantry window closes once the claim lands; the result window takes over.
+  useEffect(() => {
+    if (tend.hash) setPantry(false);
+  }, [tend.hash]);
   const trip = forageTrip(view.idle);
   const d = view.data;
   const parts: string[] = [];
@@ -46,18 +55,30 @@ export function ProductionCard({ view, cfg, now, wif, onBuy }: Props) {
           <div className="c0-prod__line">{w.nothing ? "Trails and farms keep adding up while you wait." : parts.join(" · ")}</div>
           <div className="c0-prod__line">Each trip: {trip.leaves} leaves · {trip.sugar} sugar{view.idle > FORAGE_FREE_CAP ? ` (your first ${FORAGE_FREE_CAP} free ants count)` : ` (${view.idle} free ants helping)`}</div>
         </div>
-        <Button
-          variant="paper"
-          size="compact"
-          busy={tend.busy ? "Tending…" : undefined}
-          disabledReason={w.nothing ? <span className="c0-sr">Nothing to collect yet</span> : undefined}
-          onClick={() => void tend.run({ functionName: "tend" })}
-          shortcut="t"
-        >
-          Tend
-        </Button>
+        <div className="c0-tendsplit">
+          <Button
+            variant="paper"
+            size="compact"
+            busy={tend.busy ? "Tending…" : undefined}
+            disabledReason={w.nothing ? <span className="c0-sr">Nothing to collect yet</span> : undefined}
+            onClick={doTend}
+            shortcut="t"
+          >
+            Tend
+          </Button>
+          <button
+            type="button"
+            className="c0-pantrybtn"
+            onClick={() => setPantry(true)}
+            aria-label={pantryFull ? "Pantry: full" : `Pantry: ${inPantry} ${inPantry === 1 ? "trip" : "trips"} waiting`}
+          >
+            <PixelIcon name="pantry" size={20} />
+            {inPantry > 0 ? <b className={pantryFull ? "c0-badge c0-badge--full" : "c0-badge"} aria-hidden="true">{inPantry}</b> : null}
+          </button>
+        </div>
       </div>
-      {tend.error ? <div className="c0-blocked" role="alert">{tend.error}</div> : null}
+      {tend.error && !pantry ? <div className="c0-blocked" role="alert">{tend.error}</div> : null}
+      <PantrySheet open={pantry} onClose={() => setPantry(false)} w={w} tend={tend} onClaim={doTend} />
       {!open ? (
         <button type="button" className="c0-fold__link" aria-expanded={false} onClick={() => setOpen(true)}>Want the foragers home now?</button>
       ) : (
