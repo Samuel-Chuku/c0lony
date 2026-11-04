@@ -19,7 +19,7 @@ _Screenshots are from the Robinhood Chain testnet deployment._
 
 ## Contents
 
-[What it is](#what-c0lony-is) · [Why WIF](#why-wif-is-needed) · [Flywheel](#the-flywheel) · [Raids and randomness](#raids-and-randomness) · [Features](#features) · [Voter's Pass](#voters-pass) · [Architecture](#architecture) · [Contracts](#contracts) · [How to play](#how-to-play) · [Testing](#testing) · [After the hackathon](#after-the-hackathon) · [Repo and docs](#repo-layout)
+[What it is](#what-c0lony-is) · [Why WIF](#why-wif-is-needed) · [Flywheel](#the-flywheel) · [Raids and randomness](#raids-and-randomness) · [Features](#features) · [Voter's Pass](#voters-pass) · [Architecture](#architecture) · [Contracts](#contracts) · [How to play](#how-to-play) · [Testing](#testing) · [After the hackathon](#after-the-hackathon) · [Repo and docs](#repo-layout) · [License](#license)
 
 ## What C0LONY is
 
@@ -280,3 +280,9 @@ Details in [docs/ROADMAP.md](docs/ROADMAP.md):
 | [DEPLOYMENTS.md](docs/DEPLOYMENTS.md) | Addresses, verified chain facts, hosting and backend setup |
 | [TESTNET_RUN.md](docs/TESTNET_RUN.md) | Recorded testnet seasons with transaction links |
 | [ROADMAP.md](docs/ROADMAP.md) | Season 1 scope and what comes after |
+
+## License
+
+The code is released under the [MIT License](LICENSE), © 2026 Hirving Labs.
+
+The C0LONY name, logo, pixel art and world art are not covered by that license. Please don't use them for other projects or forks.
