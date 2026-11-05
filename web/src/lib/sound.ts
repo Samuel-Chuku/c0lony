@@ -12,8 +12,7 @@ let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
 let enabled = true;
 let ambienceWanted = 0; // screens that want the colony ambience, counted
-let hum: { src: AudioBufferSourceNode; gain: GainNode } | null = null;
-let patter: ReturnType<typeof setTimeout> | null = null;
+let hum: { stop: () => void } | null = null; // the running ambience
 let noiseBuf: AudioBuffer | null = null;
 // A cue that came in while audio was asleep (before the first tap, or after the phone paused the page while the
 // player was in their wallet app). It plays as soon as audio wakes, if that is within a few seconds.
@@ -147,48 +146,125 @@ export function play(cue: Cue) {
   }
 }
 
-// ---- ambience: a low hum, and an ant's footsteps every so often, left or right in the tunnels
+// ---- ambience: the colony underground, on every screen. A warm two-note drone, air moving through the tunnels,
+// a slow music-box note now and then, and ants pattering left and right. Everything sits in the mid range so it
+// carries on laptop and phone speakers, and stays well under the action cues.
+
+const SCALE = [220, 261.63, 293.66, 329.63, 392, 440, 523.25, 587.33]; // A minor pentatonic, two octaves
 
 function startAmbience() {
   const c = audio();
   if (!c || hum || document.hidden) return;
-  const src = c.createBufferSource();
-  src.buffer = noise(c);
-  src.loop = true;
-  const f = c.createBiquadFilter();
-  f.type = "lowpass";
-  f.frequency.value = 180;
-  const gain = c.createGain();
-  gain.gain.setValueAtTime(0.0001, c.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.05, c.currentTime + 2);
-  src.connect(f).connect(gain).connect(master!);
-  src.start();
-  hum = { src, gain };
+  const now = c.currentTime;
+  const bus = c.createGain();
+  bus.gain.setValueAtTime(0.0001, now);
+  bus.gain.exponentialRampToValueAtTime(0.55, now + 3); // about 5 dB under the action cues
+  bus.connect(master!);
+
+  // Drone: A and E, slightly detuned triangles through a lowpass that slowly opens and closes.
+  const droneF = c.createBiquadFilter();
+  droneF.type = "lowpass";
+  droneF.frequency.value = 700;
+  droneF.Q.value = 0.8;
+  const droneG = c.createGain();
+  droneG.gain.value = 0.035;
+  droneF.connect(droneG).connect(bus);
+  const lfo = c.createOscillator();
+  lfo.frequency.value = 0.05;
+  const lfoDepth = c.createGain();
+  lfoDepth.gain.value = 300;
+  lfo.connect(lfoDepth).connect(droneF.frequency);
+  const oscs = [110, 110.6, 164.8].map((f) => {
+    const o = c.createOscillator();
+    o.type = "triangle";
+    o.frequency.value = f;
+    o.connect(droneF);
+    return o;
+  });
+
+  // Air in the tunnels: soft band of noise that breathes in and out.
+  const air = c.createBufferSource();
+  air.buffer = noise(c);
+  air.loop = true;
+  const airF = c.createBiquadFilter();
+  airF.type = "bandpass";
+  airF.frequency.value = 600;
+  airF.Q.value = 0.6;
+  const airG = c.createGain();
+  airG.gain.value = 0.018;
+  const breath = c.createOscillator();
+  breath.frequency.value = 0.08;
+  const breathDepth = c.createGain();
+  breathDepth.gain.value = 0.012;
+  breath.connect(breathDepth).connect(airG.gain);
+  air.connect(airF).connect(airG).connect(bus);
+
+  for (const n of [...oscs, lfo, breath]) n.start(now);
+  air.start(now);
+
+  const timers: ReturnType<typeof setTimeout>[] = [];
+  const later = (fn: () => void, ms: number) => timers.push(setTimeout(fn, ms));
+
+  // A music-box note every few seconds, sometimes answered by a second.
+  const pluck = (freq: number, at: number, vol: number) => {
+    const o = c.createOscillator();
+    const o2 = c.createOscillator();
+    const g = c.createGain();
+    const p = c.createStereoPanner();
+    o.type = "sine";
+    o2.type = "triangle";
+    o.frequency.value = freq;
+    o2.frequency.value = freq * 2;
+    p.pan.value = Math.random() * 1.2 - 0.6;
+    g.gain.setValueAtTime(0.0001, at);
+    g.gain.exponentialRampToValueAtTime(vol, at + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, at + 2.2);
+    o.connect(g);
+    o2.connect(g);
+    g.connect(p).connect(bus);
+    o.start(at);
+    o2.start(at);
+    o.stop(at + 2.3);
+    o2.stop(at + 2.3);
+  };
+  const note = () => {
+    if (!hum || c.state !== "running") return later(note, 3000);
+    const i = Math.floor(Math.random() * SCALE.length);
+    pluck(SCALE[i], c.currentTime, 0.03);
+    if (Math.random() < 0.35) pluck(SCALE[Math.min(SCALE.length - 1, i + 2)], c.currentTime + 0.45, 0.022);
+    later(note, 2500 + Math.random() * 4500);
+  };
   const step = () => {
-    const a = audio();
-    if (a && hum) {
+    if (hum && c.state === "running") {
       const pan = Math.random() * 1.6 - 0.8;
       const steps = 2 + Math.floor(Math.random() * 3);
-      for (let i = 0; i < steps; i++) hiss(a, a.currentTime + i * 0.07, 0.02, 0.012 + Math.random() * 0.01, "bandpass", 5000 + Math.random() * 2000, pan);
+      for (let i = 0; i < steps; i++) hiss(c, c.currentTime + i * 0.07, 0.02, 0.014 + Math.random() * 0.01, "bandpass", 4000 + Math.random() * 2000, pan);
     }
-    patter = setTimeout(step, 600 + Math.random() * 1600);
+    later(step, 700 + Math.random() * 1800);
   };
-  patter = setTimeout(step, 800);
+  later(note, 1500);
+  later(step, 900);
+
+  hum = {
+    stop: () => {
+      timers.forEach(clearTimeout);
+      const t = c.currentTime;
+      bus.gain.cancelScheduledValues(t);
+      bus.gain.setTargetAtTime(0.0001, t, 0.3);
+      setTimeout(() => {
+        for (const n of [...oscs, lfo, breath, air]) try { n.stop(); } catch { /* already stopped */ }
+        bus.disconnect();
+      }, 1500);
+    },
+  };
 }
 
 function stopAmbience() {
-  if (patter) clearTimeout(patter);
-  patter = null;
-  if (hum && ctx) {
-    const h = hum;
-    h.gain.gain.cancelScheduledValues(ctx.currentTime);
-    h.gain.gain.setTargetAtTime(0.0001, ctx.currentTime, 0.2);
-    setTimeout(() => h.src.stop(), 800);
-  }
+  hum?.stop();
   hum = null;
 }
 
-/** The Colony screen asks for ambience while it is on screen. Starts after the first tap if needed. */
+/** Screens ask for the ambience while they are open; the app shell asks for it on every screen. */
 export function wantAmbience(on: boolean) {
   ambienceWanted = Math.max(0, ambienceWanted + (on ? 1 : -1));
   if (ambienceWanted > 0 && ctx) startAmbience();
@@ -209,6 +285,7 @@ export function setSoundEnabled(on: boolean) {
 /** Every tap or key unlocks or re-wakes audio, starts the ambience if a screen wants it, and clicks on controls.
  * Coming back to the tab also tries to wake it (desktop browsers allow that once the player has tapped before). */
 export function installSoundListeners(): () => void {
+  wantAmbience(true); // the colony is heard on every screen, from the first tap
   const onPress = () => {
     unlock();
     if (ambienceWanted > 0 && ctx?.state === "running") startAmbience();
@@ -235,6 +312,7 @@ export function installSoundListeners(): () => void {
   window.addEventListener("pageshow", onBack);
   window.addEventListener("focus", onBack);
   return () => {
+    wantAmbience(false);
     document.removeEventListener("pointerdown", onPress, opts);
     document.removeEventListener("touchend", onPress, opts);
     document.removeEventListener("click", onClick, true);
