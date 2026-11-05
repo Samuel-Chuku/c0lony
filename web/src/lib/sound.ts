@@ -15,19 +15,65 @@ let ambienceWanted = 0; // screens that want the colony ambience, counted
 let hum: { src: AudioBufferSourceNode; gain: GainNode } | null = null;
 let patter: ReturnType<typeof setTimeout> | null = null;
 let noiseBuf: AudioBuffer | null = null;
+// A cue that came in while audio was asleep (before the first tap, or after the phone paused the page while the
+// player was in their wallet app). It plays as soon as audio wakes, if that is within a few seconds.
+let pending: { cue: Cue; at: number } | null = null;
+const PENDING_MS = 15_000;
 
-function audio(): AudioContext | null {
+/** The audio context, created on first use. It may still be asleep: check `ctx.state` before scheduling. */
+function context(): AudioContext | null {
   if (!enabled || typeof window === "undefined") return null;
+  if (ctx?.state === "closed") ctx = null;
   if (!ctx) {
     const Ctor = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
     if (!Ctor) return null;
     ctx = new Ctor();
     master = ctx.createGain();
-    master.gain.value = 0.6;
+    master.gain.value = 1; // cues are mixed soft; full gain keeps them audible on laptop speakers without clipping
     master.connect(ctx.destination);
+    noiseBuf = null;
+    hum = null; // a closed context took its hum with it
+    ctx.onstatechange = () => {
+      if (ctx?.state !== "running") return;
+      if (pending && Date.now() - pending.at < PENDING_MS) {
+        const cue = pending.cue;
+        pending = null;
+        play(cue);
+      }
+      pending = null;
+      if (ambienceWanted > 0) startAmbience();
+    };
   }
-  if (ctx.state === "suspended") void ctx.resume();
   return ctx;
+}
+
+/** Wakes audio. Browsers allow this after the player's first tap; phones also put it to sleep in the background. */
+function wake() {
+  const c = context();
+  if (c && c.state !== "running") void c.resume().catch(() => {});
+}
+
+/** A running context, or null (and a wake attempt) if audio is asleep or muted. */
+function audio(): AudioContext | null {
+  const c = context();
+  if (!c) return null;
+  if (c.state === "running") return c;
+  wake();
+  return null;
+}
+
+/** Called inside a tap or key press: the one moment every browser lets audio start. Plays one silent sample,
+ * which older iPhones need before they will play anything else. */
+function unlock() {
+  const c = context();
+  if (!c) return;
+  if (c.state !== "running") void c.resume().catch(() => {});
+  try {
+    const s = c.createBufferSource();
+    s.buffer = c.createBuffer(1, 1, c.sampleRate);
+    s.connect(c.destination);
+    s.start(0);
+  } catch { /* nothing to unlock */ }
 }
 
 function noise(c: AudioContext): AudioBuffer {
@@ -76,7 +122,10 @@ const arp = (c: AudioContext, t: number, notes: number[], step: number, type: Os
 
 export function play(cue: Cue) {
   const c = audio();
-  if (!c) return;
+  if (!c) {
+    if (enabled && cue !== "click") pending = { cue, at: Date.now() };
+    return;
+  }
   const t = c.currentTime + 0.01;
   switch (cue) {
     case "click": tone(c, 900, t, 0.035, "square", 0.025); break;
@@ -152,33 +201,47 @@ export function setSoundEnabled(on: boolean) {
     stopAmbience();
     void ctx?.suspend();
   } else if (ctx) {
-    void ctx.resume();
+    wake();
     if (ambienceWanted > 0) startAmbience();
   }
 }
 
-/** First tap or key anywhere: unlocks audio, starts the ambience if a screen wants it, and clicks on controls. */
+/** Every tap or key unlocks or re-wakes audio, starts the ambience if a screen wants it, and clicks on controls.
+ * Coming back to the tab also tries to wake it (desktop browsers allow that once the player has tapped before). */
 export function installSoundListeners(): () => void {
+  const onPress = () => {
+    unlock();
+    if (ambienceWanted > 0 && ctx?.state === "running") startAmbience();
+  };
   const onClick = (e: MouseEvent) => {
+    onPress();
     const el = e.target instanceof Element ? e.target.closest("button, a[href], [role='button'], summary, input[type='range']") : null;
-    if (!audio()) return;
-    if (ambienceWanted > 0) startAmbience();
     if (el && !(el as HTMLButtonElement).disabled) play("click");
   };
-  const onKey = () => {
-    if (audio() && ambienceWanted > 0) startAmbience();
+  const onBack = () => {
+    if (document.hidden) {
+      stopAmbience();
+      return;
+    }
+    if (ctx) wake();
+    if (ambienceWanted > 0 && ctx?.state === "running") startAmbience();
   };
-  const onVis = () => {
-    if (document.hidden) stopAmbience();
-    else if (ambienceWanted > 0 && ctx) startAmbience();
-  };
+  const opts = { capture: true, passive: true } as const;
+  document.addEventListener("pointerdown", onPress, opts);
+  document.addEventListener("touchend", onPress, opts);
   document.addEventListener("click", onClick, true);
-  document.addEventListener("keydown", onKey, true);
-  document.addEventListener("visibilitychange", onVis);
+  document.addEventListener("keydown", onPress, true);
+  document.addEventListener("visibilitychange", onBack);
+  window.addEventListener("pageshow", onBack);
+  window.addEventListener("focus", onBack);
   return () => {
+    document.removeEventListener("pointerdown", onPress, opts);
+    document.removeEventListener("touchend", onPress, opts);
     document.removeEventListener("click", onClick, true);
-    document.removeEventListener("keydown", onKey, true);
-    document.removeEventListener("visibilitychange", onVis);
+    document.removeEventListener("keydown", onPress, true);
+    document.removeEventListener("visibilitychange", onBack);
+    window.removeEventListener("pageshow", onBack);
+    window.removeEventListener("focus", onBack);
   };
 }
 
