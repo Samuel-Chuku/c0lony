@@ -72,3 +72,37 @@ export function makeVoterRefresher(d: VoterRefreshDeps) {
     d.log(`voters: root ${receipt.status === "success" ? "posted" : "FAILED"} onchain · ${hash}`);
   };
 }
+
+/**
+ * Runs `fn` once things go quiet: each call restarts a `quietMs` timer, and `fn` runs when no call has come in
+ * for that long. While the keeper catches up on past votes, batches arrive every second or so, so the voter
+ * root is posted onchain once at the end instead of once per batch. Calls that arrive while `fn` is running
+ * schedule one more run after it.
+ */
+export function whenQuiet(fn: () => Promise<void>, quietMs: number): () => void {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  let running = false;
+  let again = false;
+  const fire = async () => {
+    timer = undefined;
+    if (running) {
+      again = true;
+      return;
+    }
+    running = true;
+    try {
+      await fn();
+    } finally {
+      running = false;
+      if (again) {
+        again = false;
+        schedule();
+      }
+    }
+  };
+  const schedule = () => {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(() => void fire(), quietMs);
+  };
+  return schedule;
+}

@@ -18,7 +18,7 @@ import { replayHistory } from "./settle/history.ts";
 import { Settler } from "./settle/settler.ts";
 import { makeSettleWallet } from "./settle/wallet.ts";
 import { httpGasApi, StarterGas } from "./gas/starter.ts";
-import { makeVoterRefresher } from "./voters/refresh.ts";
+import { makeVoterRefresher, whenQuiet } from "./voters/refresh.ts";
 import { createWalletClient, http as viemHttp, type Address, type Hash } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { makeChain } from "./chain.ts";
@@ -163,12 +163,16 @@ const refreshVoters = makeVoterRefresher({
     : undefined,
   log,
 });
-const runVoterRefresh = () => refreshVoters().catch((e) => log(`voters: refresh failed: ${e instanceof Error ? e.message : e}`));
+// Wait for votes to go quiet (60s) before refreshing, so catching up on old votes posts the root once, not per batch.
+const runVoterRefresh = whenQuiet(
+  () => refreshVoters().catch((e) => log(`voters: refresh failed: ${e instanceof Error ? e.message : e}`)),
+  60_000,
+);
 
 const onVoteLogs: LogHandler = async (logs, info) => {
   const added = voteStore.add(logs);
   log(`votes: ${logs.length} logs via ${info.source}, ${added} new`);
-  if (added > 0) await runVoterRefresh();
+  if (added > 0) runVoterRefresh();
 };
 
 // Voter's Pass proofs are static files (scripts/build-voters.ts) that Caddy serves at /voters/, not routes here.
@@ -211,7 +215,7 @@ if (cfg.eventSource === "streams") {
 
 const port = await server.listen(cfg.webhookPort, cfg.webhookHost);
 for (const [source, handler] of sources) await source.start(handler);
-void runVoterRefresh();
+runVoterRefresh();
 log(`keeper up on :${port} · network ${cfg.network} · intake ${cfg.eventSource} · ${sources.length} sources`);
 
 outbox?.start();
