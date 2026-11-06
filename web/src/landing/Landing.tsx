@@ -176,7 +176,7 @@ export function Landing() {
               <ol className="l-flow">
                 <li><b>Seal.</b> The raider commits to a target without showing it. All their free ants march.</li>
                 <li><b>Guard.</b> The defender has a 4 hour window to guard leaves or sugar.</li>
-                <li><b>Reveal.</b> The raider opens the seal. The roll is fixed to a future drand round.</li>
+                <li><b>Reveal.</b> The seal opens itself: the target was timelocked to a drand round after the guard window. The roll is fixed to a later drand round.</li>
                 <li><b>Roll.</b> Anyone can settle it. The contract checks the beacon signature and pays out.</li>
               </ol>
             </div>

@@ -84,7 +84,7 @@ export function LaunchSheet({ open, mode, target, me, cooldownLeft, onClose }: P
         {session.embedded ? (
           <p className="c0-sub">Sealing asks your wallet to sign once. In your embedded wallet that happens silently.</p>
         ) : (
-          <p className="c0-sub">Sealing asks your wallet to sign once, so you can reveal from any device.</p>
+          <p className="c0-sub">Sealing asks your wallet to sign once. The raid then reveals and rolls by itself.</p>
         )}
         <Button
           variant="raid"

@@ -75,6 +75,8 @@ contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView
     // A correct guard costs the raider this share of the marching ants
     uint256 internal constant GUARDED_LOSS_PCT = 25;
     uint256 public constant ROUND_DELAY = 30 seconds;
+    /// @notice Most bytes a timelocked raid target may take (a tlock ciphertext is about 400).
+    uint256 public constant MAX_SEALED_BYTES = 1024;
     uint256 public constant SETTLE_TIMEOUT = 48 hours;
     /// @dev Share of settle's measured execution gas that is refunded, in percent. Only the measured part counts
     ///      (no allowance for intrinsic or calldata gas), and it is scaled down, so storage-clearing gas refunds can
@@ -325,6 +327,9 @@ contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView
         uint64 guardDeadline,
         bool isAvenge
     );
+    /// @notice The raid's target and salt, timelocked to a drand quicknet round that opens after the guard window.
+    ///         Once that round is out anyone can decrypt it and call reveal; the commitment decides if it counts.
+    event RaidSealed(uint256 indexed raidId, bytes sealedTarget);
     event Guarded(uint256 indexed raidId, uint64 indexed defender, address indexed owner, Resource resource);
     event Revealed(uint256 indexed raidId, Resource target, uint64 round, uint64 roundTime);
     event RaidSettled(
@@ -363,7 +368,7 @@ contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView
     error NotEnoughSugar();
     error TooManyWorkers();
     error BadResource();
-    error NotRaider();
+    error SealedTooLong();
     error NotDefender();
     error CannotRaidSelf();
     error TooFewWorkers();
@@ -909,20 +914,30 @@ contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView
         return keccak256(abi.encode(target, salt, raidId));
     }
 
-    /// @notice Seal a raid. Every free ant marches and is away until the raid resolves.
-    function launchRaid(uint64 defenderId, bytes32 commitment) external returns (uint256 raidId) {
-        return _launchRaid(defenderId, commitment, false);
+    /// @notice Seal a raid. Every free ant marches and is away until the raid resolves. `sealedTarget` is the target
+    ///         and salt timelocked to a drand round after the guard window, so the raid reveals itself (anyone may
+    ///         reveal it once the round opens it); pass empty bytes to reveal by hand.
+    function launchRaid(uint64 defenderId, bytes32 commitment, bytes calldata sealedTarget) external returns (uint256 raidId) {
+        raidId = _launchRaid(defenderId, commitment, false);
+        _emitSealed(raidId, sealedTarget);
     }
 
     /// @notice Avenge: raid back the wallet that won a raid against you, within 24 h of that settle.
     ///         Exactly like launchRaid against the raider's current colony (all free ants march; same range, shield,
     ///         one-raid-at-a-time, guard window, reveal and drand settle, no bonus), except it neither needs nor
     ///         restarts your own raid cooldown and ignores the target's raid protection. Usable once per grant.
-    function avenge(address raider, bytes32 commitment) external returns (uint256 raidId) {
+    function avenge(address raider, bytes32 commitment, bytes calldata sealedTarget) external returns (uint256 raidId) {
         uint64 expires = avengeUntil[msg.sender][raider];
         if (expires == 0 || block.timestamp > expires) revert NoAvenge();
         delete avengeUntil[msg.sender][raider];
-        return _launchRaid(colonyOf[_syncSeason()][raider], commitment, true);
+        raidId = _launchRaid(colonyOf[_syncSeason()][raider], commitment, true);
+        _emitSealed(raidId, sealedTarget);
+    }
+
+    function _emitSealed(uint256 raidId, bytes calldata sealedTarget) internal {
+        if (sealedTarget.length == 0) return;
+        if (sealedTarget.length > MAX_SEALED_BYTES) revert SealedTooLong();
+        emit RaidSealed(raidId, sealedTarget);
     }
 
     /// @notice Whether `defender` can still avenge a raid won by `raider`, and until when.
@@ -985,12 +1000,12 @@ contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView
         emit Guarded(raidId, r.defender, msg.sender, resource);
     }
 
-    /// @notice After the guard window, the raider reveals the target. The raid is assigned the first
-    ///         drand round published at least 30 seconds from now.
+    /// @notice After the guard window, anyone holding the target and salt reveals the raid: the raider by hand,
+    ///         or the keeper once the timelocked target opens. The commitment makes a wrong reveal impossible.
+    ///         The raid is assigned the first drand round published at least 30 seconds from now.
     function reveal(uint256 raidId, Resource target, bytes32 salt) external {
         Raid storage r = raids[raidId];
         if (r.status != RaidStatus.Sealed) revert WrongStatus();
-        if (colonies[r.raider].owner != msg.sender) revert NotRaider();
         uint256 windowEnd = uint256(r.launchedAt) + config.guardWindow;
         if (block.timestamp < windowEnd) revert GuardWindowOpen();
         if (block.timestamp >= windowEnd + config.revealWindow) revert RevealWindowClosed();

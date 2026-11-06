@@ -68,7 +68,7 @@ export function RaidReport() {
           : step === "sealed"
             ? `Sealed. The target stays hidden and ${iDefended ? "you can still guard for " + fmtDuration(Number(raid.launchedAt) + guardWindow - now) : "the guard window is still open"}.`
             : step === "marching"
-              ? "The ants are marching. The raider reveals the target once the guard window closes."
+              ? "The ants are marching. The raid reveals itself once the guard window closes."
               : "Revealed. The roll comes from a public drand round and lands as soon as it is published.";
     return (
       <Screen back>

@@ -51,6 +51,9 @@ export class FakeReader implements GameReader {
   async sealedLifetime() {
     return 28 * 3600;
   }
+  async guardWindow() {
+    return 4 * 3600;
+  }
   async leafForageCooldown() {
     return 6 * 3600;
   }

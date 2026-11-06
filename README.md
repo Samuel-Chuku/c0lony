@@ -75,7 +75,7 @@ flowchart LR
 
 ## Raids and randomness
 
-A raid is a sealed bet. The raider commits to a target resource without revealing it, the defender may guess and guard, and the outcome is rolled from a public randomness beacon nobody can predict or choose.
+A raid is a sealed bet. The raider commits to a target resource without revealing it, the defender may guess and guard, and the outcome is rolled from a public randomness beacon nobody can predict or choose. For the raider it is set and forget: the target is timelocked to a drand round after the guard window, so the raid reveals and rolls without them coming back.
 
 ```mermaid
 sequenceDiagram
@@ -83,12 +83,14 @@ sequenceDiagram
   participant R as Raider
   participant C as ColonyGame
   participant D as Defender
+  participant Q as drand quicknet
   participant Dr as drand evmnet
   participant K as Anyone (keeper)
-  R->>C: launchRaid(target colony, hash of target + salt)
+  R->>C: launchRaid(target colony, hash of target + salt, target + salt timelocked)
   Note over C: guard window (4 h at launch)
   D->>C: guard(leaves or sugar)
-  R->>C: reveal(target, salt)
+  Q-->>K: round after the guard window opens the timelock
+  K->>C: reveal(target, salt)
   C->>C: check hash, assign first drand round at least 30 s later
   Dr-->>K: round published (BLS signature)
   K->>C: settle(raidId, signature)
@@ -98,11 +100,12 @@ sequenceDiagram
 ```
 
 - **Sealed target:** the raider submits only a hash. The target is hidden until after the guard window.
+- **Reveals itself:** at launch the app also encrypts the target and salt with drand timelock encryption ([tlock](https://github.com/drand/tlock-js), on drand's quicknet network) to a round that comes after the guard window, and posts the ciphertext with the raid. Nobody can read it before that round, the keeper included. After it, anyone can, and the keeper reveals. The contract accepts a reveal from anyone, because the hash already decides what counts. The raider can still reveal by hand. quicknet is used only for this timelock (tlock needs a BLS12-381 network); the roll itself still comes from evmnet and is verified onchain.
 - **All free ants march.** There is no soldier picker: every idle ant goes. They still count as workers (housed, fed) while away.
 - **No odds, only a guess.** If the defender did not guard, the raider wins and takes a random 30 to 60% of the target resource. If the defender guarded the other resource, the raider still wins and takes 45 to 60%, so a wrong guess is worse than no guard. If the defender guards the right resource, the raid fails: the raider loses 25% of the marching ants (rounded down) and the defender takes 10 to 15% of a random resource from the raider. Loot is capped at 8 per marching ant. Never WIF.
 - **Raid lock.** When a raid is launched, 60% of the defender's leaves and sugar are locked until it settles or is collected. Builds cannot dip into the lock, but feeding still works.
 - **Limits (launch values).** A raider can launch once per 12 h (Avenge skips this). A colony can face one raid at a time, and after a raid is launched on it, no normal raid can be launched on it for 12 h. So a colony is raided at most twice a day, three times with an Avenge. You cannot launch a raid while one is marching on you.
-- **If the raider never reveals,** every marching ant is lost. **If nobody settles within 48 h of the round,** the ants come home. `collect` closes both cases.
+- **If the raid is never revealed** (no keeper and no raider), every marching ant is lost. **If nobody settles within 48 h of the round,** the ants come home. `collect` closes both cases.
 
 ### Why drand evmnet
 
@@ -213,18 +216,18 @@ flowchart TB
 
 - RPC and event indexing run on [Quicknode](https://www.quicknode.com/chains/robinhood): RPC for the app, keeper and deploys, and Quicknode Streams (or an `eth_getLogs` poller as fallback) for events.
 - The site is a static export plus serverless functions. The functions hold the live feed (D1 database), X profiles (KV store) and push subscriptions.
-- The keeper settles every revealed raid about 60 s after its drand round, closes expired raids with `collect`, feeds events to the app, sends push alerts, and publishes the Voter's Pass files. It stops and logs an alert if its ETH balance falls below `MIN_BALANCE_ETH`, and is safe to restart.
+- The keeper reveals every timelocked raid once its quicknet round opens it, settles every revealed raid about 60 s after its drand round, closes expired raids with `collect`, feeds events to the app, sends push alerts, and publishes the Voter's Pass files. It stops and logs an alert if its ETH balance falls below `MIN_BALANCE_ETH`, and is safe to restart.
 - Anyone can run a settler. `settle` is permissionless and the signature comes straight from drand.
 
 ## Contracts
 
-Current Robinhood Chain **testnet** (46630) deployment (fourth, 2026-11-02), all verified on Blockscout. Mainnet addresses are added here at launch.
+Current Robinhood Chain **testnet** (46630) deployment (sixth, 2026-11-05), all verified on Blockscout. Mainnet addresses are added here at launch.
 
 | Contract | Address |
 | --- | --- |
-| ColonyGame | [`0x4B63783671A416eC4Db8A31A337512a1D23B091B`](https://explorer.testnet.chain.robinhood.com/address/0x4B63783671A416eC4Db8A31A337512a1D23B091B) |
-| SeasonPot | [`0x584d8A1067E154DE1887D9fbab7e3F47cefa5451`](https://explorer.testnet.chain.robinhood.com/address/0x584d8A1067E154DE1887D9fbab7e3F47cefa5451) |
-| Treasury | [`0x0be8aade8821A44776e872E6a13F06FacF35E325`](https://explorer.testnet.chain.robinhood.com/address/0x0be8aade8821A44776e872E6a13F06FacF35E325) |
+| ColonyGame | [`0x8CCc67AcC8C3Cd70576501bC37a4755C4562504b`](https://explorer.testnet.chain.robinhood.com/address/0x8CCc67AcC8C3Cd70576501bC37a4755C4562504b) |
+| SeasonPot | [`0xdD9a1c89455e74106E534AD207CB2e306f271F6f`](https://explorer.testnet.chain.robinhood.com/address/0xdD9a1c89455e74106E534AD207CB2e306f271F6f) |
+| Treasury | [`0x98Aa85b93555459Ce4Cc4c1372Be33cD46453411`](https://explorer.testnet.chain.robinhood.com/address/0x98Aa85b93555459Ce4Cc4c1372Be33cD46453411) |
 | DrandVerifier (library) | [`0x2513832059bac29e5a5115634694F22B6B302Ae1`](https://explorer.testnet.chain.robinhood.com/address/0x2513832059bac29e5a5115634694F22B6B302Ae1) |
 | MockWIF (testnet only) | [`0xC7524F3D78E5f6150aff0Eac811e9Bd0D0Fd9B68`](https://explorer.testnet.chain.robinhood.com/address/0xC7524F3D78E5f6150aff0Eac811e9Bd0D0Fd9B68) |
 

@@ -164,7 +164,7 @@ export const guardResult = (resource: number): SuccessContent => ({
   lines: [<>{iconOf(resource)} You&apos;re guarding {resName(resource)}.</>, "If they aim there, the raid fails and a quarter of their ants fall."],
 });
 
-/** Raid launched: who marches, when the guard window closes and when it must be revealed. */
+/** Raid launched: who marches, and when the guard window closes (the raid reveals itself after it). */
 export const sealedResult = (handle: string, soldiers: number, avenged: boolean, guardWindow = 0, revealWindow = 0, cooldown = 0) => (): SuccessContent => {
   const at = (sec: number) => {
     const d = new Date(Date.now() + sec * 1000);
@@ -178,7 +178,7 @@ export const sealedResult = (handle: string, soldiers: number, avenged: boolean,
     lines: [
       <span className="c0-deltas" key="m"><span className="c0-delta"><b>{soldiers}</b><ResIcon name="ant" size={20} label="ants" /></span> marching out</span>,
       "Your target stays hidden until the roll",
-      guardWindow > 0 ? `They can guard until ${at(guardWindow)} · reveal by ${at(guardWindow + revealWindow)}` : "Reveal it after their guard window closes",
+      guardWindow > 0 ? `They can guard until ${at(guardWindow)} · then it reveals itself` : "It reveals itself after their guard window closes",
       avenged ? "Free raid back · no cooldown used" : cooldown > 0 ? `Next raid in ${fmtDuration(cooldown)}` : null,
     ].filter((l) => l !== null),
   };

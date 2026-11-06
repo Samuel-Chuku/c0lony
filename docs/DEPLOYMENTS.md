@@ -111,6 +111,20 @@ Fetched from [`https://api.drand.sh/04f1e9062b8a81f848fded9c12306733282b2727ecce
 
 Background: [drand HTTP API](https://docs.drand.love/developer/API-v1/drand-http-api), [EVM-compatible drand and bls-bn254](https://hackmd.io/@kevincharm/rJA4r_Iia).
 
+## drand quicknet (raid timelock only)
+
+Raid targets are timelocked with drand's [tlock-js](https://github.com/drand/tlock-js) (v0.9.0). It only supports BLS12-381 networks, so it cannot use evmnet (BN254). It uses quicknet, run by the same League of Entropy nodes. quicknet only decides when a sealed target can be opened; the raid roll still comes from evmnet and is verified onchain. Values from [`https://api.drand.sh/52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971/info`](https://api.drand.sh/52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971/info), pinned inside tlock-js:
+
+| Field | Value |
+| --- | --- |
+| Chain hash | `52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971` |
+| Beacon ID | `quicknet` |
+| Scheme | `bls-unchained-g1-rfc9380` |
+| Period | `3` seconds |
+| Genesis time | `1692803367` |
+
+Checked 2026-11-05: a payload locked 6 s ahead was refused before its round ("too early to decrypt") and opened byte-for-byte after it. A ciphertext from the app's browser bundle is about 600 bytes and opened 4 h 2 min after launch (guard window + 120 s margin).
+
 ## KyberSwap Aggregator (`robinhood` route)
 
 Quote request: `GET https://aggregator-api.kyberswap.com/robinhood/api/v1/routes?tokenIn=0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE&tokenOut=0x5173…4773&amountIn=…&chargeFeeBy=currency_in&isInBps=true&feeAmount=50&feeReceiver=<treasury>` with header `x-client-id: c0lony` (the same value is sent as the `source` parameter). The fee receiver for these test quotes was a placeholder; the treasury address is filled in after deploy.
@@ -178,7 +192,21 @@ Environment variable names (see `keeper/.env.example`): `FEED_API_BASE`, `FEED_I
 
 ## Deployed contracts
 
-### Robinhood Chain testnet (46630), current deployment (2026-11-03, fifth)
+### Robinhood Chain testnet (46630), current deployment (2026-11-05, sixth)
+
+Redeployed so raids reveal themselves. `launchRaid` and `avenge` take a third argument, the target and salt timelocked to a drand quicknet round after the guard window, published in a new `RaidSealed` event (max 1,024 bytes). `reveal` is open to anyone whose target and salt match the commitment, so the keeper reveals once the timelock opens. Blocks 149,189,109–149,189,177, 10,398,402 gas in total. ColonyGame, SeasonPot and Treasury are verified on Blockscout; the DrandVerifier library and MockWIF are reused.
+
+| Contract | Address |
+| --- | --- |
+| ColonyGame | [`0x8CCc67AcC8C3Cd70576501bC37a4755C4562504b`](https://explorer.testnet.chain.robinhood.com/address/0x8CCc67AcC8C3Cd70576501bC37a4755C4562504b) |
+| SeasonPot | [`0xdD9a1c89455e74106E534AD207CB2e306f271F6f`](https://explorer.testnet.chain.robinhood.com/address/0xdD9a1c89455e74106E534AD207CB2e306f271F6f) |
+| Treasury | [`0x98Aa85b93555459Ce4Cc4c1372Be33cD46453411`](https://explorer.testnet.chain.robinhood.com/address/0x98Aa85b93555459Ce4Cc4c1372Be33cD46453411) |
+| DrandVerifier (linked library, reused) | [`0x2513832059bac29e5a5115634694F22B6B302Ae1`](https://explorer.testnet.chain.robinhood.com/address/0x2513832059bac29e5a5115634694F22B6B302Ae1) |
+| MockWIF (testnet only, reused) | [`0xC7524F3D78E5f6150aff0Eac811e9Bd0D0Fd9B68`](https://explorer.testnet.chain.robinhood.com/address/0xC7524F3D78E5f6150aff0Eac811e9Bd0D0Fd9B68) |
+
+Owner: `0x4B11611CF7C90aEc2003721d71107d7E1cBf37c2`. Treasury funded with 0.002 testnet ETH. The keeper wallet `0x1A5285D03dF06089119a093756Da5D36852C09f0` is the voter-root setter.
+
+### Robinhood Chain testnet (46630), fifth deployment (retired)
 
 Redeployed so the base build costs live in the owner-tunable config (`chamberBase`, `trailBase`, `farmLeafBase`, `farmSugarBase`, each capped at 0.25× to 4× launch, every change emits `ConfigUpdated`). The aphid farm now costs 40 leaves at launch (was 25), and from the second farm on 25 sugar as well, read from the new `farmSugarCost` view. Blocks 147,433,303–147,433,344, 10,326,131 gas in total. ColonyGame, SeasonPot and Treasury are verified on Blockscout; the DrandVerifier library and MockWIF are reused.
 

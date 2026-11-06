@@ -13,6 +13,7 @@ import { Outbox } from "./feed/outbox.ts";
 import { PushClient } from "./push/client.ts";
 import { PushPlanner } from "./push/planner.ts";
 import { Scheduler } from "./push/scheduler.ts";
+import { makeUnsealer } from "./settle/unseal.ts";
 import { fetchDrandSignature } from "./settle/drand.ts";
 import { replayHistory } from "./settle/history.ts";
 import { Settler } from "./settle/settler.ts";
@@ -70,6 +71,7 @@ if (reader && cfg.keeperPrivateKey) {
     reader,
     wallet: makeSettleWallet(cfg, client),
     signature: (round) => fetchDrandSignature(fetch, cfg.drandApiUrl, cfg.drandChainHash, round),
+    unseal: makeUnsealer(),
     minBalance: parseEther(cfg.minBalanceEth),
     log,
   });

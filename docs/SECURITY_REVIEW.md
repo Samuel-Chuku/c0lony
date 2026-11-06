@@ -42,6 +42,10 @@ An honest self-audit of the C0LONY contracts written during the build. It is not
 | Risk | How it's handled | Status |
 | --- | --- | --- |
 | Defender learns the target before guarding | The target is a commitment hash until reveal, and reveal is only allowed after the guard window closes. | Closed |
+| Defender reads the timelocked target before guarding | The target and salt are timelocked (drand tlock, quicknet) to a round after the guard window; opening it needs that round's BLS signature, which doesn't exist until then. The app derives the round from the latest block's timestamp plus guard window plus 120 s, not the device clock. Only the raider chooses the round, so an early round only harms themselves. | Closed |
+| Anyone can call `reveal` | The `NotRaider` check was removed so the keeper can reveal. A reveal must match the commitment (`BadCommitment` otherwise) and is only allowed after the guard window, so a third party can neither change the target nor reveal early. Revealing twice reverts (`WrongStatus`). | Closed |
+| Raider posts a bad timelock, waits for the roll, then reveals by hand only if winning | The evmnet roll round is assigned at reveal (at least 30 s later), so it is unknown when deciding to reveal. A raid that is never revealed loses every marching ant. | Closed |
+| Oversized `RaidSealed` data | Capped at 1,024 bytes (`SealedTooLong`); a tlock ciphertext is about 600 bytes. The raider pays for their own calldata. | Closed |
 | Commitment brute force | Commitment = keccak256(target, salt, raidId). The salt comes from the raider's wallet signing the raid ID, so it can't be guessed. Raid IDs include the colony number, so commitments can't be replayed across raids. | Closed |
 | Raider sees the defender guarded correctly and refuses to reveal | Not revealing loses every marching ant, versus 25% (rounded down) if revealed. The raider can choose this to deny the defender's loot, but it always costs them more ants. | Accepted (a game choice) |
 | Farming score with a second colony | Each correctly guarded raid costs the attacking colony 25% of its marching ants and 10–15% of a resource, and every raid sends all free ants, so a colony that keeps losing shrinks out of raid range. The 12 h cooldown and 12 h target protection also cap the rate (a colony is raided at most twice a day, three times with an Avenge).  and every colony costs 1,500 WIF to found (1,200 with a Voter's Pass). | Mitigated |
@@ -98,6 +102,8 @@ An honest self-audit of the C0LONY contracts written during the build. It is not
 ## Left open
 
 - No external audit.
+- Auto-reveal depends on the keeper and on drand quicknet being reachable. If either is down past the 24 h reveal window and the raider does not reveal by hand, the marching ants are lost. The app offers a by-hand Reveal 15 minutes after the guard window if the raid has not revealed itself.
+- The keeper pays reveal gas from its own float (not refunded by the treasury, which only refunds `settle`).
 - Ranking gas grows linearly with the number of colonies that were fed twice. That's fine for hundreds of colonies, but would need batching across several transactions for many thousands.
 - The settle refund should be rechecked against a real receipt on the fourth testnet deployment, with the new settle gas.
 - The new raid loop (all-ants march, 60% lock, protection timers) has unit and fuzz tests (140 pass) but no full testnet play-through yet. Balance numbers are untested with real players, and the owner can tune the timers within their caps.

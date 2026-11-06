@@ -7,14 +7,14 @@ export const NETWORKS = {
   testnet: {
     chainId: 46630,
     // First block of the current game deployment. The live feed ignores older events (earlier test games).
-    deployBlock: 147433303,
+    deployBlock: 149189109,
     name: "Robinhood Chain Testnet",
     rpcUrl: "https://rpc.testnet.chain.robinhood.com",
     explorerUrl: "https://explorer.testnet.chain.robinhood.com",
     contracts: {
-      colonyGame: "0x4B63783671A416eC4Db8A31A337512a1D23B091B",
-      seasonPot: "0x584d8A1067E154DE1887D9fbab7e3F47cefa5451",
-      treasury: "0x0be8aade8821A44776e872E6a13F06FacF35E325", // also receives the 0.5% swap fee
+      colonyGame: "0x8CCc67AcC8C3Cd70576501bC37a4755C4562504b",
+      seasonPot: "0xdD9a1c89455e74106E534AD207CB2e306f271F6f",
+      treasury: "0x98Aa85b93555459Ce4Cc4c1372Be33cD46453411", // also receives the 0.5% swap fee
       wif: "0xC7524F3D78E5f6150aff0Eac811e9Bd0D0Fd9B68", // MockWIF
     },
   },

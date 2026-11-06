@@ -326,7 +326,7 @@ contract CoreLoopTest is Base {
         bytes32 c = game.commitmentFor(ColonyGame.Resource.Leaves, bytes32(0), game.nextRaidId(a));
         vm.prank(alice);
         vm.expectRevert(ColonyGame.TargetShielded.selector);
-        game.launchRaid(b, c);
+        game.launchRaid(b, c, "");
 
         vm.prank(bob);
         vm.expectRevert(ColonyGame.NotReady.selector);
@@ -334,7 +334,7 @@ contract CoreLoopTest is Base {
 
         vm.warp(vm.getBlockTimestamp() + 8 hours);
         vm.prank(alice);
-        game.launchRaid(b, c);
+        game.launchRaid(b, c, "");
     }
 
     // ------------------------------------------------------------------ starvation, revive, collapse

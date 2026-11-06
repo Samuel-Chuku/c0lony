@@ -47,7 +47,7 @@ contract AvengeTest is Base {
         raidId = game.nextRaidId(whoId);
         bytes32 commitment = game.commitmentFor(ColonyGame.Resource.Leaves, _salt(who, raidId), raidId);
         vm.prank(who);
-        game.avenge(target, commitment);
+        game.avenge(target, commitment, "");
     }
 
     // ------------------------------------------------------------------ granting
@@ -107,7 +107,7 @@ contract AvengeTest is Base {
         vm.expectEmit(address(game));
         emit ColonyGame.RaidLaunched(raidId, b, a, bob, alice, 10, uint64(vm.getBlockTimestamp() + 4 hours), true);
         vm.prank(bob);
-        game.avenge(alice, commitment);
+        game.avenge(alice, commitment, "");
         (uint64 raider, uint64 defender, uint32 soldiers,,,,,,,) = game.raids(raidId);
         assertEq(raider, b);
         assertEq(defender, a);
@@ -121,7 +121,7 @@ contract AvengeTest is Base {
         assertFalse(ok, "cleared when used");
         vm.prank(bob);
         vm.expectRevert(ColonyGame.NoAvenge.selector);
-        game.avenge(alice, bytes32(0));
+        game.avenge(alice, bytes32(0), "");
     }
 
     function test_avenge_expiresAfter24h() public {
@@ -131,7 +131,7 @@ contract AvengeTest is Base {
         assertFalse(ok);
         vm.prank(bob);
         vm.expectRevert(ColonyGame.NoAvenge.selector);
-        game.avenge(alice, bytes32(0));
+        game.avenge(alice, bytes32(0), "");
     }
 
     function test_avenge_usableAtExactly24h() public {
@@ -145,11 +145,11 @@ contract AvengeTest is Base {
         uint64 k = _found(keeper);
         // Bob raids carol, which starts his 12 h cooldown and sends all his free ants
         vm.prank(bob);
-        game.launchRaid(c, bytes32(0));
+        game.launchRaid(c, bytes32(0), "");
         game.setWorkers(b, 20, 10); // ten more free ants at home
         vm.prank(bob);
         vm.expectRevert(ColonyGame.NotReady.selector);
-        game.launchRaid(k, bytes32(0));
+        game.launchRaid(k, bytes32(0), "");
         // ...but the avenge still goes through
         _avenge(bob, b, alice);
         // and once the normal cooldown is over he passes the cooldown check: the avenge did not restart it
@@ -157,7 +157,7 @@ contract AvengeTest is Base {
         vm.warp(vm.getBlockTimestamp() + 12 hours);
         vm.prank(bob);
         vm.expectRevert(ColonyGame.NoFreeAnts.selector);
-        game.launchRaid(k, bytes32(0));
+        game.launchRaid(k, bytes32(0), "");
     }
 
     function test_avenge_cooldownFreeButOtherRulesStillApply() public {
@@ -165,12 +165,12 @@ contract AvengeTest is Base {
         game.setAssigned(b, 10, 0);
         vm.prank(bob);
         vm.expectRevert(ColonyGame.NoFreeAnts.selector);
-        game.avenge(alice, bytes32(0));
+        game.avenge(alice, bytes32(0), "");
         game.setAssigned(b, 0, 0);
         game.setWorkers(a, 21, 10);
         vm.prank(bob);
         vm.expectRevert(ColonyGame.OutOfRange.selector);
-        game.avenge(alice, bytes32(0));
+        game.avenge(alice, bytes32(0), "");
         (bool ok,) = game.avengeAvailable(bob, alice);
         assertTrue(ok, "a reverted attempt keeps the grant");
     }
@@ -193,7 +193,7 @@ contract AvengeTest is Base {
         _launch(carol, c, b, ColonyGame.Resource.Leaves);
         vm.prank(bob);
         vm.expectRevert(ColonyGame.UnderAttack.selector);
-        game.avenge(alice, bytes32(0));
+        game.avenge(alice, bytes32(0), "");
     }
 
     function test_avenge_blockedByRaidersShield() public {
@@ -202,20 +202,20 @@ contract AvengeTest is Base {
         game.shield();
         vm.prank(bob);
         vm.expectRevert(ColonyGame.TargetShielded.selector);
-        game.avenge(alice, bytes32(0));
+        game.avenge(alice, bytes32(0), "");
     }
 
     function test_avenge_cannotTargetAnyoneElse() public {
         _aliceRaidsBob(WIN);
         vm.prank(bob);
         vm.expectRevert(ColonyGame.NoAvenge.selector);
-        game.avenge(carol, bytes32(0));
+        game.avenge(carol, bytes32(0), "");
         vm.prank(carol);
         vm.expectRevert(ColonyGame.NoAvenge.selector);
-        game.avenge(alice, bytes32(0));
+        game.avenge(alice, bytes32(0), "");
         vm.prank(alice);
         vm.expectRevert(ColonyGame.NoAvenge.selector);
-        game.avenge(bob, bytes32(0));
+        game.avenge(bob, bytes32(0), "");
     }
 
     // ------------------------------------------------------------------ raid record and profile

@@ -109,7 +109,7 @@ function Guide({ c }: { c?: GameConfig }) {
         <P>How a raid plays out:</P>
         <UL
           items={[
-            <>After the guard window, the raider reveals the target within {d(c?.revealWindow)}. Miss it and the marching ants are lost.</>,
+            <>After the guard window, the raid reveals itself. At launch the target is timelocked to a drand round that comes after the window, so nobody can read it early, and the game&apos;s keeper opens it and reveals. The raider can also reveal by hand within {d(c?.revealWindow)}. If no one does, the marching ants are lost.</>,
             <>The roll uses the first drand round about 30 seconds after the reveal. Anyone can settle it then; the game&apos;s keeper settles every raid within about a minute, and the app offers one-tap settle too.</>,
             <>If a raid is never settled, the ants come home after {REFUND_HOURS} hours with nothing.</>,
             <>Finished raids must be settled or collected before you launch another. The Raids tab shows when you can raid, and when you can be raided again.</>,

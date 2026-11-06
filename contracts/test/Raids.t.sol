@@ -26,7 +26,7 @@ contract RaidsTest is Base {
         vm.expectEmit(address(game));
         emit ColonyGame.RaidLaunched(raidId, a, b, alice, bob, 10, uint64(vm.getBlockTimestamp() + 4 hours), false);
         vm.prank(alice);
-        game.launchRaid(b, c);
+        game.launchRaid(b, c, "");
         assertEq(_colony(a).data.soldiersOut, 10);
         assertEq(_colony(a).idle, 0);
     }
@@ -40,49 +40,49 @@ contract RaidsTest is Base {
         game.setAssigned(c, 6, 4);
         vm.prank(carol);
         vm.expectRevert(ColonyGame.NoFreeAnts.selector);
-        game.launchRaid(a, bytes32(0));
+        game.launchRaid(a, bytes32(0), "");
     }
 
     function test_launch_rangeAndMinimumWorkers() public {
         game.setWorkers(b, 21, 10); // more than double alice's 10
         vm.prank(alice);
         vm.expectRevert(ColonyGame.OutOfRange.selector);
-        game.launchRaid(b, bytes32(0));
+        game.launchRaid(b, bytes32(0), "");
 
         game.setWorkers(b, 20, 10); // exactly double is fine
         vm.prank(alice);
-        game.launchRaid(b, bytes32(0));
+        game.launchRaid(b, bytes32(0), "");
 
         game.setWorkers(a, 9, 2);
         vm.prank(alice);
         vm.expectRevert(ColonyGame.TooFewWorkers.selector);
-        game.launchRaid(b, bytes32(0));
+        game.launchRaid(b, bytes32(0), "");
     }
 
     function test_launch_cooldown12h_andSelf() public {
         uint64 c = _found(carol);
         vm.prank(alice);
         vm.expectRevert(ColonyGame.CannotRaidSelf.selector);
-        game.launchRaid(a, bytes32(0));
+        game.launchRaid(a, bytes32(0), "");
         vm.prank(alice);
-        game.launchRaid(b, bytes32(0));
+        game.launchRaid(b, bytes32(0), "");
         vm.warp(vm.getBlockTimestamp() + 12 hours - 1);
         vm.prank(alice);
         vm.expectRevert(ColonyGame.NotReady.selector);
-        game.launchRaid(c, bytes32(0));
+        game.launchRaid(c, bytes32(0), "");
         vm.warp(vm.getBlockTimestamp() + 1);
         game.setWorkers(a, 20, 10); // ants at home again, so only the cooldown could have blocked her
         vm.prank(alice);
-        game.launchRaid(c, bytes32(0));
+        game.launchRaid(c, bytes32(0), "");
     }
 
     function test_launch_oneRaidAtATimePerTarget() public {
         _found(carol);
         vm.prank(alice);
-        game.launchRaid(b, bytes32(0));
+        game.launchRaid(b, bytes32(0), "");
         vm.prank(carol);
         vm.expectRevert(ColonyGame.TargetBusy.selector);
-        game.launchRaid(b, bytes32(0));
+        game.launchRaid(b, bytes32(0), "");
     }
 
     function test_launch_targetProtected12hAfterARaid() public {
@@ -98,7 +98,7 @@ contract RaidsTest is Base {
 
         vm.prank(carol);
         vm.expectRevert(ColonyGame.TargetProtected.selector);
-        game.launchRaid(b, bytes32(0));
+        game.launchRaid(b, bytes32(0), "");
         vm.warp(launchedAt + 12 hours);
         _launch(carol, c, b, ColonyGame.Resource.Leaves);
     }
@@ -114,7 +114,7 @@ contract RaidsTest is Base {
         _launch(alice, a, b, ColonyGame.Resource.Sugar);
         vm.prank(bob);
         vm.expectRevert(ColonyGame.UnderAttack.selector);
-        game.launchRaid(c, bytes32(0));
+        game.launchRaid(c, bytes32(0), "");
     }
 
     // ------------------------------------------------------------------ the defender's stock is locked while a raid marches
@@ -339,17 +339,17 @@ contract RaidsTest is Base {
 
         vm.prank(alice);
         vm.expectRevert(ColonyGame.CollectFirst.selector);
-        game.launchRaid(c, bytes32(0));
+        game.launchRaid(c, bytes32(0), "");
 
         // Defender is blocked too
         vm.prank(bob);
         vm.expectRevert(ColonyGame.CollectFirst.selector);
-        game.launchRaid(c, bytes32(0));
+        game.launchRaid(c, bytes32(0), "");
 
         vm.prank(keeper);
         game.settle(raidId, sigOf[ROUND]);
         vm.prank(alice);
-        game.launchRaid(c, bytes32(0));
+        game.launchRaid(c, bytes32(0), "");
     }
 
     function test_collectFirst_blocksAfterMissedReveal() public {
@@ -358,11 +358,11 @@ contract RaidsTest is Base {
         _feed(alice);
         vm.prank(alice);
         vm.expectRevert(ColonyGame.CollectFirst.selector);
-        game.launchRaid(b, bytes32(0));
+        game.launchRaid(b, bytes32(0), "");
         game.collect(raidId);
         game.setWorkers(a, 10, 2); // the lost soldier took alice below the 10-worker minimum
         vm.prank(alice);
-        game.launchRaid(b, bytes32(0));
+        game.launchRaid(b, bytes32(0), "");
     }
 
     // ------------------------------------------------------------------ fuzzed odds and loot maths

@@ -6,12 +6,14 @@ import type { RaidWallets } from "./feed/decode.ts";
 
 export const RAID_STATUS = { None: 0, Sealed: 1, Revealed: 2, Settled: 3, Failed: 4, Refunded: 5 } as const;
 
-export type RaidInfo = { status: number; launchedAt: number; round: number };
+export type RaidInfo = { status: number; launchedAt: number; round: number; commitment?: string };
 
 export interface GameReader {
   raid(raidId: bigint): Promise<RaidInfo>;
   /** Guard window plus reveal window, in seconds (a sealed raid that never reveals can be collected after this). */
   sealedLifetime(): Promise<number>;
+  /** Guard window in seconds: a raid can be revealed from launchedAt + this. */
+  guardWindow(): Promise<number>;
   leafForageCooldown(): Promise<number>;
   avengeAvailable(defender: string, raider: string): Promise<{ available: boolean; expiresAt: number }>;
   seasonEnd(season: number): Promise<number>;
@@ -43,12 +45,17 @@ export class ViemGameReader implements GameReader {
   async raid(raidId: bigint): Promise<RaidInfo> {
     const r = await this.client.readContract({ address: this.address, abi: colonyGameAbi, functionName: "raids", args: [raidId] });
     // (raider, defender, soldiers, status, guard, target, outcome, launchedAt, round, commitment)
-    return { status: Number(r[3]), launchedAt: Number(r[7]), round: Number(r[8]) };
+    return { status: Number(r[3]), launchedAt: Number(r[7]), round: Number(r[8]), commitment: r[9] };
   }
 
   async sealedLifetime(): Promise<number> {
     const c = await this.client.readContract({ address: this.address, abi: colonyGameAbi, functionName: "getConfig" });
     return Number(c.guardWindow) + Number(c.revealWindow);
+  }
+
+  async guardWindow(): Promise<number> {
+    const c = await this.client.readContract({ address: this.address, abi: colonyGameAbi, functionName: "getConfig" });
+    return Number(c.guardWindow);
   }
 
   async leafForageCooldown(): Promise<number> {

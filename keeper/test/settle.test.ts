@@ -122,3 +122,90 @@ test("drand signature fetch returns 0x hex, or null when unpublished", async () 
   assert.equal(await fetchDrandSignature(ok, "http://d", "hash", 5), "0xabcd");
   assert.equal(await fetchDrandSignature(no, "http://d", "hash", 5), null);
 });
+
+// ------------------------------------------------------------------ auto-reveal (timelocked targets)
+
+import { commitmentFor, parsePayload, type Opened, type Unsealer } from "../src/settle/unseal.ts";
+
+const SALT = `0x${"11".repeat(32)}` as const;
+const sealedEv = (id: number): RawEvent => ({ contract: "game", name: "RaidSealed", args: { raidId: BigInt(id), sealedTarget: "0xc1" } });
+
+function revealSetup(open: Opened | "early" | null) {
+  const now = { t: 100_000 };
+  const reader = new FakeReader();
+  const txs: string[] = [];
+  const logs: string[] = [];
+  let opens = open;
+  const wallet: SettleWallet = {
+    balance: async () => 10n ** 18n,
+    send: async (fn, id, arg) => {
+      txs.push(fn === "reveal" ? `reveal:${id}:${(arg as Opened).target}` : `${fn}:${id}`);
+      return true;
+    },
+  };
+  const unseal: Unsealer = async () => opens;
+  const settler = new Settler({ reader, wallet, unseal, minBalance: 1n, now: () => now.t, log: (m) => logs.push(m), signature: async () => "0xabcd" });
+  return { now, reader, txs, logs, settler, setOpen: (o: Opened | "early" | null) => (opens = o) };
+}
+
+test("reveals a timelocked raid once the guard window ends and its round opens it", async () => {
+  const s = revealSetup({ target: 2, salt: SALT });
+  s.reader.raids.set("7", { status: 1, launchedAt: 100_000, round: 0, commitment: commitmentFor(2, SALT, 7n) });
+  s.settler.onEvent(launched(7));
+  s.settler.onEvent(sealedEv(7));
+  await s.settler.tick();
+  assert.deepEqual(s.txs, [], "not during the guard window");
+  s.now.t = 100_000 + 4 * 3600;
+  await s.settler.tick();
+  await s.settler.tick();
+  assert.deepEqual(s.txs, ["reveal:7:2"], "revealed once");
+  assert.equal(s.settler.pendingCount, 1, "still tracked until its Revealed event");
+  s.settler.onEvent(revealed(7, 9, s.now.t + 30));
+  s.reader.raids.set("7", { status: 2, launchedAt: 100_000, round: 9 });
+  s.now.t += 100;
+  await s.settler.tick();
+  assert.deepEqual(s.txs, ["reveal:7:2", "settle:7"], "then settled like any raid");
+});
+
+test("waits while the quicknet round is not out yet", async () => {
+  const s = revealSetup("early");
+  s.reader.raids.set("7", { status: 1, launchedAt: 0, round: 0, commitment: commitmentFor(1, SALT, 7n) });
+  s.settler.onEvent(launched(7));
+  s.settler.onEvent(sealedEv(7));
+  await s.settler.tick();
+  assert.deepEqual(s.txs, []);
+  s.setOpen({ target: 1, salt: SALT });
+  s.now.t += 11;
+  await s.settler.tick();
+  assert.deepEqual(s.txs, ["reveal:7:1"]);
+});
+
+test("a target that does not match the commitment is never sent, and is left to the raider", async () => {
+  const s = revealSetup({ target: 1, salt: SALT });
+  s.reader.raids.set("7", { status: 1, launchedAt: 0, round: 0, commitment: commitmentFor(2, SALT, 7n) });
+  s.settler.onEvent(launched(7));
+  s.settler.onEvent(sealedEv(7));
+  await s.settler.tick();
+  s.now.t += 100;
+  await s.settler.tick();
+  assert.deepEqual(s.txs, []);
+  assert.ok(s.logs.some((l) => l.includes("does not open to its commitment")));
+});
+
+test("a raid the raider already revealed by hand is not revealed again", async () => {
+  const s = revealSetup({ target: 2, salt: SALT });
+  s.reader.raids.set("7", { status: 2, launchedAt: 0, round: 9, commitment: commitmentFor(2, SALT, 7n) });
+  s.settler.onEvent(launched(7));
+  s.settler.onEvent(sealedEv(7));
+  await s.settler.tick();
+  assert.ok(!s.txs.some((t) => t.startsWith("reveal")));
+});
+
+test("the timelocked payload is the target byte then the 32-byte salt", () => {
+  const bytes = new Uint8Array(33).fill(0x11);
+  bytes[0] = 2;
+  assert.deepEqual(parsePayload(bytes), { target: 2, salt: SALT });
+  bytes[0] = 0;
+  assert.equal(parsePayload(bytes), null, "None is not a target");
+  assert.equal(parsePayload(new Uint8Array(32)), null, "wrong length");
+});

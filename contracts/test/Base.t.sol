@@ -145,7 +145,7 @@ abstract contract Base is Test {
         raidId = game.nextRaidId(raiderId);
         bytes32 commitment = game.commitmentFor(target, _salt(raider, raidId), raidId);
         vm.prank(raider);
-        game.launchRaid(defenderId, commitment);
+        game.launchRaid(defenderId, commitment, "");
     }
 
     /// @dev Warps so that reveal is assigned exactly `round`, then reveals.

@@ -1,8 +1,10 @@
 "use client";
 // Raid steps as wallet-client calls, used with useAction().run(fn).
-// The salt comes from the raider's wallet signing the raid ID, and the target is recovered at reveal time by
-// checking both resources against the onchain commitment, so a raid can be revealed from any device.
-import type { Address, Hash } from "viem";
+// The salt comes from the raider's wallet signing the raid ID. At launch the target and salt are also timelocked
+// (drand quicknet) to a round just after the guard window and posted with the raid, so the keeper reveals it and
+// the raider never has to come back. Revealing by hand still works from any device: the target is recovered by
+// checking both resources against the onchain commitment.
+import { stringToHex, type Address, type Hash, type Hex } from "viem";
 import { CONFIG } from "../config";
 import { colonyGameAbi } from "./abi";
 import { publicClient } from "./chain";
@@ -22,21 +24,43 @@ async function send(client: Client, functionName: string, args: readonly unknown
   return client.writeContract(request as never);
 }
 
-async function sealedCommitment(client: Client, colonyId: bigint, target: number) {
+/** Seconds after the guard window closes that the timelock opens: covers block-time drift, never earlier. */
+const UNLOCK_MARGIN = 120;
+
+/** The target and salt, timelocked so nobody (the keeper included) can read them until after the guard window. */
+async function timelocked(target: number, salt: Hex): Promise<Hex> {
+  const [{ timelockEncrypt, mainnetClient, roundAt, Buffer }, block, cfg] = await Promise.all([
+    import("tlock-js"),
+    publicClient.getBlock(),
+    publicClient.readContract({ ...game, functionName: "getConfig" }),
+  ]);
+  // Chain time, not the phone's clock, so a slow clock can never open it during the guard window.
+  const opensAt = Number(block.timestamp) + Number(cfg.guardWindow) + UNLOCK_MARGIN;
+  const client = mainnetClient(); // drand quicknet
+  const round = roundAt(opensAt * 1000, await client.chain().info());
+  const payload = Buffer.concat([Buffer.from([target]), Buffer.from(salt.slice(2), "hex")]);
+  return stringToHex(await timelockEncrypt(round, payload, client));
+}
+
+async function sealed(client: Client, colonyId: bigint, target: number) {
   const raidId = await publicClient.readContract({ ...game, functionName: "nextRaidId", args: [colonyId] });
   const salt = await raidSalt(client, raidId);
-  return publicClient.readContract({ ...game, functionName: "commitmentFor", args: [target, salt, raidId] });
+  const [commitment, lock] = await Promise.all([
+    publicClient.readContract({ ...game, functionName: "commitmentFor", args: [target, salt, raidId] }),
+    timelocked(target, salt),
+  ]);
+  return [commitment, lock] as const;
 }
 
 /** Seal a raid on `defenderId`, targeting leaves or sugar (hidden until reveal). Every free ant marches. */
 export const launchRaid = (myColonyId: bigint, defenderId: bigint, target: number) => async (client: Client) =>
-  send(client, "launchRaid", [defenderId, await sealedCommitment(client, myColonyId, target)]);
+  send(client, "launchRaid", [defenderId, ...(await sealed(client, myColonyId, target))]);
 
 /** Avenge: the same sealed raid, aimed at the wallet that raided you. */
 export const avenge = (myColonyId: bigint, raider: string, target: number) => async (client: Client) =>
-  send(client, "avenge", [raider as Address, await sealedCommitment(client, myColonyId, target)]);
+  send(client, "avenge", [raider as Address, ...(await sealed(client, myColonyId, target))]);
 
-/** Reveal after the guard window: re-derive the salt and find which target the commitment was sealed with. */
+/** Reveal by hand after the guard window (the keeper normally does it): re-derive the salt and find which target the commitment was sealed with. */
 export const reveal = (raidId: bigint, commitment: string) => async (client: Client) => {
   const salt = await raidSalt(client, raidId);
   for (const target of [Resource.Leaves, Resource.Sugar]) {

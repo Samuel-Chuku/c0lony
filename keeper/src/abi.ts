@@ -42,6 +42,19 @@ export const colonyGameAbi = [
   },
   {
     "type": "function",
+    "name": "MAX_SEALED_BYTES",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "MAX_SEASON_LENGTH",
     "inputs": [],
     "outputs": [
@@ -167,6 +180,11 @@ export const colonyGameAbi = [
         "name": "commitment",
         "type": "bytes32",
         "internalType": "bytes32"
+      },
+      {
+        "name": "sealedTarget",
+        "type": "bytes",
+        "internalType": "bytes"
       }
     ],
     "outputs": [
@@ -1329,6 +1347,11 @@ export const colonyGameAbi = [
         "name": "commitment",
         "type": "bytes32",
         "internalType": "bytes32"
+      },
+      {
+        "name": "sealedTarget",
+        "type": "bytes",
+        "internalType": "bytes"
       }
     ],
     "outputs": [
@@ -2806,6 +2829,25 @@ export const colonyGameAbi = [
   },
   {
     "type": "event",
+    "name": "RaidSealed",
+    "inputs": [
+      {
+        "name": "raidId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "sealedTarget",
+        "type": "bytes",
+        "indexed": false,
+        "internalType": "bytes"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
     "name": "RaidSettled",
     "inputs": [
       {
@@ -3411,11 +3453,6 @@ export const colonyGameAbi = [
   },
   {
     "type": "error",
-    "name": "NotRaider",
-    "inputs": []
-  },
-  {
-    "type": "error",
     "name": "NotReady",
     "inputs": []
   },
@@ -3491,6 +3528,11 @@ export const colonyGameAbi = [
         "internalType": "address"
       }
     ]
+  },
+  {
+    "type": "error",
+    "name": "SealedTooLong",
+    "inputs": []
   },
   {
     "type": "error",
