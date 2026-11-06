@@ -5,7 +5,7 @@ import { formatEther, parseEther } from "viem";
 import { BottomSheet, BrandName, Button, Chip, ChipRow } from "../../ui";
 import { NETWORK, NETWORK_NAME } from "../../config";
 import { fmtDuration, fmtEth, fmtWif } from "../../lib/format";
-import { usePrices, useGameConfig, useNow } from "../../lib/game";
+import { useBalances, usePrices, useGameConfig, useNow } from "../../lib/game";
 import { useSession } from "../../lib/session";
 import { txUrl } from "../../lib/chain";
 import { gasProgressLabel, useStarterGas } from "../../lib/starterGas";
@@ -38,26 +38,43 @@ function Mint() {
   const [nextAt, setNextAt] = useState(0);
   const [state, setState] = useState<"idle" | "asking" | "coming" | "error">("idle");
   const [message, setMessage] = useState<string | null>(null);
+  const balances = useBalances(session.address);
+  const wif = balances.data?.wif;
+  const [before, setBefore] = useState<bigint | null>(null);
 
   useEffect(() => {
     if (session.address) setNextAt(Number(localStorage.getItem(FAUCET_KEY(session.address)) ?? 0));
   }, [session.address]);
 
-  // While a mint is on its way, refresh balances every 5 s for up to a minute.
+  // While a mint is on its way, refresh balances every 3 s for up to two minutes.
   useEffect(() => {
     if (state !== "coming") return;
-    const id = setInterval(() => void invalidate("balances:"), 5000);
-    const stop = setTimeout(() => setState("idle"), 60_000);
+    const id = setInterval(() => void invalidate("balances:"), 3000);
+    const stop = setTimeout(() => {
+      setState("idle");
+      setMessage("Still on its way. Your balance updates once it lands.");
+    }, 120_000);
     return () => {
       clearInterval(id);
       clearTimeout(stop);
     };
   }, [state]);
 
+  // The mint landed: the balance went up.
+  useEffect(() => {
+    if (state !== "coming" || wif === undefined) return;
+    if (before === null) return setBefore(wif); // balance wasn't loaded when they asked
+    if (wif <= before) return;
+    setState("idle");
+    setMessage(null);
+    showResult({ title: "Test WIF arrived", lines: [`+${fmtWif(wif - before)} WIF in your wallet`] });
+  }, [state, before, wif]);
+
   const ask = async () => {
     if (!session.address) return;
     setState("asking");
     setMessage(null);
+    setBefore(wif ?? null);
     try {
       const token = await session.getToken();
       const res = await fetch("/api/wif/faucet", {
@@ -71,9 +88,13 @@ function Mint() {
         localStorage.setItem(FAUCET_KEY(session.address), String(body.nextAt));
         setNextAt(body.nextAt);
       }
-      setMessage(body.message ?? null);
-      showResult({ title: body.status === "queued" ? "Test WIF is on its way" : "Test WIF", lines: [body.message ?? "10,000 test WIF will reach your wallet in a few seconds."] });
-      setState(body.status === "queued" ? "coming" : "idle");
+      if (body.status === "queued") {
+        setState("coming"); // the bar below shows progress; the result pops up when the WIF lands
+      } else {
+        setMessage(body.message ?? null);
+        showResult({ title: "Test WIF", lines: [body.message ?? "10,000 test WIF will reach your wallet in a few seconds."] });
+        setState("idle");
+      }
     } catch (err) {
       const why = err instanceof Error ? err.message : "The faucet didn't answer. Try again.";
       setMessage(why);

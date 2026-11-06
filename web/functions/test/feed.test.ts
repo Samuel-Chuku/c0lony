@@ -117,8 +117,9 @@ test("events from an earlier game deployment are never served", async () => {
 test("feed filters", async () => {
   const { env } = await seed();
   const all = await page(env, "?type=all");
-  assert.ok(!all.events.some((e) => ["paid", "tended", "assigned"].includes(e.type)));
-  assert.equal(all.events.length, 8);
+  assert.ok(!all.events.some((e) => ["paid", "assigned"].includes(e.type)));
+  assert.ok(all.events.some((e) => e.type === "tended"));
+  assert.equal(all.events.length, 9);
   assert.ok(all.events[0].id > all.events[1].id);
   const raids = await page(env, "?type=raids");
   assert.equal(raids.events.length, 5);
@@ -137,7 +138,7 @@ test("feed limit clamp and before cursor", async () => {
   const { env } = await seed();
   assert.equal((await page(env, "?limit=3")).events.length, 3);
   assert.equal((await page(env, "?limit=0")).events.length, 1);
-  assert.equal((await page(env, "?limit=9999")).events.length, 8);
+  assert.equal((await page(env, "?limit=9999")).events.length, 9); // every seeded row except paid and assigned
   const first = await page(env, "?limit=2");
   const next = await page(env, `?limit=2&before=${first.events[1].id}`);
   assert.ok(next.events.every((e) => e.id < first.events[1].id));

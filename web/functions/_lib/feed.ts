@@ -20,7 +20,7 @@ export type FeedEvent = {
 
 export const RAID_TYPES = ["raid_launched", "guarded", "revealed", "settled", "collected", "avenge_granted"];
 export const POT_TYPES = ["sponsored", "season_ended", "season_finalized", "claimed", "unclaimed_rolled"];
-export const NOISY_TYPES = ["paid", "tended", "assigned"];
+export const NOISY_TYPES = ["paid", "assigned"];
 export const SUMMARY_TYPES = ["settled", "raid_launched", "avenge_granted", "claimed", "season_ended"];
 export const MAX_INGEST = 500;
 

@@ -21,7 +21,7 @@ export type FeedLine = {
 };
 
 /** Rows that only add noise to the public feed. */
-export const QUIET_TYPES = new Set(["paid", "tended", "assigned"]);
+export const QUIET_TYPES = new Set(["paid", "assigned"]);
 
 /** A tappable handle (or "you") that opens that player's profile. */
 export function Handle({ addr, me, cap }: { addr: string; me?: string | null; cap?: boolean }) {
@@ -64,9 +64,16 @@ export function describeEvent(ev: FeedEvent, me?: string | null): FeedLine | nul
         sentence: <>{S(a0, "founded", "founded")} a colony on day {num(d.seasonDay)}</> };
     case "fed":
       return { ...base, kind: "FED", tone: "sub", sentence: <>{S(a0, "fed your queen", "fed the queen")}</> };
+    case "tended": {
+      const leaves = big(d.leaves);
+      const sugar = big(d.sugar);
+      if (leaves === 0n && sugar === 0n) return null;
+      return { ...base, kind: "TENDED", tone: "sub", sentence: <>{S(a0, "brought in", "brought in")}{leaves > 0n ? <> {fmtRes(leaves)} <ResIcon name="leaf" size={16} label="leaves" /></> : null}{leaves > 0n && sugar > 0n ? " and" : null}{sugar > 0n ? <> {fmtRes(sugar)} <ResIcon name="sugar" size={16} label="sugar" /></> : null}</> };
+    }
     case "built": {
       const b = str(d.building);
-      return { ...base, kind: "BUILT", tone: "sub", sentence: <>{S(a0, "built", "built")} {b ? `a ${b}` : "something new"}</> };
+      const n = num(d.count);
+      return { ...base, kind: "BUILT", tone: "sub", sentence: <>{S(a0, "built", "built")} {b ? `a ${b}` : "something new"}{b && n > 1 ? ` · ${fmtInt(n)} now` : ""}</> };
     }
     case "sped_up":
       return { ...base, kind: "SPEED UP", tone: "sub", sentence: <>{S(a0, "sped up your foraging", "sped up foraging")}</> };
