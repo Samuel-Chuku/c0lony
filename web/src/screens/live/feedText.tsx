@@ -70,6 +70,14 @@ export function describeEvent(ev: FeedEvent, me?: string | null): FeedLine | nul
       if (leaves === 0n && sugar === 0n) return null;
       return { ...base, kind: "TENDED", tone: "sub", sentence: <>{S(a0, "brought in", "brought in")}{leaves > 0n ? <> {fmtRes(leaves)} <ResIcon name="leaf" size={16} label="leaves" /></> : null}{leaves > 0n && sugar > 0n ? " and" : null}{sugar > 0n ? <> {fmtRes(sugar)} <ResIcon name="sugar" size={16} label="sugar" /></> : null}</> };
     }
+    case "assigned": {
+      // The event carries the new totals, not the change.
+      const t = num(d.trailWorkers);
+      const f = num(d.farmWorkers);
+      const ants = (n: number) => `${fmtInt(n)} ${n === 1 ? "ant" : "ants"}`;
+      const work = t > 0 && f > 0 ? `${ants(t)} on trails and ${fmtInt(f)} on farms` : t > 0 ? `${ants(t)} on trails` : f > 0 ? `${ants(f)} on farms` : "";
+      return { ...base, kind: "ASSIGNED", tone: "sub", sentence: work ? <>{S(a0, "set", "set")} {work}</> : <>{S(a0, "called every ant home", "called every ant home")}</> };
+    }
     case "built": {
       const b = str(d.building);
       const n = num(d.count);

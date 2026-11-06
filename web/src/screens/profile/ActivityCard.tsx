@@ -5,13 +5,15 @@ import { useFeed } from "../../lib/api";
 import { timeAgo } from "../../lib/format";
 import { useNow } from "../../lib/game";
 import { useSession } from "../../lib/session";
-import { QUIET_TYPES, describeEvent } from "../live/feedText";
+import { describeEvent } from "../live/feedText";
 
 export function ActivityCard({ addr, isMe }: { addr: string; isMe: boolean }) {
-  const feed = useFeed("all", addr, 10);
+  // Everything this colony did, assignments included (the public Live feed leaves those out). Payments have no
+  // line of their own, so read extra and keep the first ten that do.
+  const feed = useFeed("mine", addr, 30);
   const session = useSession();
   const now = useNow(60_000);
-  const rows = (feed.data ?? []).filter((e) => !QUIET_TYPES.has(e.type));
+  const rows = (feed.data ?? []).filter((e) => describeEvent(e, session.address) !== null).slice(0, 10);
 
   return (
     <Card className="c0-pf__activity" aria-label={isMe ? "Journal" : "Activity"}>
