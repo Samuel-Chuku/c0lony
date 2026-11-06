@@ -62,7 +62,7 @@ export function RaidReport() {
     const step = stepOf(raid, now, guardWindow);
     const copy =
       raid.status === RaidStatus.Failed
-        ? "The raider missed the reveal window, so the raid ended without a roll and the marching ants were lost."
+        ? "The raid was never revealed in time, so it ended without a roll and the marching ants were lost."
         : raid.status === RaidStatus.Refunded
           ? "No roll came in within 48 hours, so the marching ants were sent home."
           : step === "sealed"

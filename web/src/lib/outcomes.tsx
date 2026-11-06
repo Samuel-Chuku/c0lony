@@ -187,7 +187,7 @@ export const sealedResult = (handle: string, soldiers: number, avenged: boolean,
 export const revealResult = (): SuccessContent => ({
   title: "Raid revealed",
   tone: "raid",
-  lines: ["Your target is out. The roll comes from a public drand round.", "Settle it as soon as the round is published."],
+  lines: ["Your target is out. The roll comes from a public drand round.", "It settles itself about a minute after the round is published."],
 });
 
 /** A settled raid, from the chain event or a feed row, told from one side. */
@@ -256,14 +256,14 @@ export const settleResult = (r: Rec, myOwner: string | null): SuccessContent => 
   }, myOwner);
 };
 
-/** A raid closed without a roll: missed reveal (raiders lost) or no settle in 48h (raiders home). */
+/** A raid closed without a roll: never revealed (raiders lost) or no settle in 48h (raiders home). */
 export function collectedResult(raidId: string, lost: number, asRaider: boolean): SuccessContent {
   markRaidShown(raidId);
   return {
     title: "Raid closed",
     tone: "raid",
     lines: asRaider
-      ? [lost > 0 ? deltas(delta(-BigInt(lost), "ant")) : "Your ants are home.", lost > 0 ? "Lost for missing the reveal" : "No roll came, so nothing was taken"]
+      ? [lost > 0 ? deltas(delta(-BigInt(lost), "ant")) : "Your ants are home.", lost > 0 ? "Lost because the raid was never revealed" : "No roll came, so nothing was taken"]
       : ["The raid on you ended without a roll", "Nothing was taken"],
   };
 }
