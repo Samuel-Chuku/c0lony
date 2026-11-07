@@ -1,5 +1,6 @@
 "use client";
 import { ResIcon } from "../../ui/ResIcon";
+import { Button } from "../../ui";
 import { useEffect, useState } from "react";
 import { Resource, useNow, type Raid } from "../../lib/game";
 import { fmtDuration } from "../../lib/format";
@@ -37,10 +38,15 @@ export function IncomingBanner({ raid, guardWindow }: { raid: Raid; guardWindow:
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [action.hash]);
 
-  const pick = (res: number) => {
-    setWhich(res);
-    void action.run(guard(raid.id, res));
+  // Tapping a store only selects it, so players can switch; the Guard button below sends it. A guard can't be
+  // changed once it lands.
+  const [sel, setSel] = useState<number>(0);
+  const commit = () => {
+    if (!sel) return;
+    setWhich(sel);
+    void action.run(guard(raid.id, sel));
   };
+  const selName = sel === Resource.Leaves ? "leaves" : sel === Resource.Sugar ? "sugar" : null;
 
   return (
     <section className="c0-banner" aria-label={`${who.name} is marching on you`}>
@@ -58,7 +64,7 @@ export function IncomingBanner({ raid, guardWindow }: { raid: Raid; guardWindow:
       <div className="c0-opts" role="radiogroup" aria-label={guarded ? "You are guarding" : "Pick what to guard"}>
         {([Resource.Leaves, Resource.Sugar] as const).map((res) => {
           const name = res === Resource.Leaves ? "Leaves" : "Sugar";
-          const chosen = raid.guard === res || (action.busy && which === res);
+          const chosen = guarded ? raid.guard === res : sel === res;
           return (
             <button
               key={res}
@@ -68,11 +74,11 @@ export function IncomingBanner({ raid, guardWindow }: { raid: Raid; guardWindow:
               aria-label={`${chosen ? "Guarding " : "Guard "}${name.toLowerCase()}`}
               className="c0-opt"
               disabled={action.busy || !!guarded}
-              onClick={() => pick(res)}
+              onClick={() => setSel(res)}
             >
               <ResIcon name={res === Resource.Leaves ? "leaf" : "sugar"} size={28} />
               <span>{name}</span>
-              <span className="c0-opt__tag">{chosen ? (action.busy ? "Guarding…" : "✓ Guarding") : guarded ? "" : "Tap to guard"}</span>
+              <span className="c0-opt__tag">{guarded ? (chosen ? "✓ Guarding" : "") : chosen ? "✓ Chosen" : "Tap to choose"}</span>
             </button>
           );
         })}
@@ -84,7 +90,18 @@ export function IncomingBanner({ raid, guardWindow }: { raid: Raid; guardWindow:
       ) : (
         <p style={{ margin: 0, fontSize: 13 }}>Guess what they will target. Right: the raid fails. Wrong: they take a bigger share. No guard: they take 30 to 60%.</p>
       )}
-      {action.error ? <div className="c0-blocked" role="alert">{action.error}</div> : null}
+      {!guarded ? (
+        <Button
+          variant="paper"
+          fullWidth
+          busy={action.busy ? "Guarding…" : undefined}
+          disabledReason={selName ? undefined : "Choose leaves or sugar first"}
+          error={action.error}
+          onClick={commit}
+        >
+          {selName ? `Guard ${selName}` : "Guard"}
+        </Button>
+      ) : null}
       <ShieldButton full />
       </>) : null}
     </section>

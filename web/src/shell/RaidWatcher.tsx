@@ -4,7 +4,9 @@
 // player, so without this the result would only show up in the feed. Away-time results go to WelcomeBack.
 import { useEffect, useRef } from "react";
 import { useFeed, type FeedEvent } from "../lib/api";
-import { useActiveRaids, useProfile } from "../lib/game";
+import { RaidStatus, Resource, readColony, useActiveRaids, useGameConfig, useProfile } from "../lib/game";
+import { fmtDuration } from "../lib/format";
+import { Handle } from "../screens/live/feedText";
 import { invalidate } from "../lib/store";
 import { collectedResult, raidResult, raidShown } from "../lib/outcomes";
 import { showResult, useResult } from "../lib/result";
@@ -33,6 +35,14 @@ function resultOf(ev: FeedEvent, me: string) {
   }
   const asRaider = lc(ev.actors[0]) === me;
   return { content: { ...collectedResult(id, Number(d.soldiersLost ?? 0), asRaider), hash: ev.tx as `0x${string}` }, cue: "reveal" as const };
+}
+
+const shownKey = (id: bigint) => `c0lony:incoming:${id}`;
+function incomingShown(id: bigint) {
+  try { return localStorage.getItem(shownKey(id)) === "1"; } catch { return false; }
+}
+function markIncomingShown(id: bigint) {
+  try { localStorage.setItem(shownKey(id), "1"); } catch { /* storage blocked */ }
 }
 
 export function RaidWatcher() {
@@ -72,6 +82,37 @@ export function RaidWatcher() {
       window.removeEventListener("focus", onBack);
     };
   }, []);
+
+  // A raid launched on me while the app is open: pop it up within one poll (about 4 s), straight from the chain, so
+  // it doesn't wait on the keeper or the feed. Each raid pops once per device; opening the app later during its
+  // guard window pops it too.
+  const guardWindow = Number(useGameConfig().data?.guardWindow ?? 0);
+  useEffect(() => {
+    if (!me || !colonyId || !raids || !guardWindow || open) return;
+    const now = Math.floor(Date.now() / 1000);
+    const r = raids.find(
+      (x) => x.defender === colonyId && x.status === RaidStatus.Sealed && x.guard === Resource.None &&
+        now < Number(x.launchedAt) + guardWindow && !incomingShown(x.id),
+    );
+    if (!r) return;
+    markIncomingShown(r.id);
+    const left = Number(r.launchedAt) + guardWindow - now;
+    void readColony(r.raider)
+      .then((c) => c.data.owner.toLowerCase())
+      .catch(() => null)
+      .then((owner) => {
+        play("raid");
+        showResult({
+          title: "Raid incoming",
+          tone: "raid",
+          lines: [
+            <>{owner ? <Handle addr={owner} /> : "A neighbour"} is marching on you with {Number(r.soldiers)} ants</>,
+            `Guard leaves or sugar within ${fmtDuration(left)}. Guess right and the raid fails.`,
+          ],
+          link: { href: "/?tab=raids", label: "Guard now" },
+        });
+      });
+  }, [me, colonyId, raids, guardWindow, open]);
 
   useEffect(() => {
     if (!me || !feed || open) return;

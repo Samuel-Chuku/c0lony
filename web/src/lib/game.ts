@@ -183,7 +183,7 @@ export function useActiveRaids(colonyId: bigint | null | undefined) {
       const ids = await publicClient.readContract({ ...game, functionName: "getActiveRaids", args: [colonyId!] });
       return Promise.all(ids.map(readRaid));
     },
-    6_000, // cheap, and the app refreshes everything when these change (see RaidWatcher)
+    4_000, // cheap, and the app refreshes everything when these change (see RaidWatcher)
   );
 }
 
