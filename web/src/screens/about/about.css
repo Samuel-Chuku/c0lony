@@ -4,18 +4,25 @@ html .c0-about { min-height: 0; padding: var(--c0-s4) var(--c0-s4) var(--c0-s4) 
 .c0-about__logo img { width: 244px; max-width: 100%; height: auto; image-rendering: pixelated; }
 .c0-about__sec { display: flex; flex-direction: column; gap: var(--c0-s2); }
 .c0-about__label { margin: 0; font-family: var(--c0-f-display); font-weight: 400; font-size: 18px; letter-spacing: 2px; text-transform: uppercase; color: var(--c0-sub); }
-.c0-about__p { margin: 0; font-family: var(--c0-f-body); font-size: 14px; line-height: 1.6; color: var(--c0-ink); }
-.c0-about__hand { margin: 0; font-family: var(--c0-f-hand); font-weight: 700; font-size: 18px; line-height: 1.2; color: var(--c0-sub); }
+.c0-about__p { margin: 0; font-family: var(--c0-f-body); font-size: 16px; line-height: 1.6; color: var(--c0-ink); }
+.c0-about__hand { margin: 0; font-family: var(--c0-f-hand); font-weight: 700; font-size: 20px; line-height: 1.25; color: var(--c0-sub); }
 .c0-about__projects { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
 .c0-about__project { display: flex; flex-direction: column; gap: var(--c0-s1); padding: 12px 0; border-bottom: var(--c0-bw-thin) dashed var(--c0-rule); }
 .c0-about__project:first-child { padding-top: 0; }
 .c0-about__project:last-child { border-bottom: 0; padding-bottom: 0; }
 .c0-about__pname { align-self: flex-start; font-family: var(--c0-f-display); font-size: 22px; line-height: var(--c0-lh-tight); color: var(--c0-ink); text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; }
-.c0-about__pline { font-family: var(--c0-f-body); font-size: 13px; line-height: 1.5; color: var(--c0-ink); }
+.c0-about__pline { font-family: var(--c0-f-body); font-size: 15px; line-height: 1.5; color: var(--c0-ink); }
 .c0-about__links { display: flex; flex-direction: column; gap: var(--c0-s2); }
 .c0-about__row { display: flex; align-items: center; gap: var(--c0-s2); height: 48px; padding: 0 var(--c0-s3); box-sizing: border-box; background: var(--c0-paper-hi); color: var(--c0-ink); border: var(--c0-bw) solid var(--c0-ink); box-shadow: var(--c0-shadow-card); text-decoration: none; }
 .c0-about__row:active { box-shadow: none; transform: translate(2px, 2px); }
 .c0-about__rowlabel { font-family: var(--c0-f-display); font-size: 22px; line-height: var(--c0-lh-tight); }
-.c0-about__handle { flex: 1; min-width: 0; font-size: 12px; color: var(--c0-sub); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.c0-about__handle { flex: 1; min-width: 0; font-size: 14px; color: var(--c0-sub); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .c0-about__chev { font-family: var(--c0-f-display); font-size: 24px; line-height: 1; }
-.c0-about__disclaimer { margin: var(--c0-s4) 0; text-align: center; font-size: 11px; line-height: 1.5; color: var(--c0-fg-muted); }
+.c0-about__disclaimer { margin: var(--c0-s4) 0; text-align: center; font-size: 13px; line-height: 1.5; color: var(--c0-fg-muted); }
+.c0-about__side { display: flex; flex-direction: column; gap: var(--c0-s4); }
+/* Computer: the story on the left, the builder and links beside it, in a column a little wider than the game's. */
+@media (min-width: 1024px) {
+  html .c0-about { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); column-gap: var(--c0-s8); row-gap: var(--c0-s4); align-items: start; width: 100%; max-width: 1120px; margin-left: auto; margin-right: auto; box-sizing: border-box; padding: var(--c0-s6) var(--c0-s6) var(--c0-s6) 40px; }
+  .c0-about__logo { grid-column: 1 / -1; }
+  .c0-about__p { font-size: 17px; }
+}

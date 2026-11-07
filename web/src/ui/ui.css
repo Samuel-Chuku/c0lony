@@ -152,7 +152,14 @@ a { color: var(--c0-fg); }
 .c0-nrow__main { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--c0-s2); }
 .c0-nrow__col { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
 .c0-nrow__handle { font-family: var(--c0-f-display); font-size: 22px; line-height: var(--c0-lh-tight); }
-.c0-nrow__line { font-size: var(--c0-fs-caption); color: var(--c0-sub); }
+.c0-nrow__line { font-size: 12px; line-height: 20px; color: var(--c0-sub); }
+.c0-nrow__line svg { width: 18px; height: 18px; vertical-align: -4px; }
+.c0-nrow__num { font-weight: 400; color: var(--c0-ink); }
+@media (min-width: 1024px) {
+  .c0-nrow__line { font-size: 15px; line-height: 24px; }
+  .c0-nrow__line svg { width: 22px; height: 22px; vertical-align: -5px; }
+  .c0-nrow__num { font-family: var(--c0-f-display); font-size: 22px; }
+}
 .c0-nrow__note { color: var(--c0-sub); line-height: var(--c0-lh-tight); }
 .c0-nrow__note--raider { color: var(--c0-red-text); }
 .c0-cooldown { width: 76px; flex: none; display: flex; flex-direction: column; align-items: center; font-size: var(--c0-fs-caption); color: var(--c0-sub); }

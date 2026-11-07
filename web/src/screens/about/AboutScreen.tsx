@@ -23,12 +23,12 @@ const LINKS: Array<{ label: string; handle: string; href: string; icon: IconName
 
 export function AboutScreen() {
   return (
-    <Screen back title="About">
+    <Screen back wide title="About">
       <article className="c0-journal c0-about">
         <span className="c0-journal__margin" aria-hidden="true" />
         <div className="c0-about__logo"><img src="/logo-compact.svg" alt="C0LONY" width={244} height={56} /></div>
 
-        <section className="c0-about__sec">
+        <section className="c0-about__sec c0-about__main">
           <Label>About</Label>
           <P>C0LONY is a daily, social game played onchain. You found a colony, keep your queen fed, dig chambers, send foragers down leafcutter trails and herd aphids for sugar, and every so often you march on a neighbour&apos;s colony to carry off what they have stored, or stand guard while someone marches on yours.</P>
           <P>It runs on Robinhood Chain and is paid in $WIF. Every WIF spent on founding, feeding, shields and speed-ups is split three ways: most of it goes into the season pot, a share is burned for good, and the rest keeps the treasury able to cover gas for new players. When a season ends, the colonies that finished in the top quarter, still alive and properly fed, share the pot between them. Nothing about the payout is decided by hand.</P>
@@ -36,6 +36,7 @@ export function AboutScreen() {
           <p className="c0-about__hand">We built C0LONY because most onchain games ask you to trade before they ask you to play. This one asks you to come back each day, look after something small, and keep an eye on the neighbours.</p>
         </section>
 
+        <div className="c0-about__side">
         <section className="c0-about__sec">
           <Label>The builder</Label>
           <P>C0LONY is built by Hirving, the founder of Hirving Labs, a design and development studio in Lagos. Hirving builds production AI agents, automation systems and onchain products, and spent close to a decade in crypto communities before building for them full time.</P>
@@ -63,6 +64,7 @@ export function AboutScreen() {
             ))}
           </div>
         </section>
+        </div>
       </article>
       <p className="c0-about__disclaimer">C0LONY is an independent project built for the World is Flat hackathon. It is not affiliated with Robinhood.</p>
     </Screen>
