@@ -7,6 +7,11 @@ function env(name: string, fallback?: string): string {
   throw new Error(`Missing env var ${name}`);
 }
 
+/** Comma-separated RPC URLs, in the order to try them (first is primary, the rest are fallbacks). */
+export function urlList(raw: string): string[] {
+  return raw.split(",").map((u) => u.trim()).filter(Boolean);
+}
+
 function int(name: string, fallback: number): number {
   const n = Number(env(name, String(fallback)));
   if (!Number.isInteger(n)) throw new Error(`${name} must be an integer`);
@@ -25,10 +30,10 @@ export function loadConfig() {
   return {
     network,
     chainId: network === "mainnet" ? 4663 : 46630,
-    // Quicknode endpoints (keys stay in env)
-    rpcUrl: network === "mainnet" ? env("ROBINHOOD_RPC_URL") : env("ROBINHOOD_TESTNET_RPC_URL"),
+    // RPC endpoints in priority order, comma-separated (keys stay in env). Later ones are used only when earlier ones fail.
+    rpcUrls: urlList(network === "mainnet" ? env("ROBINHOOD_RPC_URL") : env("ROBINHOOD_TESTNET_RPC_URL")),
     // Votes are always read from mainnet, where $WIF and World is Fair live
-    votesRpcUrl: env("ROBINHOOD_RPC_URL"),
+    votesRpcUrls: urlList(env("ROBINHOOD_RPC_URL")),
     eventSource,
     pollIntervalMs: int("POLL_INTERVAL_MS", 15_000),
     // Votes only change the Voter's Pass list, so they are checked every 3 hours (players are told to allow that).
@@ -57,6 +62,11 @@ export function loadConfig() {
     vapidPrivateKey: env("VAPID_PRIVATE_KEY", ""),
     vapidSubject: env("VAPID_SUBJECT", ""),
     pushEnabled: env("PUSH_ENABLED", env("VAPID_PUBLIC_KEY", "") && env("VAPID_PRIVATE_KEY", "") ? "true" : "false") === "true",
+    // Telegram alerts (same bot as the app's TELEGRAM_BOT_TOKEN Pages secret). On by default on mainnet when the
+    // token is set; TELEGRAM_ENABLED=true forces it on elsewhere (for a test), false turns it off.
+    telegramBotToken: env("TELEGRAM_BOT_TOKEN", ""),
+    telegramEnabled:
+      env("TELEGRAM_ENABLED", network === "mainnet" && env("TELEGRAM_BOT_TOKEN", "") ? "true" : "false") === "true" && !!env("TELEGRAM_BOT_TOKEN", ""),
     // Settlement wallet; empty = settling is off
     keeperPrivateKey: env("KEEPER_PRIVATE_KEY", ""),
     minBalanceEth: env("MIN_BALANCE_ETH", "0.0002"),

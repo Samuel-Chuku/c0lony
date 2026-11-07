@@ -9,3 +9,6 @@
 .c0-vp { display: flex; flex-direction: column; gap: var(--c0-s3); padding-top: var(--c0-s2); }
 .c0-vp p { margin: 0; font-size: var(--c0-fs-body); line-height: var(--c0-lh-body); color: var(--c0-sub); }
 .c0-vp__ok { font-family: var(--c0-f-display); font-size: 22px; }
+/* The Telegram Connect link looks like a compact paper button. */
+.c0-tglink { text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
+.c0-srow > .c0-icon { flex: none; color: var(--c0-fg); }

@@ -14,6 +14,7 @@ import { useXProfile } from "../lib/useXProfile";
 import { GetWifSheet } from "../screens/wallet/GetWifSheet";
 import { AddFundsSheet } from "../screens/wallet/AddFundsSheet";
 import "./menu.css";
+import { openGuide } from "./GuideHost";
 
 export function MenuDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
   const session = useSession();
@@ -97,6 +98,11 @@ export function MenuDrawer({ open, onClose }: { open: boolean; onClose: () => vo
         <nav className="c0-menu__links" aria-label="Menu">
           {link("/leaderboard", "trophy", "Leaderboard", rank ? `#${rank}` : undefined)}
           {link("/invite", "invite", "Invite friends")}
+          <button type="button" className="c0-menu__link" onClick={() => { onClose(); openGuide(); }}>
+            <PixelIcon name="live" />
+            <span>Watch the 1-minute guide</span>
+            <span aria-hidden="true">›</span>
+          </button>
           {link("/how-to-play", "book", "How to play")}
           {link("/about", "globe", "About")}
           {link("/settings", "gear", "Settings")}

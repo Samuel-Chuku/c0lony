@@ -29,3 +29,4 @@
 .c0-menu__asset-name { flex: 1; font-size: var(--c0-fs-body); }
 .c0-menu__asset-amt { font-family: var(--c0-f-display); font-size: 22px; }
 .c0-menu__asset-cap { font-size: 12px; color: var(--c0-fg-muted); }
+.c0-menu__links button.c0-menu__link { background: none; border: 0; width: 100%; text-align: left; cursor: pointer; }

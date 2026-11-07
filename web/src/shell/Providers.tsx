@@ -8,6 +8,7 @@ import { MenuDrawer } from "./MenuDrawer";
 import { WelcomeBack } from "./WelcomeBack";
 import { ResultModal } from "./ResultModal";
 import { RaidWatcher } from "./RaidWatcher";
+import { GuideHost } from "./GuideHost";
 import { QueenAlert } from "./QueenAlert";
 import { ShortcutsHelp, useShortcuts } from "./Shortcuts";
 import { installSoundListeners, setSoundEnabled } from "../lib/sound";
@@ -158,6 +159,7 @@ export function Providers({ children }: { children: ReactNode }) {
         <QueenAlert />
         <ResultModal />
         <RaidWatcher />
+        <GuideHost />
       </ShellContext.Provider>
     </SessionProvider>
   );

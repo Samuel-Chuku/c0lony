@@ -2,7 +2,8 @@
 // The full guide. Every number comes from the live game config (useGameConfig); the few fixed rules mirror
 // constants in the contract (ColonyGame.sol, SeasonPot.sol).
 import { useEffect, type ReactNode } from "react";
-import { Card, ResIcon, type ResIconName, Wif } from "../../ui";
+import { Button, Card, ResIcon, type ResIconName, Wif } from "../../ui";
+import { openGuide } from "../../shell/GuideHost";
 import { Screen } from "../../shell/Screen";
 import { fmtDuration, fmtWif } from "../../lib/format";
 import { NETWORK_NAME } from "../../config";
@@ -187,6 +188,7 @@ export function HowToPlayScreen() {
   return (
     <Screen back>
       <div className="c0-ht__logo"><img src="/logo.svg" alt="C0LONY" width={244} height={92} /></div>
+      <Button variant="paper" fullWidth icon="live" onClick={openGuide}>Watch the 1-minute guide</Button>
       <Guide c={cfg} />
       <Card className="c0-ht__card"><P>Prices can change within limits set in the contract, and every change is public onchain.</P></Card>
     </Screen>

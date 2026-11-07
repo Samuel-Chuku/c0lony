@@ -1,6 +1,7 @@
 // Talks to the app for push: which browsers to notify (signed), X handles (public), and the Web Push send itself.
 import { signedPost, type FetchFn } from "../feed/signed.ts";
 import type { PushPayload } from "./scheduler.ts";
+import type { TelegramClient } from "./telegram.ts";
 
 export type PushTarget = {
   wallet: string;
@@ -18,10 +19,13 @@ export type SendFn = (
 export const shortAddr = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`;
 
 export class PushClient {
-  private readonly o: { apiBase: string; secret: string; send: SendFn; fetchFn: FetchFn; log: (m: string) => void };
+  private readonly o: {
+    apiBase: string; secret: string; send?: SendFn; telegram?: TelegramClient; fetchFn: FetchFn; log: (m: string) => void;
+  };
   private readonly handleCache = new Map<string, string | null>();
 
-  constructor(opts: { apiBase: string; secret: string; send: SendFn; fetchFn?: FetchFn; log?: (m: string) => void }) {
+  /** `send` is Web Push (omit when push is off); `telegram` adds Telegram delivery of the same alerts. */
+  constructor(opts: { apiBase: string; secret: string; send?: SendFn; telegram?: TelegramClient; fetchFn?: FetchFn; log?: (m: string) => void }) {
     this.o = { fetchFn: fetch, log: () => {}, ...opts };
   }
 
@@ -57,8 +61,22 @@ export class PushClient {
     return h ? `@${h}` : shortAddr(w);
   }
 
-  /** Sends to every subscribed browser of `wallet` that has `pref` on. Returns how many were delivered. */
+  /** Sends to every subscribed browser and the linked Telegram chat of `wallet` that has `pref` on. */
   async notify(wallet: string, pref: string, payload: PushPayload): Promise<number> {
+    let delivered = 0;
+    if (this.o.telegram) {
+      try {
+        delivered += await this.o.telegram.notify(wallet, pref, payload);
+      } catch (e) {
+        this.o.log(`telegram: ${e instanceof Error ? e.message : e}`);
+      }
+    }
+    if (this.o.send) delivered += await this.push(wallet, pref, payload);
+    return delivered;
+  }
+
+  private async push(wallet: string, pref: string, payload: PushPayload): Promise<number> {
+    const send = this.o.send!;
     const targets = (await this.targets([wallet.toLowerCase()])).filter(
       (t) => t.wallet.toLowerCase() === wallet.toLowerCase() && t.prefs?.[pref] !== false,
     );
@@ -66,7 +84,7 @@ export class PushClient {
     let delivered = 0;
     for (const t of targets) {
       try {
-        await this.o.send({ endpoint: t.endpoint, keys: t.keys }, JSON.stringify(payload));
+        await send({ endpoint: t.endpoint, keys: t.keys }, JSON.stringify(payload));
         delivered++;
       } catch (err) {
         const code = (err as { statusCode?: number }).statusCode;

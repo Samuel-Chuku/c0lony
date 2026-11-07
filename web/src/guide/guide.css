@@ -1,0 +1,175 @@
+/* The one-minute guide. Paper reel in a loam film frame, on the dimmed page. Square corners, hard shadows,
+   gold only for WIF, red only for raids, motion in steps. */
+.g-root { align-items: center; }
+.g-dialog {
+  position: relative; z-index: 1; display: flex; flex-direction: column; gap: 12px;
+  width: min(480px, 100%); max-height: min(100dvh, 880px); height: 100%; box-sizing: border-box;
+  padding: 12px; background: #1C140D; border: 3px solid #1A110A; box-shadow: 5px 5px 0 #0E0905; outline: none;
+  color: #E9D8B4; font-family: var(--c0-f-body);
+}
+@media (min-width: 520px) { .g-dialog { height: auto; } }
+
+.g-top { display: flex; align-items: center; gap: 8px; }
+.g-count {
+  margin-right: auto; padding: 4px 8px; border: 2px solid #E9D8B4; font-family: var(--c0-f-display);
+  font-size: 18px; letter-spacing: 2px; line-height: 1;
+}
+.g-chip {
+  min-height: 44px; padding: 0 12px; background: #4A3020; color: #E9D8B4; border: 3px solid #1A110A;
+  box-shadow: 3px 3px 0 #0E0905; font-family: var(--c0-f-display); font-size: 20px; letter-spacing: 1px; cursor: pointer;
+}
+.g-chip--on { background: #E9D8B4; color: #1A110A; }
+.g-chip:active { transform: translate(3px, 3px); box-shadow: none; }
+
+.g-film { flex: 1; min-height: 0; padding: 8px; background: #4A3020; border: 3px solid #1A110A; overflow: auto; }
+.g-frame {
+  display: flex; flex-direction: column; gap: 8px; min-height: 100%; box-sizing: border-box; padding: 16px;
+  background: #E9D8B4; color: #1A110A; border: 3px solid #1A110A; animation: g-in 0.24s steps(3) both;
+}
+@keyframes g-in { from { transform: translateX(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+.g-kicker {
+  align-self: flex-start; padding: 2px 8px; background: #1A110A; color: #E9D8B4;
+  font-family: var(--c0-f-display); font-size: 16px; letter-spacing: 2px;
+}
+.g-dialog .g-title { margin: 0; font-family: var(--c0-f-display); font-weight: 400; font-size: 36px; line-height: 0.95; color: #1A110A; letter-spacing: 0; text-transform: none; }
+.g-body { margin: 0; font-size: 14px; line-height: 1.35; color: #4A3020; }
+.g-wif { display: inline-flex; align-items: center; gap: 2px; white-space: nowrap; font-weight: 700; }
+
+.g-scene { flex: 1 1 auto; min-height: 150px; display: flex; align-items: center; justify-content: center; }
+.g-scene > .g-s { height: 170px; }
+@media (min-height: 780px) { .g-scene > .g-s--world { height: 230px; } }
+.g-s { position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; gap: 16px; }
+
+.g-talk { display: flex; align-items: flex-end; gap: 8px; }
+.g-portrait {
+  flex: none; width: 72px; height: 72px; display: flex; align-items: center; justify-content: center;
+  background: #24180F; border: 3px solid #1A110A; box-shadow: inset 0 0 0 3px #E7B13C; /* her chamber glow */
+}
+.g-bubble {
+  position: relative; flex: 1; margin: 0; padding: 8px 12px; min-height: 72px; box-sizing: border-box;
+  background: #FBF3DE; border: 3px solid #1A110A; box-shadow: 3px 3px 0 #0E0905;
+  font-family: var(--c0-f-hand); font-weight: 700; font-size: 17px; line-height: 1.2;
+}
+.g-bubble b { font-family: var(--c0-f-display); font-weight: 400; font-size: 16px; letter-spacing: 1px; color: #4A3020; }
+.g-unsaid { visibility: hidden; } /* keeps the bubble its final size while the line types */
+.g-caret { animation: g-blink 0.8s steps(1) infinite; }
+@keyframes g-blink { 50% { opacity: 0; } }
+
+.g-dots { display: flex; justify-content: center; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.g-dot { width: 44px; height: 32px; padding: 0; background: none; border: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.g-dot::before { content: ""; width: 12px; height: 12px; border: 2px solid #E9D8B4; }
+.g-dot--seen::before { background: #CDB78F; border-color: #CDB78F; }
+.g-dot--now::before { width: 24px; background: #E9D8B4; }
+
+.g-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.g-navbtn { width: 100%; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
+.g-navbtn:disabled { opacity: 0.45; }
+.g-ready { animation: g-nudge 1.2s steps(2) 2; }
+@keyframes g-nudge { 50% { transform: translate(-2px, -2px); box-shadow: 5px 5px 0 #0E0905; } }
+
+/* ---------- scene 1: the world */
+.g-world { height: 100%; width: auto; max-width: 100%; border: 3px solid #1A110A; image-rendering: pixelated; }
+.g-walker { position: absolute; bottom: 20%; animation: g-walk 6s steps(24) infinite; }
+.g-walker--b { bottom: 46%; animation-duration: 8s; animation-direction: reverse; }
+@keyframes g-walk { from { left: 18%; } to { left: 74%; } }
+
+/* ---------- scene 2: feed (gold: the queen's fed time, and a button that spends WIF) */
+.g-queen { padding: 8px; background: #24180F; border: 3px solid #1A110A; animation: g-glow 4s steps(1) infinite; }
+@keyframes g-glow { 0%, 40% { box-shadow: inset 0 0 0 4px #E7B13C; } 41%, 69% { box-shadow: inset 0 0 0 4px #4A3020; } 70%, 100% { box-shadow: inset 0 0 0 4px #E7B13C; } }
+.g-feedcol { display: flex; flex-direction: column; gap: 6px; width: 180px; }
+.g-meter { height: 20px; background: #4A3020; border: 3px solid #1A110A; }
+.g-meter__fill { display: block; height: 100%; background: #E7B13C; animation: g-drain 4s steps(12) infinite; }
+@keyframes g-drain { 0% { width: 100%; } 60% { width: 12%; } 69% { width: 12%; } 70%, 100% { width: 100%; } }
+.g-meterlbl { display: flex; justify-content: space-between; font-size: 12px; color: #4A3020; }
+.g-hours::after { content: "72h"; animation: g-hours 4s steps(1) infinite; }
+@keyframes g-hours { 0% { content: "72h"; } 20% { content: "48h"; } 40% { content: "20h"; } 55% { content: "8h"; } 70%, 100% { content: "72h"; } }
+.g-fakebtn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-height: 40px; padding: 0 8px;
+  border: 3px solid #1A110A; box-shadow: 3px 3px 0 #0E0905; font-family: var(--c0-f-display); font-size: 20px;
+}
+.g-fakebtn--wif { background: #E7B13C; color: #1A110A; animation: g-press 4s steps(1) infinite; }
+@keyframes g-press { 0%, 63% { transform: none; box-shadow: 3px 3px 0 #0E0905; } 64%, 69% { transform: translate(3px, 3px); box-shadow: none; } }
+
+/* ---------- scene 3: tend and build */
+.g-s--tend { flex-direction: column; gap: 12px; }
+.g-stock { display: flex; gap: 24px; font-family: var(--c0-f-display); font-size: 28px; }
+.g-stock span { display: inline-flex; align-items: center; gap: 6px; }
+.g-count-up::after { animation: g-leaf 3s steps(1) infinite; content: "20"; }
+.g-count-up--sugar::after { animation-name: g-sugar; }
+@keyframes g-leaf { 0% { content: "20"; } 25% { content: "26"; } 50% { content: "33"; } 75%, 100% { content: "41"; } }
+@keyframes g-sugar { 0% { content: "20"; } 25% { content: "24"; } 50% { content: "29"; } 75%, 100% { content: "34"; } }
+.g-builds { display: flex; gap: 12px; }
+.g-build {
+  display: flex; flex-direction: column; align-items: center; gap: 2px; width: 76px; padding: 6px 0;
+  background: #FBF3DE; border: 3px solid #1A110A; box-shadow: 3px 3px 0 #0E0905; animation: g-pop 0.3s steps(3) both;
+}
+.g-build small { font-size: 12px; }
+@keyframes g-pop { from { transform: translateY(12px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+/* ---------- scene 4: raids (red) */
+.g-s--raid { flex-direction: column; gap: 10px; }
+.g-seal { display: flex; align-items: center; gap: 12px; }
+.g-seal__env {
+  padding: 4px 8px; background: #B4473A; color: #FBF3DE; border: 3px solid #1A110A; box-shadow: 3px 3px 0 #0E0905;
+  font-family: var(--c0-f-display); font-size: 20px; letter-spacing: 2px;
+}
+.g-seal__opts { display: inline-flex; align-items: center; gap: 6px; }
+.g-q { font-family: var(--c0-f-display); font-size: 28px; color: #8E3529; animation: g-blink 1s steps(1) infinite; }
+.g-march { position: relative; width: 260px; height: 36px; border-bottom: 3px dashed #8E3529; }
+.g-march__ants { position: absolute; bottom: 2px; display: inline-flex; animation: g-marchgo 3.6s steps(18) infinite; }
+.g-march__home { position: absolute; right: 0; bottom: 0; }
+@keyframes g-marchgo { from { left: 0; } to { left: 160px; } }
+.g-steps { display: flex; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.g-steps li {
+  padding: 2px 6px; border: 2px solid #1A110A; font-size: 12px; background: #FBF3DE;
+  animation: g-step 3.6s steps(1) infinite;
+}
+@keyframes g-step { 0%, 24% { background: #B4473A; color: #FBF3DE; } 25%, 100% { background: #FBF3DE; color: #1A110A; } }
+
+/* ---------- scene 5: drand */
+.g-s--drand { flex-direction: column; gap: 10px; }
+.g-round { font-size: 14px; }
+.g-roundno { font-family: var(--c0-f-display); font-size: 26px; font-weight: 400; }
+.g-roundno::after { content: "22165425"; animation: g-tick 3s steps(1) infinite; }
+@keyframes g-tick { 0% { content: "22165425"; } 33% { content: "22165426"; } 66%, 100% { content: "22165427"; } }
+.g-sig { width: 260px; height: 24px; overflow: hidden; padding: 2px 8px; background: #24180F; border: 3px solid #1A110A; }
+.g-sig__roll { display: block; white-space: nowrap; font-size: 13px; color: #CDB78F; animation: g-sig 3s steps(15) infinite; }
+@keyframes g-sig { from { transform: translateX(0); } to { transform: translateX(-75%); } }
+.g-stamp {
+  padding: 4px 10px; border: 3px solid #1A110A; background: #FBF3DE; font-family: var(--c0-f-display);
+  font-size: 22px; letter-spacing: 2px; transform: rotate(-4deg); animation: g-stampin 3s steps(1) infinite;
+}
+@keyframes g-stampin { 0%, 59% { opacity: 0; } 60%, 100% { opacity: 1; } }
+
+/* ---------- scene 6: the pot (gold holds WIF; burned is the blocked hatch) */
+.g-s--pot { flex-direction: column; gap: 6px; }
+.g-split { display: flex; width: 280px; height: 32px; border: 3px solid #1A110A; font-family: var(--c0-f-display); font-size: 18px; }
+.g-split > span { display: flex; align-items: center; justify-content: center; }
+.g-split__pot { width: 70%; background: #E7B13C; color: #1A110A; }
+.g-split__burn { width: 20%; background: var(--c0-hatch); color: #E9D8B4; border-left: 3px solid #1A110A; }
+.g-split__tre { width: 10%; background: #4A3020; color: #E9D8B4; border-left: 3px solid #1A110A; font-size: 14px; }
+.g-splitkey { display: flex; width: 280px; font-size: 11px; color: #4A3020; }
+.g-splitkey span:nth-child(1) { width: 70%; }
+.g-splitkey span:nth-child(2) { width: 20%; }
+.g-podium { display: flex; align-items: flex-end; gap: 4px; margin-top: 4px; }
+.g-pod {
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-start; width: 64px; padding-top: 4px;
+  background: #FBF3DE; border: 3px solid #1A110A; font-family: var(--c0-f-display); font-size: 20px;
+}
+.g-pod--1 { height: 76px; }
+.g-pod--2 { height: 62px; }
+.g-pod--3 { height: 54px; }
+
+/* Short phones: tighten the reel. */
+@media (max-height: 700px) {
+  .g-dialog .g-title { font-size: 30px; }
+  .g-scene { min-height: 120px; }
+  .g-scene > .g-s { height: 140px; }
+  .g-body { font-size: 13px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .g-root *, .g-root *::before, .g-root *::after { animation: none !important; }
+}
+.c0-reduce-motion .g-root *, .c0-reduce-motion .g-root *::before, .c0-reduce-motion .g-root *::after { animation: none !important; }

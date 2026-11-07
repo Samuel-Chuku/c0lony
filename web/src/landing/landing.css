@@ -194,3 +194,5 @@
   .l-world { --c0-world-scale: 2; }
   .l-world__box { max-width: none; width: 786px; }
 }
+.l-guide { font-size: 22px; gap: var(--c0-s2); }
+.l-guide__play { width: 12px; height: 14px; background: currentColor; clip-path: polygon(0 0, 100% 50%, 0 100%); flex: none; }

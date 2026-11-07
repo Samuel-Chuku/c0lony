@@ -20,7 +20,7 @@ export function fmtRes(raw: string): string {
 }
 
 const pos = (e: FeedEvent) => e.block * 1_000_000 + e.logIndex;
-const payload = (body: string, url: string, tag: string): PushPayload => ({ title: "C0LONY", body, url, tag });
+const payload = (body: string, url: string, tag: string, image?: string): PushPayload => ({ title: "C0LONY", body, url, tag, ...(image ? { image } : {}) });
 
 export class PushPlanner {
   private readonly o: {
@@ -101,12 +101,13 @@ export class PushPlanner {
         const url = `/report?raid=${id}`;
         const raiderBody = won ? `Raid result is in: you took ${loot}.` : e.data.outcome === "guarded" ? "Raid result is in: they had guarded the right resource." : "Raid result is in: your raid failed.";
         const defenderBody = won ? `You were raided: lost ${loot}.` : "You held them off.";
-        for (const [w, pref, body] of [
-          [String(e.data.raider), "result", raiderBody],
-          [String(e.data.defender), "result", defenderBody],
+        // Picture cards: the raider sees "won" or "held" (raid failed); the defender sees "lost" or "held".
+        for (const [w, pref, body, image] of [
+          [String(e.data.raider), "result", raiderBody, won ? "won" : "held"],
+          [String(e.data.defender), "result", defenderBody, won ? "lost" : "held"],
         ] as const) {
           if (!sched.claim(`result:${id}:${w}`)) continue;
-          await this.o.client.notify(w, pref, payload(body, url, `result-${id}`));
+          await this.o.client.notify(w, pref, payload(body, url, `result-${id}`, image));
         }
         break;
       }
@@ -150,8 +151,8 @@ export class PushPlanner {
     const { sched } = this.o;
     if (!sched.advance(wallet, group, pos(e))) return;
     sched.cancel(wallet, ["hungry12", "hungry2"]);
-    sched.schedule({ key: `hungry12:${wallet}:${fedUntil}`, at: fedUntil - 12 * HOUR, wallet, pref: "hungry12", payload: payload("Your queen is hungry in 12h. Feed her to keep the colony.", "/", "hungry") });
-    sched.schedule({ key: `hungry2:${wallet}:${fedUntil}`, at: fedUntil - 2 * HOUR, wallet, pref: "hungry2", payload: payload("Your queen starves in 2h.", "/", "hungry") });
+    sched.schedule({ key: `hungry12:${wallet}:${fedUntil}`, at: fedUntil - 12 * HOUR, wallet, pref: "hungry12", payload: payload("Your queen is hungry in 12h. Feed her to keep the colony.", "/?do=feed", "hungry", "hungry") });
+    sched.schedule({ key: `hungry2:${wallet}:${fedUntil}`, at: fedUntil - 2 * HOUR, wallet, pref: "hungry2", payload: payload("Your queen starves in 2h.", "/?do=feed", "hungry", "hungry") });
   }
 
   private async forageJob(e: FeedEvent, wallet: string): Promise<void> {

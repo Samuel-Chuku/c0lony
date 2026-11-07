@@ -1,7 +1,7 @@
 "use client";
 import { useExportWallet, useLinkAccount } from "@privy-io/react-auth";
 import { useEffect, useState } from "react";
-import { Button, Switch, withBrand } from "../../ui";
+import { Button, PixelIcon, Switch, withBrand } from "../../ui";
 import { Screen } from "../../shell/Screen";
 import { useShell } from "../../shell/Providers";
 import { useSession } from "../../lib/session";
@@ -12,6 +12,7 @@ import {
   currentEndpoint, DEFAULT_PREFS, disablePush, enablePush, isIos, isStandalone, pushSupport, savePushPrefs,
   type PushPrefs, type PushSupport,
 } from "../../lib/push";
+import { TELEGRAM_ON, tgLinkUrl, tgSavePrefs, tgStatus, tgUnlink } from "../../lib/telegram";
 import { WithdrawSheet } from "../wallet/WithdrawSheet";
 import { VoterPass } from "./VoterPass";
 import "./settings.css";
@@ -148,6 +149,119 @@ function Notifications() {
   );
 }
 
+const LINK_FRESH_MS = 10 * 60_000; // the server's start codes last 15 minutes
+
+/** Telegram alerts: one tap opens the bot with a one-time code; pressing Start there links this wallet. */
+function TelegramAlerts() {
+  const session = useSession();
+  const [status, setStatus] = useState<{ linked: boolean; prefs: PushPrefs } | null>(null);
+  const [link, setLink] = useState<{ url: string; at: number } | null>(null);
+  const [waiting, setWaiting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const addr = session.address;
+
+  // Read whether this wallet is linked; when it isn't, have a fresh start link ready so Connect is one tap.
+  useEffect(() => {
+    if (!TELEGRAM_ON || !addr) return;
+    let live = true;
+    const load = async () => {
+      try {
+        const token = await session.getToken();
+        if (!token || !live) return;
+        const st = await tgStatus(addr, token);
+        if (!live) return;
+        setStatus(st);
+        if (!st.linked && (!link || Date.now() - link.at > LINK_FRESH_MS)) {
+          const url = await tgLinkUrl(addr, token, st.prefs);
+          if (live) setLink({ url, at: Date.now() });
+        }
+        if (st.linked) setWaiting(false);
+      } catch (e) {
+        if (live) setError((e as { status?: number }).status === 404 ? "Telegram alerts aren't switched on yet." : "Couldn't reach the server. Try again shortly.");
+      }
+    };
+    void load();
+    // While waiting for Start in Telegram, check every 3s; otherwise refresh the link before it expires.
+    const t = setInterval(load, waiting ? 3_000 : LINK_FRESH_MS);
+    return () => { live = false; clearInterval(t); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [addr, waiting]);
+
+  if (!TELEGRAM_ON) {
+    return (
+      <div className="c0-srow">
+        <PixelIcon name="telegram" size={30} />
+        <div className="c0-srow__text">
+          <span>Telegram alerts</span>
+          <span className="c0-srow__hint">Raids, results and a hungry queen, sent to Telegram with a button to act. Opens with the mainnet launch.</span>
+        </div>
+      </div>
+    );
+  }
+
+  async function savePref(key: keyof PushPrefs, v: boolean) {
+    if (!status || !addr) return;
+    const next = { ...status.prefs, [key]: v };
+    setStatus({ ...status, prefs: next });
+    try {
+      const token = await session.getToken();
+      if (token) await tgSavePrefs(addr, token, next);
+    } catch {
+      setError("Couldn't save that change. Check your connection and try again.");
+    }
+  }
+
+  async function unlink() {
+    if (!addr) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const token = await session.getToken();
+      if (token) await tgUnlink(addr, token);
+      setStatus((s) => (s ? { ...s, linked: false } : s));
+      setLink(null);
+    } catch {
+      setError("Couldn't unlink Telegram. Try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const linked = !!status?.linked;
+  return (
+    <>
+      <div className="c0-srow">
+        <PixelIcon name="telegram" size={30} />
+        <div className="c0-srow__text">
+          <span>Telegram alerts</span>
+          <span className="c0-srow__hint">
+            {!addr ? "Sign in to get alerts on Telegram."
+              : linked ? "Linked · alerts arrive in Telegram with a button to act"
+              : waiting ? "Press Start in Telegram. This page updates once you do."
+              : "Get raids, results and a hungry queen on Telegram, with a picture and a button to act."}
+          </span>
+        </div>
+        {!addr ? null : linked ? (
+          <Button variant="paper" size="compact" busy={busy ? "Unlinking…" : undefined} onClick={() => void unlink()}>Unlink</Button>
+        ) : link ? (
+          <a className="c0-btn c0-btn--paper c0-btn--compact c0-tglink" href={link.url} target="_blank" rel="noopener noreferrer" onClick={() => setWaiting(true)}>
+            {waiting ? "Open again" : "Connect"}
+          </a>
+        ) : (
+          <Button variant="paper" size="compact" busy="Loading…" />
+        )}
+      </div>
+      {linked && status
+        ? PREF_ROWS.map((r) => (
+            <Switch key={r.key} id={`t-${r.key}`} label={r.label} hint={r.hint} checked={status.prefs[r.key]} onChange={(v) => void savePref(r.key, v)} />
+          ))
+        : null}
+      {error ? <div className="c0-blocked" role="alert">{error}</div> : null}
+    </>
+  );
+}
+
 function AppRows() {
   const shell = useShell();
   const [standalone, setStandalone] = useState(true);
@@ -204,8 +318,10 @@ export function SettingsScreen() {
           </div>
           <Button variant="paper" size="compact" onClick={() => setPass(true)}>View</Button>
         </div>
-        <h2 className="c0-set__label">Notifications</h2>
+        <h2 className="c0-set__label">Alerts on this device</h2>
         <Notifications />
+        <h2 className="c0-set__label">Alerts on Telegram</h2>
+        <TelegramAlerts />
         <h2 className="c0-set__label">App</h2>
         <AppRows />
       </div>

@@ -6,6 +6,7 @@ import { APP_URL, BRAND } from "../brand";
 import { NETWORK, NETWORK_NAME, CONFIG } from "../config";
 import { BrandName, Hand, Meter, PixelIcon, ResIcon, shortAddress, withBrand } from "../ui";
 import { HeroWorld } from "./HeroWorld";
+import { Guide, useGuide } from "../guide/Guide";
 import { LiveNumbers } from "./LiveNumbers";
 
 const REPO_URL = "https://github.com/Samuel-Chuku/c0lony";
@@ -93,6 +94,7 @@ const FAQ: { q: string; a: ReactNode }[] = [
 ];
 
 export function Landing() {
+  const guide = useGuide(true);
   return (
     <div className="l-page">
       <a className="l-skip" href="#main">Skip to content</a>
@@ -113,6 +115,7 @@ export function Landing() {
         </div>
       </header>
 
+      <Guide open={guide.open} onClose={guide.close} playHref={APP_URL} playLabel="Play C0LONY" />
       <main id="main">
         {/* 1. Hero */}
         <section className="l-hero" id="top" aria-labelledby="h-hero">
@@ -126,7 +129,9 @@ export function Landing() {
               </p>
               <div className="l-cta">
                 <PlayButton hero />
-                <a className="l-link" href="#how">How it works ›</a>
+                <button type="button" className="c0-btn c0-btn--dark l-guide" onClick={guide.show}>
+                  <span className="l-guide__play" aria-hidden="true" /> Watch the 1-minute guide
+                </button>
               </div>
               <p className="l-reassure">
                 <Hand size={18}>Sign in with X or email · a wallet is made for you · new players get starter gas</Hand>

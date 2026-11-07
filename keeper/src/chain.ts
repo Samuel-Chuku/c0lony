@@ -1,5 +1,5 @@
 // Read-only access to ColonyGame through viem, behind small interfaces so tests can use fakes.
-import { createPublicClient, defineChain, http, type Address, type PublicClient } from "viem";
+import { createPublicClient, defineChain, fallback, http, type Address, type PublicClient, type Transport } from "viem";
 import { colonyGameAbi } from "./abi.ts";
 import type { Config } from "./config.ts";
 import type { RaidWallets } from "./feed/decode.ts";
@@ -25,12 +25,18 @@ export function makeChain(cfg: Config) {
     id: cfg.chainId,
     name: cfg.network === "mainnet" ? "Robinhood Chain" : "Robinhood Chain Testnet",
     nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
-    rpcUrls: { default: { http: [cfg.rpcUrl] } },
+    rpcUrls: { default: { http: cfg.rpcUrls } },
   });
 }
 
+/** Endpoints in priority order; viem moves to the next one when a request fails (reverts are not retried). */
+export function rpcTransport(urls: string[]): Transport {
+  const list = urls.map((u) => http(u, { timeout: 15_000, retryCount: 1 }));
+  return list.length === 1 ? list[0] : fallback(list, { rank: false, retryCount: 1 });
+}
+
 export function makePublicClient(cfg: Config): PublicClient {
-  return createPublicClient({ chain: makeChain(cfg), transport: http(cfg.rpcUrl) });
+  return createPublicClient({ chain: makeChain(cfg), transport: rpcTransport(cfg.rpcUrls) });
 }
 
 export class ViemGameReader implements GameReader {

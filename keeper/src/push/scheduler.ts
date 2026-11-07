@@ -6,7 +6,8 @@ import { JsonStore } from "../state.ts";
 export const MAX_LATE_SEC = 30 * 60;
 const SENT_KEEP = 5000;
 
-export type PushPayload = { title: string; body: string; url: string; tag: string };
+/** `image` names the Telegram picture card (web/public/tg/<image>.png); it defaults to the alert's pref. */
+export type PushPayload = { title: string; body: string; url: string; tag: string; image?: string };
 
 export type Job = {
   key: string;

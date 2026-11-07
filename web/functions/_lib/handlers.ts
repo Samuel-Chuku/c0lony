@@ -11,7 +11,7 @@ import { clampInt, isRecord, normAddr, sanitizePrefs } from "./validate.ts";
 type Res = Promise<Response>;
 const CHUNK = 90; // D1 allows 100 bound parameters per statement
 
-async function signedBody(request: Request, env: Env): Promise<{ body: string } | Response> {
+export async function signedBody(request: Request, env: Env): Promise<{ body: string } | Response> {
   const body = await readBody(request);
   if (body === null) return fail(413, "That request is too large.");
   const v = await verifyHmac(
@@ -136,7 +136,7 @@ export async function profiles(request: Request, env: Env): Res {
   return json({ profiles: out }, 200, "public, max-age=60");
 }
 
-async function authed(request: Request, env: Env, fetchImpl: typeof fetch) {
+export async function authed(request: Request, env: Env, fetchImpl: typeof fetch) {
   const did = await verifyPrivyToken(bearer(request), env);
   if (!did) return fail(401, "Sign in again to continue.");
   const wallets = await userWallets(did, env, fetchImpl);
@@ -144,7 +144,7 @@ async function authed(request: Request, env: Env, fetchImpl: typeof fetch) {
   return { did, wallets };
 }
 
-async function jsonBody(request: Request): Promise<Record<string, unknown> | Response> {
+export async function jsonBody(request: Request): Promise<Record<string, unknown> | Response> {
   const text = await readBody(request);
   if (text === null) return fail(413, "That request is too large.");
   const b = parseJson(text);

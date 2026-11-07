@@ -95,6 +95,16 @@ An honest self-audit of the C0LONY contracts written during the build. It is not
 | Contract size above 24 KB | ColonyGame is about 26 KB. Robinhood Chain accepts contracts up to at least 64 KB (checked live with `eth_estimateGas` on both networks). | Accepted, documented |
 | Long idle period makes the next transaction expensive | Seasons are created lazily, one loop iteration per missed season. Even a year of 1-day seasons stays within block limits. | Accepted |
 
+## Alerts (off chain)
+
+| Risk | How it's handled | Status |
+| --- | --- | --- |
+| Someone links your wallet to their Telegram | A link code is only made for a wallet the signed-in player owns (checked against their Privy account), lasts 15 minutes, works once, and only in a private chat with the bot. | Closed |
+| Forged messages to the bot's webhook | Telegram sends a secret header set with `setWebhook`; requests without it are refused. | Closed |
+| Bot token leaks | It lives only in the app's encrypted secrets and the keeper's `.env`, never in the site or the repo. Logs never print it. | Closed |
+| Alerts reveal a sealed target | Alerts are built from the public feed, which strips targets and guard choices until the reveal. | Closed |
+| Spam to a player | The bot only messages chats that linked themselves, honours each chat's switches, `/stop` unlinks every wallet, and chats that block the bot are removed. | Closed |
+
 ## Settle gas
 
 `settle` itself measures 314,958 gas in Foundry (`test_gas_settle` logs the call alone; the whole test, setup included, is 511,644 in `.gas-snapshot`). The earlier 512k figure was that whole-test number, so the two are not a like-for-like drop. The refund cap of 0.00005 ETH is unchanged and the refund is still computed from measured gas, so it can't exceed the real cost. If the cap is below the real cost of a settle, the settler covers the difference.

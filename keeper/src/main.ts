@@ -3,7 +3,7 @@
 import { appendFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { loadConfig } from "./config.ts";
-import { Rpc } from "./intake/rpc.ts";
+import { Rpc, rpcHost } from "./intake/rpc.ts";
 import { PollerSource } from "./intake/poller.ts";
 import { StreamsWebhookServer } from "./intake/streamsWebhook.ts";
 import { logKey, sortLogs, type EventSource, type LogFilter, type LogHandler } from "./intake/types.ts";
@@ -12,6 +12,7 @@ import { BlockTimes, decodeLog, decodeRaw, RaidDirectory, type FeedEvent } from 
 import { Outbox } from "./feed/outbox.ts";
 import { PushClient } from "./push/client.ts";
 import { PushPlanner } from "./push/planner.ts";
+import { TelegramClient } from "./push/telegram.ts";
 import { Scheduler } from "./push/scheduler.ts";
 import { makeUnsealer } from "./settle/unseal.ts";
 import { fetchDrandSignature } from "./settle/drand.ts";
@@ -20,9 +21,9 @@ import { Settler } from "./settle/settler.ts";
 import { makeSettleWallet } from "./settle/wallet.ts";
 import { httpGasApi, StarterGas } from "./gas/starter.ts";
 import { makeVoterRefresher, whenQuiet } from "./voters/refresh.ts";
-import { createWalletClient, http as viemHttp, type Address, type Hash } from "viem";
+import { createWalletClient, type Address, type Hash } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { makeChain } from "./chain.ts";
+import { makeChain, rpcTransport } from "./chain.ts";
 import webpush from "web-push";
 import { parseEther } from "viem";
 import { JsonStore } from "./state.ts";
@@ -49,19 +50,24 @@ if (!outbox) log("feed: FEED_API_BASE or FEED_INGEST_SECRET missing, feed delive
 
 let planner: PushPlanner | undefined;
 let scheduler: Scheduler | undefined;
-if (reader && cfg.feedApiBase && cfg.feedIngestSecret && cfg.pushEnabled && cfg.vapidPublicKey && cfg.vapidPrivateKey && cfg.vapidSubject) {
-  webpush.setVapidDetails(cfg.vapidSubject, cfg.vapidPublicKey, cfg.vapidPrivateKey);
+const pushReady = cfg.pushEnabled && !!(cfg.vapidPublicKey && cfg.vapidPrivateKey && cfg.vapidSubject);
+if (reader && cfg.feedApiBase && cfg.feedIngestSecret && (pushReady || cfg.telegramEnabled)) {
+  if (pushReady) webpush.setVapidDetails(cfg.vapidSubject, cfg.vapidPublicKey, cfg.vapidPrivateKey);
   const client = new PushClient({
     apiBase: cfg.feedApiBase,
     secret: cfg.feedIngestSecret,
-    send: (sub, body) => webpush.sendNotification(sub, body, { TTL: 3600 }),
+    send: pushReady ? (sub, body) => webpush.sendNotification(sub, body, { TTL: 3600 }) : undefined,
+    telegram: cfg.telegramEnabled
+      ? new TelegramClient({ apiBase: cfg.feedApiBase, secret: cfg.feedIngestSecret, token: cfg.telegramBotToken, log })
+      : undefined,
     log,
   });
   let p: PushPlanner | undefined;
   scheduler = new Scheduler({ file: join(cfg.stateDir, "push-jobs.json"), fire: (job) => p!.fire(job), log });
   p = planner = new PushPlanner({ sched: scheduler, client, chain: reader, rosterFile: join(cfg.stateDir, "push-roster.json"), log });
+  log(`alerts: push ${pushReady ? "on" : "off"} · telegram ${cfg.telegramEnabled ? "on" : "off"}`);
 } else {
-  log("push: off (needs FEED_API_BASE, FEED_INGEST_SECRET, VAPID keys and subject, PUSH_ENABLED, game addresses)");
+  log("alerts: off (needs FEED_API_BASE, FEED_INGEST_SECRET, game addresses, and VAPID keys or a Telegram bot token)");
 }
 
 let settler: Settler | undefined;
@@ -85,7 +91,7 @@ let starterGas: StarterGas | undefined;
 if (cfg.starterGasEnabled && cfg.keeperPrivateKey && cfg.feedApiBase && cfg.feedIngestSecret) {
   const client = makePublicClient(cfg);
   const account = privateKeyToAccount(cfg.keeperPrivateKey as Hash);
-  const wallet = createWalletClient({ account, chain: makeChain(cfg), transport: viemHttp(cfg.rpcUrl) });
+  const wallet = createWalletClient({ account, chain: makeChain(cfg), transport: rpcTransport(cfg.rpcUrls) });
   starterGas = new StarterGas({
     api: httpGasApi(fetch, cfg.feedApiBase, cfg.feedIngestSecret),
     chain: {
@@ -116,7 +122,7 @@ if (cfg.starterGasEnabled && cfg.keeperPrivateKey && cfg.feedApiBase && cfg.feed
   log("gas: starter gas off (needs KEEPER_PRIVATE_KEY, FEED_API_BASE and FEED_INGEST_SECRET)");
 }
 
-const blockTimes = new BlockTimes(new Rpc(cfg.rpcUrl));
+const blockTimes = new BlockTimes(new Rpc(cfg.rpcUrls));
 const directory = new RaidDirectory(join(cfg.stateDir, "raids.json"));
 const decodeDeps = {
   gameAddress: cfg.colonyGameAddress,
@@ -161,7 +167,7 @@ const refreshVoters = makeVoterRefresher({
   game: cfg.colonyGameAddress ? (cfg.colonyGameAddress as Address) : undefined,
   client: cfg.colonyGameAddress ? makePublicClient(cfg) : undefined,
   wallet: cfg.keeperPrivateKey
-    ? createWalletClient({ account: privateKeyToAccount(cfg.keeperPrivateKey as Hash), chain: makeChain(cfg), transport: viemHttp(cfg.rpcUrl) })
+    ? createWalletClient({ account: privateKeyToAccount(cfg.keeperPrivateKey as Hash), chain: makeChain(cfg), transport: rpcTransport(cfg.rpcUrls) })
     : undefined,
   log,
 });
@@ -188,7 +194,7 @@ if (cfg.eventSource === "streams") {
   if (cfg.gameAddresses.length > 0) {
     sources.push([
       new PollerSource({
-        rpc: new Rpc(cfg.rpcUrl),
+        rpc: new Rpc(cfg.rpcUrls),
         filter: gameFilter,
         startBlock: cfg.startBlock,
         intervalMs: cfg.pollIntervalMs,
@@ -202,7 +208,7 @@ if (cfg.eventSource === "streams") {
   }
   sources.push([
     new PollerSource({
-      rpc: new Rpc(cfg.votesRpcUrl),
+      rpc: new Rpc(cfg.votesRpcUrls),
       filter: votesFilter(wallets),
       startBlock: cfg.votesStartBlock,
       intervalMs: cfg.votesPollIntervalMs,
@@ -218,7 +224,7 @@ if (cfg.eventSource === "streams") {
 const port = await server.listen(cfg.webhookPort, cfg.webhookHost);
 for (const [source, handler] of sources) await source.start(handler);
 runVoterRefresh();
-log(`keeper up on :${port} · network ${cfg.network} · intake ${cfg.eventSource} · ${sources.length} sources`);
+log(`keeper up on :${port} · network ${cfg.network} · intake ${cfg.eventSource} · ${sources.length} sources · rpc ${cfg.rpcUrls.map(rpcHost).join(" > ")}`);
 
 outbox?.start();
 scheduler?.start();

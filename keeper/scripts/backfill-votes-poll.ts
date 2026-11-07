@@ -10,7 +10,7 @@ import { loadVoteWallets, votesFilter, VoteStore } from "../src/voters/votes.ts"
 const cfg = loadConfig();
 const wallets = loadVoteWallets(cfg.voteWalletsFile);
 const store = new VoteStore(join(cfg.stateDir, "votes.json"), wallets);
-const rpc = new Rpc(cfg.votesRpcUrl);
+const rpc = new Rpc(cfg.votesRpcUrls);
 const head = await rpc.blockNumber();
 const poller = new PollerSource({
   rpc,
