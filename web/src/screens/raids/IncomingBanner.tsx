@@ -1,9 +1,11 @@
 "use client";
+import Link from "next/link";
 import { ResIcon } from "../../ui/ResIcon";
 import { Button } from "../../ui";
 import { useEffect, useState } from "react";
-import { Resource, useNow, type Raid } from "../../lib/game";
-import { fmtDuration } from "../../lib/format";
+import { LOOT, Resource, useNow, useProfile, type Raid } from "../../lib/game";
+import { useSession } from "../../lib/session";
+import { RES, fmtDuration, fmtRes } from "../../lib/format";
 import { guard } from "../../lib/raids";
 import { guardResult } from "../../lib/outcomes";
 import { useAction } from "../../lib/tx";
@@ -18,6 +20,15 @@ export function IncomingBanner({ raid, guardWindow }: { raid: Raid; guardWindow:
   const action = useAction("Guarding", { success: () => guardResult(which) });
   const [which, setWhich] = useState<number>(0);
   const left = Number(raid.launchedAt) + guardWindow - now;
+  // The numbers that make the guess worth it: what is in each store and the most they could carry off from it.
+  const me = useProfile(useSession().address).data;
+  const soldiers = Number(raid.soldiers);
+  const carry = BigInt(soldiers * LOOT.perAnt) * RES;
+  const atRisk = (stock: bigint) => {
+    const max = (stock * BigInt(LOOT.maxPct)) / 100n;
+    return max < carry ? max : carry;
+  };
+  const stockOf = (res: number) => (me ? (res === Resource.Leaves ? me.leaves : me.sugar) : null);
   const guarded = raid.guard === Resource.Leaves ? "leaves" : raid.guard === Resource.Sugar ? "sugar" : null;
 
   // The banner can fold down to its title line. It starts open until you guard, then folds; the choice sticks per raid.
@@ -78,6 +89,12 @@ export function IncomingBanner({ raid, guardWindow }: { raid: Raid; guardWindow:
             >
               <ResIcon name={res === Resource.Leaves ? "leaf" : "sugar"} size={28} />
               <span>{name}</span>
+              {stockOf(res) !== null ? (
+                <span className="c0-opt__nums">
+                  <span><b>{fmtRes(stockOf(res)!)}</b> in store</span>
+                  <span><b>{fmtRes(atRisk(stockOf(res)!))}</b> at risk</span>
+                </span>
+              ) : null}
               <span className="c0-opt__tag">{guarded ? (chosen ? "✓ Guarding" : "") : chosen ? "✓ Chosen" : "Tap to choose"}</span>
             </button>
           );
@@ -88,7 +105,7 @@ export function IncomingBanner({ raid, guardWindow }: { raid: Raid; guardWindow:
           <ResIcon name={guarded === "leaves" ? "leaf" : "sugar"} size={16} /> You&apos;re guarding {guarded}. If they aim there, the raid fails and a quarter of their ants fall.
         </p>
       ) : (
-        <p style={{ margin: 0, fontSize: 13 }}>Guess what they will target. Right: the raid fails. Wrong: they take a bigger share. No guard: they take 30 to 60%.</p>
+        <Link href="/how-to-play#raids" className="c0-banner__rules">How raids work ›</Link>
       )}
       {!guarded ? (
         <Button

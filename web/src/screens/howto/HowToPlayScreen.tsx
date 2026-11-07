@@ -1,7 +1,7 @@
 "use client";
 // The full guide. Every number comes from the live game config (useGameConfig); the few fixed rules mirror
 // constants in the contract (ColonyGame.sol, SeasonPot.sol).
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { Card, ResIcon, type ResIconName, Wif } from "../../ui";
 import { Screen } from "../../shell/Screen";
 import { fmtDuration, fmtWif } from "../../lib/format";
@@ -15,9 +15,22 @@ const AVENGE_HOURS = 24;
 const CLAIM_DAYS = 30;
 const REFUND_HOURS = 48;
 
+/** "Voter's Pass" -> "voters-pass": the anchor other screens link to, e.g. /how-to-play#raids. */
+const slug = (t: string) => t.toLowerCase().replace(/'/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+
+const SECTIONS = ["Getting started", "Your queen", "Leaves and sugar", "Buildings", "Raids", "Avenge", "Shield", "The season and the pot", "Voter's Pass"];
+
+function Contents() {
+  return (
+    <nav className="c0-ht__toc" aria-label="On this page">
+      {SECTIONS.map((t) => <a key={t} href={`#${slug(t)}`}>{t}</a>)}
+    </nav>
+  );
+}
+
 function Sec({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <Card className="c0-ht__card c0-ht__sec">
+    <Card id={slug(title)} className="c0-ht__card c0-ht__sec">
       <h2 className="c0-pf__h2">{title}</h2>
       {children}
     </Card>
@@ -37,6 +50,7 @@ function Guide({ c }: { c?: GameConfig }) {
   const pct = (v?: number) => (v === undefined ? "…" : `${v}%`);
   return (
     <>
+      <Contents />
       <Sec title="The goal">
         <P>Keep your queen alive, grow your colony, and finish the season with a high score. Colonies that finish high share the season pot in WIF.</P>
       </Sec>
@@ -157,6 +171,19 @@ function Guide({ c }: { c?: GameConfig }) {
 
 export function HowToPlayScreen() {
   const cfg = useGameConfig().data;
+  // Links like /how-to-play#raids arrive by in-app navigation, which doesn't jump to the section on its own.
+  useEffect(() => {
+    const go = () => {
+      const id = decodeURIComponent(location.hash.slice(1));
+      if (id) document.getElementById(id)?.scrollIntoView({ block: "start" });
+    };
+    const t = setTimeout(go, 50);
+    window.addEventListener("hashchange", go);
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener("hashchange", go);
+    };
+  }, []);
   return (
     <Screen back>
       <div className="c0-ht__logo"><img src="/logo.svg" alt="C0LONY" width={244} height={92} /></div>

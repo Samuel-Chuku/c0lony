@@ -305,7 +305,10 @@ a { color: var(--c0-fg); }
 .c0-inv__note { color: var(--c0-sub); text-align: center; }
 
 /* How to play: sections, tables */
-.c0-ht__sec { display: flex; flex-direction: column; gap: var(--c0-s2); }
+.c0-ht__sec { display: flex; flex-direction: column; gap: var(--c0-s2); scroll-margin-top: var(--c0-s4); }
+.c0-ht__toc { display: flex; flex-wrap: wrap; gap: 6px var(--c0-s2); }
+.c0-ht__toc a { display: inline-flex; align-items: center; min-height: 32px; padding: 0 var(--c0-s2); border: var(--c0-bw-thin) solid var(--c0-ink); background: var(--c0-paper-hi); color: var(--c0-ink); text-decoration: none; font-family: var(--c0-f-display); font-size: 14px; box-shadow: 2px 2px 0 var(--c0-ink); }
+.c0-ht__toc a:hover { transform: translate(1px, 1px); box-shadow: 1px 1px 0 var(--c0-ink); }
 .c0-ht__p { margin: 0; font-size: var(--c0-fs-body); line-height: var(--c0-lh-body); }
 .c0-ht__ul { margin: 0; padding: 0 0 0 var(--c0-s4); display: flex; flex-direction: column; gap: var(--c0-s1); font-size: var(--c0-fs-body); line-height: var(--c0-lh-body); }
 .c0-ht__table { width: 100%; border-collapse: collapse; font-size: var(--c0-fs-caption); }
@@ -331,6 +334,9 @@ a { color: var(--c0-fg); }
 .c0-opts { display: flex; gap: var(--c0-s2); }
 .c0-opt { flex: 1; min-width: 0; min-height: 92px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--c0-s1); padding: var(--c0-s2); box-sizing: border-box; border: var(--c0-bw) solid var(--c0-ink); background: var(--c0-loam); color: var(--c0-paper); font-family: var(--c0-f-display); font-size: 22px; cursor: pointer; }
 .c0-opt[aria-checked="true"], .c0-opt[aria-pressed="true"] { border-width: 5px; background: var(--c0-paper-hi); color: var(--c0-ink); box-shadow: var(--c0-shadow-card); }
+.c0-banner__rules { align-self: flex-start; font-size: 13px; color: inherit; opacity: .85; }
+.c0-opt__nums { display: flex; flex-direction: column; align-items: center; font-family: var(--c0-f-body, inherit); font-size: 12px; line-height: 1.3; text-align: center; white-space: nowrap; }
+.c0-opt__nums b { font-family: var(--c0-f-display); font-weight: 400; font-size: 15px; }
 .c0-opt__tag { font-family: var(--c0-f-body, inherit); font-size: 13px; letter-spacing: 1px; text-transform: uppercase; min-height: 16px; }
 .c0-opt:not([aria-checked="true"]):not([aria-pressed="true"]) { opacity: .8; }
 .c0-opt:disabled { cursor: default; }
