@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { formatEther, parseEther } from "viem";
 import { BottomSheet, BrandName, Button, Chip, ChipRow, Wif } from "../../ui";
-import { NETWORK, NETWORK_NAME } from "../../config";
+import { CONFIG, NETWORK, NETWORK_NAME } from "../../config";
 import { fmtDuration, fmtEth, fmtWif } from "../../lib/format";
 import { useBalances, usePrices, useGameConfig, useNow } from "../../lib/game";
 import { useSession } from "../../lib/session";
@@ -21,8 +21,26 @@ const HIGH_IMPACT = 3;
 export function GetWifSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   return (
     <BottomSheet open={open} onClose={onClose} title="Get WIF">
-      {NETWORK_NAME === "mainnet" ? <Swap /> : <Mint />}
+      {NETWORK_NAME === "mainnet" ? <BuyChoice /> : <Mint />}
     </BottomSheet>
+  );
+}
+
+// Players on their own wallet can also buy on Pons, which opens in a new tab. The in-game wallet only swaps here.
+function BuyChoice() {
+  const session = useSession();
+  const external = !!session.address && !session.embedded && !!CONFIG.ponsWifUrl;
+  if (!external) return <Swap />;
+  return (
+    <>
+      <div className="c0-buychoice">
+        <span className="c0-buychoice__cap">Swap ETH for WIF here, or on Pons with your own wallet.</span>
+        <a className="c0-btn c0-btn--paper c0-btn--compact c0-buychoice__pons" href={CONFIG.ponsWifUrl} target="_blank" rel="noopener noreferrer">
+          Buy on Pons ›
+        </a>
+      </div>
+      <Swap />
+    </>
   );
 }
 

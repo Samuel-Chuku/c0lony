@@ -309,13 +309,32 @@ a { color: var(--c0-fg); }
 
 /* How to play: sections, tables */
 .c0-ht__sec { display: flex; flex-direction: column; gap: var(--c0-s2); scroll-margin-top: var(--c0-s4); }
-.c0-ht__toc { display: flex; flex-wrap: wrap; gap: 6px var(--c0-s2); }
-.c0-ht__toc a { display: inline-flex; align-items: center; min-height: 32px; padding: 0 var(--c0-s2); border: var(--c0-bw-thin) solid var(--c0-ink); background: var(--c0-paper-hi); color: var(--c0-ink); text-decoration: none; font-family: var(--c0-f-display); font-size: 14px; box-shadow: 2px 2px 0 var(--c0-ink); }
+/* How to play: chips on top on a phone; a fixed contents list on the left from 1024px. Reading sizes are larger
+   than the game's body text, because this page is read, not glanced at. */
+.c0-ht { display: flex; flex-direction: column; gap: var(--c0-s4); }
+.c0-ht__body { display: flex; flex-direction: column; gap: var(--c0-s4); min-width: 0; }
+.c0-ht__toc { display: flex; gap: var(--c0-s2); overflow-x: auto; padding: 0 0 var(--c0-s1); scrollbar-width: none; }
+.c0-ht__toc::-webkit-scrollbar { display: none; }
+.c0-ht__toc a { flex: none; }
+.c0-ht__sec { scroll-margin-top: 72px; }
+.c0-ht__tocCap { display: none; }
+.c0-ht__toc a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 var(--c0-s3); border: var(--c0-bw-thin) solid var(--c0-ink); background: var(--c0-paper-hi); color: var(--c0-ink); text-decoration: none; font-family: var(--c0-f-display); font-size: 20px; box-shadow: 2px 2px 0 var(--c0-ink); }
 .c0-ht__toc a:hover { transform: translate(1px, 1px); box-shadow: 1px 1px 0 var(--c0-ink); }
-.c0-ht__p { margin: 0; font-size: var(--c0-fs-body); line-height: var(--c0-lh-body); }
-.c0-ht__ul { margin: 0; padding: 0 0 0 var(--c0-s4); display: flex; flex-direction: column; gap: var(--c0-s1); font-size: var(--c0-fs-body); line-height: var(--c0-lh-body); }
-.c0-ht__table { width: 100%; border-collapse: collapse; font-size: var(--c0-fs-caption); }
-.c0-ht__table th { text-align: left; font-family: var(--c0-f-display); font-weight: 400; font-size: 16px; padding: var(--c0-s1) var(--c0-s1) var(--c0-s1) 0; border-bottom: 2px solid var(--c0-ink); }
+.c0-ht__toc a[aria-current] { background: var(--c0-ink); color: var(--c0-paper); }
+.c0-ht__sec h2 { font-size: 28px; }
+@media (min-width: 1024px) {
+  .c0-ht { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: var(--c0-s8); align-items: start; }
+  .c0-ht__side { position: sticky; top: 88px; max-height: calc(100vh - 112px); overflow: auto; padding: 0 4px 4px 0; }
+  .c0-ht__toc { flex-direction: column; overflow: visible; gap: var(--c0-s1); }
+  .c0-ht__tocCap { display: block; margin-bottom: var(--c0-s1); font-family: var(--c0-f-display); font-size: 18px; letter-spacing: 2px; color: var(--c0-fg-muted); }
+  .c0-ht__toc a { min-height: 48px; font-size: 22px; box-shadow: 3px 3px 0 var(--c0-ink); border-width: var(--c0-bw); }
+  .c0-ht__sec { scroll-margin-top: 88px; }
+  .c0-ht__sec h2 { font-size: 32px; }
+}
+.c0-ht__p { margin: 0; font-size: 16px; line-height: 1.5; }
+.c0-ht__ul { margin: 0; padding: 0 0 0 var(--c0-s5, 20px); display: flex; flex-direction: column; gap: var(--c0-s2); font-size: 16px; line-height: 1.5; }
+.c0-ht__table { width: 100%; border-collapse: collapse; font-size: 15px; }
+.c0-ht__table th { text-align: left; font-family: var(--c0-f-display); font-weight: 400; font-size: 20px; padding: var(--c0-s1) var(--c0-s1) var(--c0-s1) 0; border-bottom: 2px solid var(--c0-ink); }
 .c0-ht__table td { padding: var(--c0-s1) var(--c0-s1) var(--c0-s1) 0; border-bottom: 2px dashed var(--c0-rule); vertical-align: top; line-height: var(--c0-lh-body); }
 .c0-ht__table tr:last-child td { border-bottom: 0; }
 .c0-ht__table td:first-child { white-space: nowrap; }

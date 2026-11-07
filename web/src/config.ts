@@ -55,6 +55,8 @@ export const CONFIG = {
     apiUrl: "https://api.drand.sh",
     chainHash: "04f1e9062b8a81f848fded9c12306733282b2727ecced50032187751166ec8c3",
   },
+  // Pons page for buying WIF with ETH (offered to players on their own wallet, opens in a new tab). Empty = hidden.
+  ponsWifUrl: "https://ponsfamily.com/launchpad/0x5173b8eA6923c2d40267890D45C46a3480954773",
   kyber: {
     apiUrl: "https://aggregator-api.kyberswap.com/robinhood/api/v1",
     clientId: "c0lony", // sent as x-client-id and source

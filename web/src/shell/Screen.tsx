@@ -26,12 +26,14 @@ export type ScreenProps = {
   back?: boolean;
   /** Replace the standard header entirely (the Colony screen has its own). */
   header?: ReactNode;
+  /** Sub-screens use a narrow column on desktop unless wide (How to play uses the full width). */
+  wide?: boolean;
   children: ReactNode;
 };
 
 export { tabHref };
 
-export function Screen({ title, sub, tab, back, header, children }: ScreenProps) {
+export function Screen({ title, sub, tab, back, header, wide, children }: ScreenProps) {
   const router = useRouter();
   const shell = useShell();
   const session = useSession();
@@ -80,7 +82,7 @@ export function Screen({ title, sub, tab, back, header, children }: ScreenProps)
           </Button>
         </div>
       )}
-      <main className={tab ? "c0-main" : "c0-main c0-main--narrow"}>{children}</main>
+      <main className={tab || wide ? "c0-main" : "c0-main c0-main--narrow"}>{children}</main>
       {tab && <BottomNav active={tab} alerts={alerts} onSelect={(t) => router.push(tabHref(t))} />}
       </div>
     </div>

@@ -1,7 +1,7 @@
 "use client";
 // The full guide. Every number comes from the live game config (useGameConfig); the few fixed rules mirror
 // constants in the contract (ColonyGame.sol, SeasonPot.sol).
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Button, Card, ResIcon, type ResIconName, Wif } from "../../ui";
 import { openGuide } from "../../shell/GuideHost";
 import { Screen } from "../../shell/Screen";
@@ -19,12 +19,29 @@ const REFUND_HOURS = 48;
 /** "Voter's Pass" -> "voters-pass": the anchor other screens link to, e.g. /how-to-play#raids. */
 const slug = (t: string) => t.toLowerCase().replace(/'/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
-const SECTIONS = ["Getting started", "Your queen", "Leaves and sugar", "Buildings", "Raids", "Avenge", "Shield", "The season and the pot", "Voter's Pass"];
+const SECTIONS = ["The goal", "Getting started", "Your queen", "Leaves and sugar", "Buildings", "Raids", "Avenge", "Shield", "The season and the pot", "The app", "Voter's Pass"];
 
+/** Section links: chips on top on a phone, a fixed list on the left on a computer. Marks the section in view. */
 function Contents() {
+  const [now, setNow] = useState(slug(SECTIONS[0]));
+  useEffect(() => {
+    const els = SECTIONS.map((t) => document.getElementById(slug(t))).filter((e): e is HTMLElement => !!e);
+    const io = new IntersectionObserver(
+      (entries) => {
+        const top = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+        if (top) setNow(top.target.id);
+      },
+      { rootMargin: "-10% 0px -60% 0px" },
+    );
+    els.forEach((e) => io.observe(e));
+    return () => io.disconnect();
+  }, []);
   return (
     <nav className="c0-ht__toc" aria-label="On this page">
-      {SECTIONS.map((t) => <a key={t} href={`#${slug(t)}`}>{t}</a>)}
+      <span className="c0-ht__tocCap">ON THIS PAGE</span>
+      {SECTIONS.map((t) => (
+        <a key={t} href={`#${slug(t)}`} aria-current={now === slug(t) ? "location" : undefined}>{t}</a>
+      ))}
     </nav>
   );
 }
@@ -51,7 +68,6 @@ function Guide({ c }: { c?: GameConfig }) {
   const pct = (v?: number) => (v === undefined ? "…" : `${v}%`);
   return (
     <>
-      <Contents />
       <Sec title="The goal">
         <P>Keep your queen alive, grow your colony, and finish the season with a high score. Colonies that finish high share the season pot in WIF.</P>
       </Sec>
@@ -186,11 +202,16 @@ export function HowToPlayScreen() {
     };
   }, []);
   return (
-    <Screen back>
-      <div className="c0-ht__logo"><img src="/logo.svg" alt="C0LONY" width={244} height={92} /></div>
-      <Button variant="paper" fullWidth icon="live" onClick={openGuide}>Watch the 1-minute guide</Button>
-      <Guide c={cfg} />
-      <Card className="c0-ht__card"><P>Prices can change within limits set in the contract, and every change is public onchain.</P></Card>
+    <Screen back wide>
+      <div className="c0-ht">
+        <aside className="c0-ht__side"><Contents /></aside>
+        <div className="c0-ht__body">
+          <div className="c0-ht__logo"><img src="/logo.svg" alt="C0LONY" width={244} height={92} /></div>
+          <Button variant="paper" fullWidth icon="live" onClick={openGuide}>Watch the 1-minute guide</Button>
+          <Guide c={cfg} />
+          <Card className="c0-ht__card"><P>Prices can change within limits set in the contract, and every change is public onchain.</P></Card>
+        </div>
+      </div>
     </Screen>
   );
 }
