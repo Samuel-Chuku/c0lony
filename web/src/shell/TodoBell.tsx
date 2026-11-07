@@ -73,7 +73,7 @@ export function RaidStrip() {
   return (
     <Link href="/?tab=raids" className="c0-raidstrip">
       <span><Raider raid={t.raid!} /> is marching on you · not guarded · {fmtDuration(t.left ?? 0)} left</span>
-      <span className="c0-raidstrip__go">Guard ›</span>
+      <span className="c0-raidstrip__go">Guard <span aria-hidden="true">›</span></span>
     </Link>
   );
 }

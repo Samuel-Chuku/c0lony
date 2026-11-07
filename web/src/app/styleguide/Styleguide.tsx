@@ -154,6 +154,11 @@ export function Styleguide() {
           <FeedRow avatar={AVATAR} kind="Raid won" kindTone="raid" timeAgo="4m ago" onOpenProfile={noop}><b>@sugar_thief</b> took sugar from <b>@mudlark_</b>.</FeedRow>
           <FeedRow avatar={NO_AVATAR} kind="Sponsor" kindTone="sub" timeAgo="1h ago" onOpenProfile={noop}><b>{shortAddress(ADDR)}</b> added 500 WIF to the pot.</FeedRow>
           <FeedRow avatar={AVATAR} kind="Defended" kindTone="sub" timeAgo="3h ago" own shareHref="https://x.com/intent/post" onOpenProfile={noop}>You guarded against <b>@sugar_thief</b>.</FeedRow>
+          <div style={{ width: 360, display: "flex", flexDirection: "column", gap: 6 }}>
+            <FeedRow compact avatar={AVATAR} kind="Raid won" kindTone="raid" timeAgo="6h" own shareHref="https://x.com/intent/post" onOpenProfile={noop}>You raided <b>0x6d26…314a</b> and took 8 leaves</FeedRow>
+            <FeedRow compact avatar={NO_AVATAR} kind="Marching" kindTone="raid" timeAgo="1h" onOpenProfile={noop}><b>@0xPixy</b> is marching on you</FeedRow>
+            <FeedRow compact avatar={AVATAR} kind="Guarding" kindTone="sub" timeAgo="5m" own onOpenProfile={noop}><b>You</b> are guarding</FeedRow>
+          </div>
         </div>
       </Section>
 

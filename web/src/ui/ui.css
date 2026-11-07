@@ -64,6 +64,7 @@ a { color: var(--c0-fg); }
 /* Avatar */
 .c0-avatar { display: inline-flex; align-items: center; justify-content: center; flex: none; box-sizing: border-box; border-radius: 50% !important; border: var(--c0-bw) solid var(--c0-paper); box-shadow: 0 0 0 2px var(--c0-ink); background: var(--c0-clay); color: var(--c0-ink); overflow: hidden; }
 .c0-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; image-rendering: pixelated; }
+.c0-avatar--32 { width: 32px; height: 32px; }
 .c0-avatar--40 { width: 40px; height: 40px; }
 .c0-avatar--56 { width: 56px; height: 56px; }
 .c0-avatar--64 { width: 64px; height: 64px; }
@@ -163,6 +164,12 @@ a { color: var(--c0-fg); }
 .c0-frow__time { font-size: var(--c0-fs-caption); color: var(--c0-sub); }
 .c0-frow__text { font-size: var(--c0-fs-body); line-height: var(--c0-lh-body); }
 .c0-frow__text b { font-family: var(--c0-f-display); font-weight: 400; font-size: 17px; }
+.c0-frow--compact { gap: var(--c0-s2); padding: 6px var(--c0-s2); align-items: center; }
+.c0-frow--compact .c0-frow__col { gap: 0; }
+.c0-frow--compact .c0-frow__kind { font-size: 12px; letter-spacing: 1px; }
+.c0-frow--compact .c0-frow__text { font-size: 13px; line-height: 1.35; }
+.c0-frow--compact .c0-frow__text b { font-size: 15px; }
+.c0-recent .c0-feedlist { gap: 6px; }
 .c0-frow__share { font-size: var(--c0-fs-caption); display: inline-flex; align-items: center; min-height: var(--c0-tap); color: var(--c0-ink); }
 
 .c0-jrow { display: flex; justify-content: space-between; gap: var(--c0-s3); padding: var(--c0-s2) 0; border-bottom: 2px dashed var(--c0-rule); font-size: var(--c0-fs-body); }
@@ -395,4 +402,6 @@ a { color: var(--c0-fg); }
 /* Unguarded raid strip under the header, on every screen. */
 .c0-raidstrip { display: flex; align-items: center; gap: var(--c0-s2); min-height: 44px; padding: var(--c0-s2) var(--c0-s3); box-sizing: border-box; background: var(--c0-red); color: var(--c0-paper-hi); border-bottom: var(--c0-bw) solid var(--c0-ink); text-decoration: none; font-size: 14px; }
 .c0-raidstrip > span:first-child { flex: 1; min-width: 0; }
-.c0-raidstrip__go { font-family: var(--c0-f-display); font-size: 18px; white-space: nowrap; }
+.c0-raidstrip__go { flex: none; display: inline-flex; align-items: center; gap: var(--c0-s1); min-height: 32px; padding: 0 var(--c0-s2); background: var(--c0-paper-hi); color: var(--c0-ink); border: var(--c0-bw-thin) solid var(--c0-ink); box-shadow: 2px 2px 0 var(--c0-ink); font-family: var(--c0-f-display); font-size: 17px; white-space: nowrap; }
+.c0-raidstrip__go > span { font-size: 22px; line-height: 1; }
+.c0-raidstrip:hover .c0-raidstrip__go { transform: translate(1px, 1px); box-shadow: 1px 1px 0 var(--c0-ink); }

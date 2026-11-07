@@ -42,7 +42,7 @@ export function RecentActivity({ rows, me, now }: { rows: FeedEvent[] | undefine
       ) : (
         <ul className="c0-feedlist">
           {shown.map((ev) => (
-            <li key={ev.id}><LiveRow ev={ev} me={me} now={now} /></li>
+            <li key={ev.id}><LiveRow ev={ev} me={me} now={now} compact /></li>
           ))}
         </ul>
       )}

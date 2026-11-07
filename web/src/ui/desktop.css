@@ -48,7 +48,8 @@
 @media (min-width: 1024px) {
   html { scrollbar-color: var(--c0-clay) var(--c0-soil); }
   html .c0-app { max-width: none; display: grid; grid-template-columns: 96px minmax(0, 1fr); align-items: start; }
-  html .c0-app__body { min-height: 100vh; }
+  /* Big screens leave soil showing around the cards: a faint pixel ground (pebbles, a root, an ant) fills it. */
+  html .c0-app__body { min-height: 100vh; background-image: url(/soil-pattern.svg); background-size: 192px 192px; }
   html .c0-nav { display: none; }
 
   /* The rail */

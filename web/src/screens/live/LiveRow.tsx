@@ -6,7 +6,7 @@ import { timeAgo } from "../../lib/format";
 import { useXProfile } from "../../lib/useXProfile";
 import { describeEvent, feedIntentUrl } from "./feedText";
 
-export function LiveRow({ ev, me, now }: { ev: FeedEvent; me: string | null; now: number }) {
+export function LiveRow({ ev, me, now, compact }: { ev: FeedEvent; me: string | null; now: number; compact?: boolean }) {
   const router = useRouter();
   const line = describeEvent(ev, me);
   const actor = line?.actor ?? ev.actors[0];
@@ -20,6 +20,7 @@ export function LiveRow({ ev, me, now }: { ev: FeedEvent; me: string | null; now
       kindTone={line.tone}
       timeAgo={timeAgo(ev.ts, now).replace(" ago", "")}
       own={own}
+      compact={compact}
       shareHref={own && line.shareText && me ? feedIntentUrl(line.shareText, me) : undefined}
       onOpenProfile={() => actor && router.push(`/colony?addr=${actor}`)}
     >

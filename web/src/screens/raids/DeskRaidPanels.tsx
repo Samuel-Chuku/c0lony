@@ -39,7 +39,7 @@ export function RaidRules() {
 const RAID_TYPES = new Set(["settled", "collected", "raid_launched", "avenge_granted", "guarded"]);
 
 export function RecentRaids({ rows, me, now }: { rows: FeedEvent[] | undefined; me: string | null; now: number }) {
-  const shown = (rows ?? []).filter((e) => RAID_TYPES.has(e.type)).slice(0, 4);
+  const shown = (rows ?? []).filter((e) => RAID_TYPES.has(e.type)).slice(0, 5);
   return (
     <section className="c0-desk c0-recent" aria-label="Your recent raids">
       <div className="c0-sect">
@@ -50,7 +50,7 @@ export function RecentRaids({ rows, me, now }: { rows: FeedEvent[] | undefined; 
         <Hand size={16} className="c0-recent__empty">No raids yet. Pick a neighbour with plenty of sugar.</Hand>
       ) : (
         <ul className="c0-feedlist">
-          {shown.map((ev) => <li key={ev.id}><LiveRow ev={ev} me={me} now={now} /></li>)}
+          {shown.map((ev) => <li key={ev.id}><LiveRow ev={ev} me={me} now={now} compact /></li>)}
         </ul>
       )}
     </section>

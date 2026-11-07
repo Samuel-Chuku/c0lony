@@ -5,7 +5,7 @@ export function shortAddress(addr: string): string {
   return addr.length > 12 ? `${addr.slice(0, 6)}…${addr.slice(-4)}` : addr;
 }
 
-export type AvatarProps = { src?: string | null; address?: string; size?: 40 | 56 | 64; alt: string; className?: string };
+export type AvatarProps = { src?: string | null; address?: string; size?: 32 | 40 | 56 | 64; alt: string; className?: string };
 
 export function Avatar({ src, address, size = 40, alt, className }: AvatarProps) {
   return (
