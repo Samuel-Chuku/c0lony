@@ -1,8 +1,8 @@
 "use client";
 // The header bell: how many things are waiting on the player, and a list that takes them to each one.
 import Link from "next/link";
-import { useState } from "react";
-import { Modal, PixelIcon, ResIcon } from "../ui";
+import { useEffect, useRef, useState } from "react";
+import { PixelIcon, ResIcon } from "../ui";
 import { useColonyView } from "../screens/colony/data";
 import { displayName, fmtDuration } from "../lib/format";
 import { useXProfile } from "../lib/useXProfile";
@@ -38,28 +38,67 @@ function Row({ t, onGo }: { t: Todo; onGo: () => void }) {
 export function TodoBell() {
   const session = useSession();
   const todos = useTodos(session.address);
-  const [open, setOpen] = useState(false);
+  const [at, setAt] = useState<{ top: number; right: number } | null>(null);
+  const bell = useRef<HTMLButtonElement>(null);
+  const panel = useRef<HTMLDivElement>(null);
+  const close = () => setAt(null);
+
+  // A small panel that drops from the bell (not a centred dialog). Closes on Escape, a tap outside, or a pick.
+  useEffect(() => {
+    if (!at) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") { close(); bell.current?.focus(); } };
+    const onDown = (e: PointerEvent) => {
+      const t = e.target as Node;
+      if (!panel.current?.contains(t) && !bell.current?.contains(t)) close();
+    };
+    document.addEventListener("keydown", onKey);
+    document.addEventListener("pointerdown", onDown);
+    panel.current?.querySelector<HTMLElement>("a")?.focus();
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("pointerdown", onDown);
+    };
+  }, [at]);
+
   if (!session.signedIn) return null;
   const n = todos.length;
+  const toggle = () => {
+    if (at) return close();
+    const r = bell.current!.getBoundingClientRect();
+    // Hang under the bell, right edges lined up, but never past either side of the screen.
+    const vw = window.innerWidth;
+    const width = Math.min(320, vw - 16);
+    const right = Math.min(Math.max(8, vw - r.right - 8), vw - width - 8);
+    setAt({ top: r.bottom + 6, right });
+  };
   return (
     <>
       <button
+        ref={bell}
         type="button"
         className="c0-header__sound c0-bell"
         aria-label={n ? `${n} ${n === 1 ? "thing needs" : "things need"} you` : "Nothing needs you"}
+        aria-expanded={!!at}
+        aria-haspopup="dialog"
         data-tip={n ? `${n} to do` : "All done"}
-        onClick={() => setOpen(true)}
+        onClick={toggle}
       >
         <PixelIcon name="bell" />
         {n ? <b className="c0-bell__count" aria-hidden="true">{n}</b> : null}
       </button>
-      <Modal open={open} onClose={() => setOpen(false)} title="TO DO" kicker={n ? `${n} waiting on you` : "all caught up"}>
-        {n ? (
-          <ul className="c0-todos">{todos.map((t) => <Row key={t.id} t={t} onGo={() => setOpen(false)} />)}</ul>
-        ) : (
-          <p style={{ margin: 0 }}>Nothing needs you right now. The bell counts raids to guard, a hungry queen and a full pantry.</p>
-        )}
-      </Modal>
+      {at ? (
+        <div ref={panel} className="c0-bellpop" role="dialog" aria-label="To do" style={{ top: at.top, right: at.right }}>
+          <div className="c0-bellpop__head">
+            <span>TO DO</span>
+            <span className="c0-bellpop__sub">{n ? `${n} waiting` : "all caught up"}</span>
+          </div>
+          {n ? (
+            <ul className="c0-todos">{todos.map((t) => <Row key={t.id} t={t} onGo={close} />)}</ul>
+          ) : (
+            <p className="c0-bellpop__empty">Nothing needs you right now. Raids to guard, a hungry queen and a full pantry show up here.</p>
+          )}
+        </div>
+      ) : null}
     </>
   );
 }

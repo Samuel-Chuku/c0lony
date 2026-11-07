@@ -389,15 +389,20 @@ a { color: var(--c0-fg); }
 .c0-wif { white-space: nowrap; }
 .c0-wif > svg { margin-right: 4px; position: relative; top: -1px; }
 
-/* Header bell (shell/TodoBell): count of things waiting on the player, and its list. */
+/* Header bell (shell/TodoBell): count of things waiting on the player, and a small panel that drops from it. */
 .c0-bell { position: relative; min-width: 44px; min-height: 44px; }
-.c0-bell__count { position: absolute; top: 2px; right: 0; min-width: 18px; height: 18px; box-sizing: border-box; padding: 0 3px; display: inline-flex; align-items: center; justify-content: center; background: var(--c0-red); color: var(--c0-paper-hi); border: 2px solid var(--c0-ink); font-family: var(--c0-f-display); font-weight: 400; font-size: 13px; line-height: 1; }
-.c0-todos { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--c0-s2); }
-.c0-todo { display: flex; align-items: center; gap: var(--c0-s2); min-height: 52px; padding: var(--c0-s2) var(--c0-s3); box-sizing: border-box; border: var(--c0-bw) solid var(--c0-ink); background: var(--c0-paper-hi); color: var(--c0-ink); text-decoration: none; box-shadow: var(--c0-shadow-card); }
+.c0-bell__count { position: absolute; top: 4px; right: 2px; min-width: 16px; height: 16px; box-sizing: border-box; padding: 0 3px; display: inline-flex; align-items: center; justify-content: center; background: var(--c0-red); color: var(--c0-paper-hi); border: 2px solid var(--c0-ink); font-family: var(--c0-f-display); font-weight: 400; font-size: 12px; line-height: 1; }
+@media (max-width: 1023px) { .c0-bell { min-width: 32px; margin: 0 -6px; } }
+.c0-bellpop { position: fixed; z-index: 60; width: min(320px, calc(100vw - 16px)); max-height: min(420px, calc(100vh - 80px)); overflow-y: auto; box-sizing: border-box; padding: var(--c0-s2); background: var(--c0-paper); color: var(--c0-ink); border: var(--c0-bw) solid var(--c0-ink); box-shadow: var(--c0-shadow-modal, 5px 5px 0 var(--c0-ink)); }
+.c0-bellpop__head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--c0-s2); padding: 0 var(--c0-s1) var(--c0-s2); font-family: var(--c0-f-display); font-size: 18px; }
+.c0-bellpop__sub { font-family: var(--c0-f-hand); font-weight: 700; font-size: 15px; color: var(--c0-sub); }
+.c0-bellpop__empty { margin: 0; padding: 0 var(--c0-s1) var(--c0-s1); font-size: 13px; }
+.c0-todos { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.c0-todo { display: flex; align-items: center; gap: var(--c0-s2); min-height: 44px; padding: 6px var(--c0-s2); box-sizing: border-box; border: var(--c0-bw-thin) solid var(--c0-ink); background: var(--c0-paper-hi); color: var(--c0-ink); text-decoration: none; font-size: 13px; line-height: 1.35; box-shadow: 2px 2px 0 var(--c0-ink); }
 .c0-todo--raid { background: var(--c0-red); color: var(--c0-paper-hi); }
 .c0-todo__icon { display: inline-flex; flex: none; }
 .c0-todo__text { flex: 1; min-width: 0; }
-.c0-todo__go { font-family: var(--c0-f-display); font-size: 22px; }
+.c0-todo__go { font-family: var(--c0-f-display); font-size: 20px; }
 
 /* Unguarded raid strip under the header, on every screen. */
 .c0-raidstrip { display: flex; align-items: center; gap: var(--c0-s2); min-height: 44px; padding: var(--c0-s2) var(--c0-s3); box-sizing: border-box; background: var(--c0-red); color: var(--c0-paper-hi); border-bottom: var(--c0-bw) solid var(--c0-ink); text-decoration: none; font-size: 14px; }
