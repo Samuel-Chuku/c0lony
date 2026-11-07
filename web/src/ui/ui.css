@@ -110,6 +110,8 @@ a { color: var(--c0-fg); }
 .c0-header { height: var(--c0-header-h); box-sizing: border-box; padding: 0 var(--c0-s3); display: flex; align-items: center; gap: var(--c0-s3); border-bottom: 4px solid var(--c0-ink); background: var(--c0-soil); flex: none; }
 .c0-header__title { margin: 0; flex: 1; min-width: 0; font-family: var(--c0-f-display); font-weight: 400; font-size: var(--c0-fs-h1); text-transform: uppercase; color: var(--c0-fg); white-space: nowrap; overflow: hidden; text-overflow: clip; }
 .c0-header__sub { font-size: 18px; color: var(--c0-fg-muted); margin-left: var(--c0-s2); text-transform: none; }
+/* Phones: the header row is full (balance, bell, sound, avatar), so the subtitle would only be cut off. */
+@media (max-width: 479px) { .c0-header__sub, .c0-live__text { display: none; } }
 .c0-header__back { flex: 1; justify-content: flex-start; height: var(--c0-tap); font-size: 22px; color: var(--c0-fg); background: none; border: 0; padding: 0; display: flex; align-items: center; text-align: left; font-family: var(--c0-f-display); }
 .c0-header__wif { display: inline-flex; align-items: center; gap: var(--c0-s1); font-family: var(--c0-f-display); font-size: var(--c0-fs-button); color: var(--c0-gold); }
 /* Daylight: gold text fails on sand, so the header WIF becomes a gold fill with ink text. */
@@ -252,6 +254,7 @@ a { color: var(--c0-fg); }
 .c0-below__row { display: flex; gap: var(--c0-s2); align-items: flex-start; }
 .c0-below__row > * { flex: 1; min-width: 0; }
 .c0-below__row .c0-btn { width: 100%; padding: 0 var(--c0-s2); }
+@media (max-width: 479px) { .c0-below__row { flex-direction: column; align-items: stretch; } }
 .c0-hero54 { height: 54px; font-size: 28px; }
 
 /* Profile */

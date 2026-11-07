@@ -1,5 +1,23 @@
 # Testnet play-throughs (Robinhood Chain testnet, 46630)
 
+## Run 3: a set-and-forget raid (current contracts, current rules)
+
+The current testnet deployment (sixth, see [DEPLOYMENTS.md](DEPLOYMENTS.md)) with launch settings: a 4 h guard window and the current raid rules. The raider launched a sealed, timelocked raid and never came back. The keeper opened the timelock once its drand quicknet round was out, revealed the raid, then settled it with the evmnet round assigned at reveal. Nobody touched it in between.
+
+| Time (UTC) | Step | Sent by | Transaction |
+| --- | --- | --- | --- |
+| 6 Nov 22:06 | colony #4 launches a sealed raid on colony #2, target timelocked to a quicknet round after the guard window | raider `0x4B11…37c2` | [`0x12fbdde0…`](https://explorer.testnet.chain.robinhood.com/tx/0x12fbdde0aca2f68ca2c987df6a7cbb2643b271cc25b31842847e4022003ae658) |
+| 6 Nov 22:06 to 7 Nov 02:06 | guard window: the defender did not guard | | |
+| 7 Nov 02:08 | the keeper opens the timelock, checks it against the commitment and reveals (2 min after the window, as designed) | keeper `0x1A52…09f0` | [`0x8dbdcc06…`](https://explorer.testnet.chain.robinhood.com/tx/0x8dbdcc068db053bdf9884d2d0555b8ba8cd3f66d30c72ba9f552666a67d356f2) |
+| 7 Nov 02:10 | the keeper settles with drand evmnet round [22165425](https://api.drand.sh/04f1e9062b8a81f848fded9c12306733282b2727ecced50032187751166ec8c3/public/22165425), verified onchain | keeper `0x1A52…09f0` | [`0x1dfa1eae…`](https://explorer.testnet.chain.robinhood.com/tx/0x1dfa1eae552c5d6e0db881c63235f5511b29dc8a2861d59b96e2a93ba411da29) |
+
+**What it shows**
+
+- **Raids reveal themselves.** The reveal came from the keeper, not the raider, 4 h 2 min after launch: the guard window plus the 120 s timelock margin.
+- **The roll is verifiable.** Unguarded, so the raider won and took 42% of the defender's leaves (8 leaves). Avenge was granted to the defender in the same transaction.
+- **The settle refund works on a real receipt.** `settle` used 355,302 gas at 0.01 gwei (0.00000355 ETH). The Treasury refunded the keeper 0.00000305 ETH (`SettleRefunded`: 305,073 measured gas, L1 fee 0 on testnet), about 86% of the cost and well under the 0.00005 ETH cap.
+- **The rest of the loop runs on the same deployment:** four colonies founded (two by throwaway test wallets), feeding, tending, building chambers and farms, speed-ups, guards and live raid alerts.
+
 ## Run 1 (retired contracts)
 
 A full season played on 2026-10-30 against the testnet contracts in [DEPLOYMENTS.md](DEPLOYMENTS.md), with two throwaway player wallets, MockWIF and a real drand evmnet round. Testnet-only settings: a 1 h guard window and a 6 h feed interval, so both colonies could be fed twice in one day. Script: `keeper/scripts/testnet-loop.ts`.

@@ -105,8 +105,7 @@ An honest self-audit of the C0LONY contracts written during the build. It is not
 - Auto-reveal depends on the keeper and on drand quicknet being reachable. If either is down past the 24 h reveal window and the raider does not reveal by hand, the marching ants are lost. The app offers a by-hand Reveal 15 minutes after the guard window if the raid has not revealed itself.
 - The keeper pays reveal gas from its own float (not refunded by the treasury, which only refunds `settle`).
 - Ranking gas grows linearly with the number of colonies that were fed twice. That's fine for hundreds of colonies, but would need batching across several transactions for many thousands.
-- The settle refund should be rechecked against a real receipt on the current testnet deployment, with the new settle gas.
-- The new raid loop (all-ants march, 60% lock, protection timers) has unit and fuzz tests (150 pass) but no full testnet play-through yet. Balance numbers are untested with real players, and the owner can tune the timers within their caps.
+- The new raid loop (all-ants march, 60% lock, protection timers, timelocked auto-reveal) has unit and fuzz tests (150 pass) and has run end to end on testnet (Run 3 in [TESTNET_RUN.md](TESTNET_RUN.md)), but not yet a full season with many players. Balance numbers are untested with real players, and the owner can tune the timers within their caps.
 - Guaranteed wins on unguarded raids are a design choice. If play shows raiding is too strong, the tools are `raidProtection` and the raider cooldown, each within 0.25x to 4x.
 - Avenge collusion is slowed, not prevented. Two coordinated wallets can still trade raids. The score value of a win is the same as a normal raid.
 - Avenge grants survive refounding and season boundaries for up to 24 h.

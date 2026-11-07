@@ -30,7 +30,7 @@ export function LiveScreen() {
       LIVE
       <span className="c0-live__count">
         <span className="c0-live__dot" aria-hidden="true" />
-        {raids === undefined ? "" : `${fmtInt(raids)} ${raids === 1 ? "raid" : "raids"} today`}
+        <span className="c0-live__text">{raids === undefined ? "" : `${fmtInt(raids)} ${raids === 1 ? "raid" : "raids"} today`}</span>
       </span>
     </>
   );
