@@ -1,5 +1,6 @@
 "use client";
-import { Button } from "../../ui";
+import type { ReactNode } from "react";
+import { Button, Wif } from "../../ui";
 import { useBalances, useGameConfig, useNow, useProfile } from "../../lib/game";
 import { fmtDuration, fmtWif } from "../../lib/format";
 import { useSession } from "../../lib/session";
@@ -21,11 +22,11 @@ export function ShieldButton({ size = "compact", icon = true }: { size?: "compac
   const price = cfg.shieldPrice;
   const shieldUntil = Number(profile?.shieldUntil ?? 0n);
   const nextAt = view ? Number(view.data.lastShield) + Number(cfg.shieldCooldown) : 0;
-  let reason: string | null = null;
+  let reason: ReactNode = null;
   if (!session.signedIn || !profile?.colonyId) reason = "Found a colony first";
   else if (now < shieldUntil) reason = `Shielded for ${fmtDuration(shieldUntil - now)}`;
   else if (view && Number(view.data.lastShield) > 0 && now < nextAt) reason = `Shield cooldown · ${fmtDuration(nextAt - now)}`;
-  else if (bal && bal.wif < price) reason = `You need ${fmtWif(price)} WIF`;
+  else if (bal && bal.wif < price) reason = <>You need <Wif>{fmtWif(price)}</Wif></>;
 
   return (
     <div className="c0-shield">
@@ -39,7 +40,7 @@ export function ShieldButton({ size = "compact", icon = true }: { size?: "compac
       error={action.error}
       onClick={() => void action.run({ functionName: "shield", wif: price })}
     >
-      Shield · {fmtWif(price)} WIF
+      Shield · <Wif>{fmtWif(price)}</Wif>
     </Button>
     <p className="c0-shield__note">Blocks new raids on you for {fmtDuration(Number(cfg.shieldDuration))}. Raids already marching still land.</p>
     </div>

@@ -2,7 +2,7 @@
 // The "Get WIF" sheet. Mainnet: ETH to WIF through KyberSwap (0.5% fee to the treasury). Testnet: a daily faucet.
 import { useEffect, useState } from "react";
 import { formatEther, parseEther } from "viem";
-import { BottomSheet, BrandName, Button, Chip, ChipRow } from "../../ui";
+import { BottomSheet, BrandName, Button, Chip, ChipRow, Wif } from "../../ui";
 import { NETWORK, NETWORK_NAME } from "../../config";
 import { fmtDuration, fmtEth, fmtWif } from "../../lib/format";
 import { useBalances, usePrices, useGameConfig, useNow } from "../../lib/game";
@@ -67,7 +67,7 @@ function Mint() {
     if (wif <= before) return;
     setState("idle");
     setMessage(null);
-    showResult({ title: "Test WIF arrived", lines: [`+${fmtWif(wif - before)} WIF in your wallet`] });
+    showResult({ title: "Test WIF arrived", lines: [<><Wif>+{fmtWif(wif - before)}</Wif> in your wallet</>] });
   }, [state, before, wif]);
 
   const ask = async () => {
@@ -228,7 +228,7 @@ function Swap() {
       {quoting ? <div className="c0-underway" role="status"><div className="c0-underway__bar" aria-hidden="true" /><span>Finding the best price…</span></div> : null}
       {quote ? (
         <dl className="c0-wsheet__rows">
-          <div><dt>You get</dt><dd className="c0-wsheet__wif">{fmtWif(quote.amountOut)} WIF</dd></div>
+          <div><dt>You get</dt><dd className="c0-wsheet__wif"><Wif>{fmtWif(quote.amountOut)}</Wif></dd></div>
           <div><dt>Fee (0.5%)</dt><dd>{fmtEth(fee)} ETH</dd></div>
           <div><dt>Price impact</dt><dd>{impact === null ? "unknown" : `${impact.toFixed(2)}%`}</dd></div>
         </dl>

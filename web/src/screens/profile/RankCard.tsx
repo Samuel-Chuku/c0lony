@@ -1,6 +1,6 @@
 "use client";
 import { useRouter } from "next/navigation";
-import { Button, Card } from "../../ui";
+import { Button, Card, Wif } from "../../ui";
 import { fmtInt, fmtWif } from "../../lib/format";
 import { Status, estimateShare, inRange, useColonies, useNow, type Profile } from "../../lib/game";
 import { useSession } from "../../lib/session";
@@ -45,7 +45,7 @@ export function RankCard({ addr, profile, rows, loading, pot, isMe }: {
       </div>
       {isMe ? (
         <div className="c0-pf__share">
-          <span className="c0-pf__chip">{share === null ? "…" : `~${fmtWif(share)} WIF`}</span>
+          <span className="c0-pf__chip">{share === null ? "…" : <Wif>~{fmtWif(share)}</Wif>}</span>
           <span className="c0-pf__cap">estimate</span>
         </div>
       ) : (

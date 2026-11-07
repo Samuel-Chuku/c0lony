@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Avatar } from "./Avatar";
-import { PixelIcon } from "./PixelIcon";
+import { ResIcon } from "./ResIcon";
 
 export type HeaderProps = {
   title: ReactNode;
@@ -25,7 +25,7 @@ export function Header({ title, sub, wifBalance, avatar, onOpenMenu, back, extra
         </h1>
       )}
       {wifBalance ? (
-        <span className="c0-header__wif"><PixelIcon name="wif" />{wifBalance}</span>
+        <span className="c0-header__wif"><ResIcon name="wif" size={20} />{wifBalance}</span>
       ) : null}
       {extra}
       <button type="button" className="c0-header__avatar" aria-label="Open menu and profile" onClick={onOpenMenu} data-shortcut="m" data-tip="Menu · M">

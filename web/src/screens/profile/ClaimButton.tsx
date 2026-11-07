@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { Button, Card } from "../../ui";
+import { Button, Card, Wif } from "../../ui";
 import { publicClient } from "../../lib/chain";
 import { fmtWif } from "../../lib/format";
 import { colonyGameAbi, seasonPotAbi } from "../../lib/abi";
@@ -49,7 +49,7 @@ export function ClaimButton({ wallet, season }: { wallet: string; season?: numbe
           });
         }}
       >
-        Claim · {fmtWif(due.amount)} WIF
+        Claim · <Wif>{fmtWif(due.amount)}</Wif>
       </Button>
     </Card>
   );

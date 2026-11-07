@@ -11,7 +11,7 @@ const REPO_URL = "https://github.com/Samuel-Chuku/c0lony";
 const SECURITY_DOC = `${REPO_URL}/blob/main/docs/SECURITY_REVIEW.md`;
 const DRAND_INFO = `${CONFIG.drand.apiUrl}/${CONFIG.drand.chainHash}/info`;
 
-const Wif = ({ children }: { children: ReactNode }) => <span className="l-wif">{children}</span>;
+const Wif = ({ children }: { children: ReactNode }) => <span className="l-wif"><ResIcon name="wif" size={20} />{children}</span>;
 
 function PlayButton({ hero = false, label = <>Play <BrandName /></> }: { hero?: boolean; label?: ReactNode }) {
   return (

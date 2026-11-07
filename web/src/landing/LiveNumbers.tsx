@@ -37,7 +37,7 @@ function Numbers() {
           <Tile caption={s ? `SEASON ${s.season} POT` : "SEASON POT"}>
             {s ? (
               <span className="l-gold">
-                {fmtWif(s.pot)} <small>WIF</small>
+                <ResIcon name="wif" size={30} /> {fmtWif(s.pot)} <small>WIF</small>
               </span>
             ) : failed ? (
               <span className="l-na">·</span>

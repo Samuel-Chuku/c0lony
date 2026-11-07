@@ -8,6 +8,7 @@ import { ResIcon } from "../../ui/ResIcon";
 import { displayName, fmtInt, fmtRes, fmtWif } from "../../lib/format";
 import { useXProfile } from "../../lib/useXProfile";
 import { drandRoundUrl } from "../../lib/raids";
+import { Wif } from "../../ui";
 
 export type FeedLine = {
   kind: string;
@@ -131,16 +132,16 @@ export function describeEvent(ev: FeedEvent, me?: string | null): FeedLine | nul
         sentence: <>{S(defender, "can raid", "can raid")} {H(raider)} back for free</> };
     case "sponsored":
       return { ...base, kind: "SPONSOR", tone: "sub",
-        sentence: <>{S(a0, "added", "added")} {fmtWif(big(d.amount))} WIF to the pot</> };
+        sentence: <>{S(a0, "added", "added")} <Wif>{fmtWif(big(d.amount))}</Wif> to the pot</> };
     case "season_ended":
-      return { kind: "SEASON", tone: "sub", sentence: <>Season {num(d.season)} is over. The pot is {fmtWif(big(d.pot))} WIF.</> };
+      return { kind: "SEASON", tone: "sub", sentence: <>Season {num(d.season)} is over. The pot is <Wif>{fmtWif(big(d.pot))}</Wif>.</> };
     case "season_finalized":
       return { kind: "SEASON", tone: "sub", sentence: <>Season {num(d.season)} is ranked. {num(d.topCount)} colonies share the pot.</> };
     case "claimed":
       return { ...base, kind: "CLAIMED", tone: "sub", shareText: "I claimed my share of the C0LONY pot.",
-        sentence: <>{S(a0, "claimed", "claimed")} {fmtWif(big(d.amount))} WIF from the pot</> };
+        sentence: <>{S(a0, "claimed", "claimed")} <Wif>{fmtWif(big(d.amount))}</Wif> from the pot</> };
     case "unclaimed_rolled":
-      return { kind: "POT", tone: "sub", sentence: <>{fmtWif(big(d.amount))} unclaimed WIF rolled into season {num(d.toSeason)}</> };
+      return { kind: "POT", tone: "sub", sentence: <><Wif>{fmtWif(big(d.amount))}</Wif> unclaimed rolled into season {num(d.toSeason)}</> };
     default:
       return null;
   }

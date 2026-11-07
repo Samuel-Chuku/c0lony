@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { Button, Card, PixelIcon, ResIcon } from "../../ui";
+import { Button, Card, PixelIcon, ResIcon, Wif } from "../../ui";
 import { RES, fmtDuration, fmtRes, fmtWif } from "../../lib/format";
 import type { ColonyView, GameConfig } from "../../lib/game";
 import { FORAGE_FREE_CAP, Resource } from "../../lib/game";
@@ -95,7 +95,7 @@ export function ProductionCard({ view, cfg, now, wif, onBuy }: Props) {
       <PantrySheet open={pantry} onClose={() => setPantry(false)} w={w} tend={tend} onClaim={doTend} />
       <button type="button" className="c0-drop" aria-expanded={open} aria-controls="c0-speedups" onClick={() => setOpen((o) => !o)}>
         <span className="c0-drop__label">Speed up foragers</span>
-        <span className="c0-drop__meta">{fmtWif(price)} WIF · 2 options</span>
+        <span className="c0-drop__meta"><Wif>{fmtWif(price)}</Wif> · 2 options</span>
         <span className="c0-drop__chev" aria-hidden="true">›</span>
       </button>
       {open ? (
@@ -105,7 +105,7 @@ export function ProductionCard({ view, cfg, now, wif, onBuy }: Props) {
             const reason =
               o.state === "home" ? "already home"
               : o.state === "used" ? `used · again in ${fmtDuration(o.again)}`
-              : short ? <>You need {fmtWif(price)} WIF · <button type="button" className="c0-linkbtn" onClick={onBuy}>Buy WIF</button></>
+              : short ? <>You need <Wif>{fmtWif(price)}</Wif> · <button type="button" className="c0-linkbtn" onClick={onBuy}>Buy WIF</button></>
               : undefined;
             return (
               <div key={o.res} className="c0-speed">
@@ -118,7 +118,7 @@ export function ProductionCard({ view, cfg, now, wif, onBuy }: Props) {
                   disabledReason={reason}
                   onClick={() => { setForage(o.res); tendSnap.current = w; void speed.run({ functionName: "speedUp", args: [o.res], wif: price }); }}
                 >
-                  <ResIcon name={o.kind} size={20} /> {o.name} foragers · {fmtWif(price)} WIF
+                  <ResIcon name={o.kind} size={20} /> {o.name} foragers · <Wif>{fmtWif(price)}</Wif>
                 </Button>
               </div>
             );

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { Avatar, Button, Card, Drawer, PixelIcon, type IconName } from "../ui";
+import { Avatar, Button, Card, Drawer, PixelIcon, type IconName, Wif, ResIcon } from "../ui";
 import { displayName, fmtEth, fmtWif, shortAddress } from "../lib/format";
 import { useStarterGas } from "../lib/starterGas";
 import { NETWORK } from "../config";
@@ -67,7 +67,7 @@ export function MenuDrawer({ open, onClose }: { open: boolean; onClose: () => vo
             <Card className="c0-menu__card">
               <div className="c0-menu__cap"><span>WALLET</span><span>gas sponsored for new players</span></div>
               <div className="c0-menu__bal">
-                <span className="c0-menu__chip">{balances.data ? fmtWif(balances.data.wif) : "…"} WIF</span>
+                <span className="c0-menu__chip"><Wif>{balances.data ? fmtWif(balances.data.wif) : "…"}</Wif></span>
                 <span className="c0-menu__eth">{balances.data ? fmtEth(balances.data.eth) : "…"} ETH</span>
               </div>
               <div className="c0-menu__addr">
@@ -120,7 +120,7 @@ export function MenuDrawer({ open, onClose }: { open: boolean; onClose: () => vo
               <span className="c0-menu__asset-amt">{balances.data ? fmtEth(balances.data.eth) : "…"}</span>
             </div>
             <div className="c0-menu__asset">
-              <PixelIcon name="wif" />
+              <ResIcon name="wif" size={20} />
               <span className="c0-menu__asset-name">WIF</span>
               <span className="c0-menu__asset-amt">{balances.data ? fmtWif(balances.data.wif) : "…"}</span>
             </div>

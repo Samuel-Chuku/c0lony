@@ -37,6 +37,7 @@
 .l-fine { margin: var(--c0-s2) 0 0; font-size: 12px; line-height: 1.4; color: var(--c0-fg-muted); }
 .l-fine--ink { color: var(--c0-sub); }
 .l-link { white-space: nowrap; font-family: var(--c0-f-display); font-size: 24px; color: var(--c0-fg); text-underline-offset: 4px; min-height: var(--c0-tap); display: inline-flex; align-items: center; }
+.l-wif > svg { margin-right: 6px; position: relative; top: -2px; }
 .l-wif { display: inline-block; background: var(--c0-gold); color: var(--c0-ink); border: var(--c0-bw-thin) solid var(--c0-ink); padding: 0 var(--c0-s2); font-family: var(--c0-f-display); font-size: 20px; line-height: 24px; white-space: nowrap; }
 .l-gold { color: var(--c0-gold); }
 .l-gold small { font-size: 18px; }

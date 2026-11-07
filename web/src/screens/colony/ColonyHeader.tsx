@@ -1,6 +1,6 @@
 "use client";
 // The Colony tab's own header: "YOUR COLONY · DAY 6 OF 21", the WIF balance and the avatar that opens the Menu.
-import { Avatar, PixelIcon } from "../../ui";
+import { Avatar, ResIcon } from "../../ui";
 import { fmtWif } from "../../lib/format";
 import { useBalances, useNow, useSeason, seasonDays } from "../../lib/game";
 import { useSession } from "../../lib/session";
@@ -24,7 +24,7 @@ export function ColonyHeader() {
       </h1>
       {balances.data ? (
         <span className="c0-header__wif">
-          <PixelIcon name="wif" />
+          <ResIcon name="wif" size={20} />
           {fmtWif(balances.data.wif)}
         </span>
       ) : null}

@@ -2,7 +2,7 @@
 // The full guide. Every number comes from the live game config (useGameConfig); the few fixed rules mirror
 // constants in the contract (ColonyGame.sol, SeasonPot.sol).
 import type { ReactNode } from "react";
-import { Card, ResIcon, type ResIconName } from "../../ui";
+import { Card, ResIcon, type ResIconName, Wif } from "../../ui";
 import { Screen } from "../../shell/Screen";
 import { fmtDuration, fmtWif } from "../../lib/format";
 import { NETWORK_NAME } from "../../config";
@@ -33,7 +33,7 @@ const Ico = ({ name, children }: { name: ResIconName; children: ReactNode }) => 
 
 function Guide({ c }: { c?: GameConfig }) {
   const d = (v?: bigint | number) => (v === undefined ? "…" : fmtDuration(Number(v)));
-  const w = (v?: bigint) => (v === undefined ? "…" : `${fmtWif(v)} WIF`);
+  const w = (v?: bigint) => (v === undefined ? "…" : <Wif>{fmtWif(v)}</Wif>);
   const pct = (v?: number) => (v === undefined ? "…" : `${v}%`);
   return (
     <>

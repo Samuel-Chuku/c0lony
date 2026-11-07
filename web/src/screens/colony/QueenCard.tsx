@@ -1,6 +1,6 @@
 "use client";
 import type { ReactNode } from "react";
-import { BlockedStrip, Button, Card, Hand, Meter } from "../../ui";
+import { BlockedStrip, Button, Card, Hand, Meter, Wif } from "../../ui";
 import { fmtDuration, fmtWif, RES } from "../../lib/format";
 import { seasonDays, Status, type ColonyView, type GameConfig, type Profile } from "../../lib/game";
 import { fedResult, foundedResult, revivedResult } from "../../lib/outcomes";
@@ -20,7 +20,7 @@ type Props = {
 
 const need = (amount: bigint, onBuy: () => void): ReactNode => (
   <span className="c0-need">
-    You need {fmtWif(amount)} WIF ·{" "}
+    You need <Wif>{fmtWif(amount)}</Wif> ·{" "}
     <button type="button" className="c0-linkbtn" onClick={onBuy}>Buy WIF</button>
   </span>
 );
@@ -52,7 +52,7 @@ export function QueenCard({ addr, profile, view, cfg, season, wif, now, onBuy }:
             error={revive.error}
             onClick={() => void revive.run({ functionName: "revive", wif: cost })}
           >
-            Revive · {cost !== undefined ? fmtWif(cost) : "…"} WIF
+            Revive · <Wif>{cost !== undefined ? fmtWif(cost) : "…"}</Wif>
           </Button>
         ) : (
           <>
@@ -66,7 +66,7 @@ export function QueenCard({ addr, profile, view, cfg, season, wif, now, onBuy }:
             >
               Start a new colony
             </Button>
-            {foundPrice !== undefined ? <p className="c0-qcard__note">A new colony costs {fmtWif(foundPrice)} WIF.</p> : null}
+            {foundPrice !== undefined ? <p className="c0-qcard__note">A new colony costs <Wif>{fmtWif(foundPrice)}</Wif>.</p> : null}
           </>
         )}
       </Card>
@@ -106,11 +106,11 @@ export function QueenCard({ addr, profile, view, cfg, season, wif, now, onBuy }:
           error={feed.error}
           onClick={() => void feed.run({ functionName: "feedQueen", args: [prices.proof], wif: price })}
         >
-          Feed the colony · {price !== undefined ? fmtWif(price) : "…"} WIF
+          Feed the colony · <Wif>{price !== undefined ? fmtWif(price) : "…"}</Wif>
         </Button>
       )}
       {!waiting ? <p className="c0-qcard__note">The queen eats 3 leaves and every ant eats 1 sugar. Ants without sugar die; new ants hatch from what is left.</p> : null}
-      {!waiting && prices.passApplies && price !== undefined ? <Hand size={15}>Voter&apos;s Pass price: {fmtWif(price)} WIF</Hand> : null}
+      {!waiting && prices.passApplies && price !== undefined ? <Hand size={15}>Voter&apos;s Pass price: <Wif>{fmtWif(price)}</Wif></Hand> : null}
     </Card>
   );
 }

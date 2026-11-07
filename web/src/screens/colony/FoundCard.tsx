@@ -1,5 +1,5 @@
 "use client";
-import { Button, Card, Hand } from "../../ui";
+import { Button, Card, Hand, Wif } from "../../ui";
 import { fmtWif } from "../../lib/format";
 import { useSession } from "../../lib/session";
 import { gasProgressLabel, gasWaiting, useStarterGas, WAITING_REASON } from "../../lib/starterGas";
@@ -22,7 +22,7 @@ export function FoundCard({ addr, wif, onBuy }: { addr: string | null; wif: bigi
   else if (short)
     reason = (
       <span className="c0-need">
-        You need {fmtWif(price)} WIF ·{" "}
+        You need <Wif>{fmtWif(price)}</Wif> ·{" "}
         <button type="button" className="c0-linkbtn" onClick={onBuy}>Buy WIF</button>
       </span>
     );
@@ -56,9 +56,9 @@ export function FoundCard({ addr, wif, onBuy }: { addr: string | null; wif: bigi
         error={found.error}
         onClick={() => void found.run({ functionName: "foundColony", args: [prices.proof], wif: price })}
       >
-        Found a colony · {price !== undefined ? fmtWif(price) : "…"} WIF
+        Found a colony · <Wif>{price !== undefined ? fmtWif(price) : "…"}</Wif>
       </Button>
-      {prices.passApplies && price !== undefined ? <Hand size={15}>Voter&apos;s Pass price: {fmtWif(price)} WIF</Hand> : null}
+      {prices.passApplies && price !== undefined ? <Hand size={15}>Voter&apos;s Pass price: <Wif>{fmtWif(price)}</Wif></Hand> : null}
     </Card>
   );
 }

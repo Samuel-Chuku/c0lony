@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { BlockedStrip, Button, Modal, ResIcon } from "../ui";
+import { BlockedStrip, Button, Modal, ResIcon, Wif } from "../ui";
 import { fetchSummary, type Summary } from "../lib/api";
 import { fmtDuration, fmtRes } from "../lib/format";
 import { Status, useNow, useProfile } from "../lib/game";
@@ -158,7 +158,7 @@ export function WelcomeBack() {
               error={feed.error}
               onClick={() => void feed.run({ functionName: "feedQueen", args: [prices.proof], wif: feedPrice }).then((h) => { if (h) close(); })}
             >
-              Feed the colony · {feedPrice !== undefined ? fmtWif(feedPrice) : "…"} WIF
+              Feed the colony · <Wif>{feedPrice !== undefined ? fmtWif(feedPrice) : "…"}</Wif>
             </Button>
           ) : null}
           {marching ? (

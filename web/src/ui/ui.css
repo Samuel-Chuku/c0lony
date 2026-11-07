@@ -377,3 +377,7 @@ a { color: var(--c0-fg); }
 .c0-sect .c0-filter__btn span, .c0-sect .c0-filter__item { color: var(--c0-ink); font-size: 18px; letter-spacing: 0; text-transform: none; }
 .c0-sect .c0-filter__item { font-family: var(--c0-f-body); font-size: 14px; }
 .c0-sect .c0-filter__tick { font-size: 16px; }
+
+/* A WIF amount with its coin: keep the coin, number and "WIF" on one line. */
+.c0-wif { white-space: nowrap; }
+.c0-wif > svg { margin-right: 4px; position: relative; top: -1px; }

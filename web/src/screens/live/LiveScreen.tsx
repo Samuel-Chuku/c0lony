@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Button, Chip, ChipRow, Panel, Underway } from "../../ui";
+import { Button, Chip, ChipRow, Panel, Underway, Wif } from "../../ui";
 import { Screen } from "../../shell/Screen";
 import { fetchFeed, feedUrl, useFeed, useFeedStats, type FeedEvent, type FeedFilter } from "../../lib/api";
 import { fmtInt, fmtWif } from "../../lib/format";
@@ -42,11 +42,11 @@ export function LiveScreen() {
       <Panel className="c0-potstrip" aria-label="Season pot">
         <div>
           <div className="c0-potstrip__cap">SEASON {season.data ? season.data.season : ""} POT</div>
-          <div className="c0-potstrip__num c0-potstrip__num--gold">{season.data ? `${fmtWif(season.data.pot)} WIF` : "…"}</div>
+          <div className="c0-potstrip__num c0-potstrip__num--gold">{season.data ? <Wif size={20}>{fmtWif(season.data.pot)}</Wif> : "…"}</div>
         </div>
         <div className="c0-potstrip__right">
           <div className="c0-potstrip__cap">BURNED</div>
-          <div className="c0-potstrip__num">{stats.data ? `${fmtInt(Math.floor(Number(stats.data.burnedWif)))} WIF` : "·"}</div>
+          <div className="c0-potstrip__num">{stats.data ? <Wif size={20}>{fmtInt(Math.floor(Number(stats.data.burnedWif)))}</Wif> : "·"}</div>
         </div>
       </Panel>
       {top.length > 0 ? (

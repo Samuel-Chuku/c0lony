@@ -23,3 +23,4 @@ export { BlockedStrip, Underway } from "./Global";
 export { useDialog } from "./useDialog";
 export { ResIcon, type ResIconName } from "./ResIcon";
 export { BrandName, withBrand } from "./BrandName";
+export { Wif } from "./Wif";

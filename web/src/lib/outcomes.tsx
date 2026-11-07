@@ -6,6 +6,7 @@ import { ResIcon } from "../ui/ResIcon";
 import { RES, displayName, fmtDuration, fmtRes, fmtWif } from "./format";
 import { Outcome, Resource } from "./game";
 import { eventsOf, type SuccessContent } from "./tx";
+import { Wif } from "../ui";
 
 type Rec = TransactionReceipt;
 
@@ -36,7 +37,7 @@ const whole = (n: unknown) => BigInt(String(n ?? 0)) * RES; // events carry ant 
 /** "−100 WIF · 70 to the pot · 20 burned", from the transaction's Paid event. */
 const paidLine = (r: Rec): ReactNode => {
   const paid = eventsOf(r, "Paid")[0];
-  return paid ? `−${fmtWif(BigInt(paid.amount))} WIF · ${fmtWif(BigInt(paid.toPot))} to the pot · ${fmtWif(BigInt(paid.burned))} burned` : null;
+  return paid ? <><Wif>−{fmtWif(BigInt(paid.amount))}</Wif> · {fmtWif(BigInt(paid.toPot))} to the pot · {fmtWif(BigInt(paid.burned))} burned</> : null;
 };
 
 /** The feeding result: gains and losses as + and −, then the queen, the colony, the score and the WIF. */
@@ -275,5 +276,5 @@ export const collectResult = (r: Rec): SuccessContent => {
 
 export const claimResult = (amount: bigint, season: number): SuccessContent => ({
   title: "Pot share claimed",
-  lines: [`${fmtWif(amount)} WIF sent to your wallet from season ${season}.`],
+  lines: [<><Wif>{fmtWif(amount)}</Wif> sent to your wallet from season {season}.</>],
 });

@@ -3,7 +3,7 @@
 // The one-colour pixel icons (PixelIcon) stay for navigation and controls.
 import type { ReactElement, SVGProps } from "react";
 
-export type ResIconName = "leaf" | "sugar" | "ant" | "chamber" | "trail" | "farm" | "queen";
+export type ResIconName = "leaf" | "sugar" | "ant" | "chamber" | "trail" | "farm" | "queen" | "wif";
 
 const INK = "#1A110A";
 
@@ -54,6 +54,18 @@ const paths: Record<ResIconName, ReactElement> = {
       <ellipse cx="16" cy="15" rx="3" ry="2.3" fill="#9CCB5A" stroke={INK} strokeWidth="1.5" />
       <circle cx="7.6" cy="10.4" r="0.8" fill={INK} />
       <circle cx="14.8" cy="14.5" r="0.8" fill={INK} />
+    </>
+  ),
+  // $WIF: a bronze coin with a rope rim and a flat world in the middle (our own drawing of the coin, without the
+  // official logo's centre mark).
+  wif: (
+    <>
+      <circle cx="12" cy="12" r="10.25" fill="#B8873A" stroke={INK} strokeWidth="1.5" />
+      <circle cx="12" cy="12" r="7.6" fill="none" stroke="#6E4A1C" strokeWidth="1.7" strokeDasharray="1.7 1.2" />
+      <circle cx="12" cy="12" r="5.6" fill="#CB9A4B" stroke="#6E4A1C" strokeWidth="0.8" />
+      <ellipse cx="12" cy="12.8" rx="4.7" ry="2.3" fill="#3F7FA0" stroke="#24180F" strokeWidth="0.7" />
+      <path d="M9.2 12.6c1-.9 2.3-1 3.2-.5.8.4 1.8.3 2.5-.2-.3 1-1.4 1.6-2.5 1.4-1-.2-2.2-.1-3.2-.7Z" fill="#6FA03C" />
+      <path d="M5.2 8.4A8 8 0 0 1 9 4.9" stroke="#E7C27A" strokeWidth="1.2" strokeLinecap="round" fill="none" />
     </>
   ),
   queen: (
