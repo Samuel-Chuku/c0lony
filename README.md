@@ -252,7 +252,7 @@ cd web && pnpm test:functions         # feed and profile functions
 cd web && pnpm typecheck && pnpm typecheck:functions
 ```
 
-The Foundry suite has 140 tests, including fuzzed loot maths. The economy and raid rules above were added on 2026-11-02, after the recorded seasons below, which ran on the older rules.
+The Foundry suite has 150 tests, including fuzzed loot maths and real drand rounds; the keeper has 65 and the serverless functions 23. The economy and raid rules above were added on 2026-11-02, after the recorded seasons below, which ran on the older rules.
 
 Two full seasons were played on testnet with real drand rounds: see [docs/TESTNET_RUN.md](docs/TESTNET_RUN.md).
 

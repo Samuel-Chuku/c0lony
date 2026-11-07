@@ -66,6 +66,7 @@ export function RaidsScreen() {
   ];
   const collectFirst = (raids ?? []).some((r) => r.status === RaidStatus.Sealed && now >= Number(r.launchedAt) + guardWindow + revealWindow);
   const marchingOn = new Set(outgoing.map((r) => String(r.defender)));
+  const raidingMe = new Set(incoming.filter((r) => r.status === RaidStatus.Sealed || r.status === RaidStatus.Revealed).map((r) => String(r.raider)));
   const underAttack = incoming.some((r) => r.status === RaidStatus.Sealed || r.status === RaidStatus.Revealed);
   const myRaidableIn = mine ? mine.raidableAt - now : 0;
 
@@ -162,7 +163,7 @@ export function RaidsScreen() {
                 <NeighbourItem
                   key={String(row.id)}
                   row={row}
-                  ctx={{ me: myAddr!, cooldownLeft, collectFirst, underAttack, marchingOn }}
+                  ctx={{ me: myAddr!, cooldownLeft, collectFirst, underAttack, marchingOn, raidingMe }}
                   onRaid={openRaid}
                   onProfile={(w) => router.push(`/colony?addr=${w}`)}
                 />

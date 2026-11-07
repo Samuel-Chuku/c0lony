@@ -14,6 +14,8 @@ export type NeighbourCtx = {
   underAttack: boolean;
   /** Colony ids I currently have a raid out against. */
   marchingOn: Set<string>;
+  /** Colony ids with a raid marching on me. */
+  raidingMe: Set<string>;
 };
 
 type Props = {
@@ -30,11 +32,13 @@ export function NeighbourItem({ row, ctx, onRaid, onProfile }: Props) {
   const avenge = useAvenge(ctx.me, row.owner).data;
   const isRaider = !!avenge?.ok;
   const sealedOn = ctx.marchingOn.has(String(row.id));
+  const onMe = ctx.raidingMe.has(String(row.id));
   const shieldLeft = row.shieldUntil - now;
   const safeLeft = row.raidableAt - now;
 
   let note = `queen fed ${timeAgo(row.fedUntil - 72 * 3600, now)}`;
   if (isRaider && avenge) note = `raided you · free avenge, ${Math.max(1, Math.floor((avenge.expiresAt - now) / 3600))}h`;
+  else if (onMe) note = "marching on you";
   else if (sealedOn) note = "your raid is marching";
   else if (row.feedCount === 0) note = "new colony";
 
@@ -48,7 +52,7 @@ export function NeighbourItem({ row, ctx, onRaid, onProfile }: Props) {
   } else if (safeLeft > 0) {
     right = <div className="c0-nstate"><span>raid in</span><b>{fmtDuration(safeLeft)}</b></div>;
   } else if (ctx.underAttack) {
-    right = <div className="c0-nstate"><span>you&apos;re</span><b>raided</b></div>;
+    right = <div className="c0-nstate"><span>not while</span><b>raided</b></div>;
   } else if (ctx.collectFirst) {
     right = <div className="c0-nstate"><span>busy</span><b>collect</b></div>;
   } else if (ctx.cooldownLeft > 0) {
@@ -64,7 +68,7 @@ export function NeighbourItem({ row, ctx, onRaid, onProfile }: Props) {
         <span className="c0-nrow__col">
           <span className="c0-nrow__handle">{who.name}</span>
           <span className="c0-nrow__line"><ResIcon name="ant" size={16} label="ants" /> {fmtInt(row.workers)} · <ResIcon name="leaf" size={16} label="leaves" /> ~{fmtRes(row.leaves)} · <ResIcon name="sugar" size={16} label="sugar" /> ~{fmtRes(row.sugar)}</span>
-          <Hand size={15} className={isRaider ? "c0-nrow__note c0-nrow__note--raider" : "c0-nrow__note"}>{note}</Hand>
+          <Hand size={15} className={isRaider || onMe ? "c0-nrow__note c0-nrow__note--raider" : "c0-nrow__note"}>{note}</Hand>
         </span>
       </button>
       {right}

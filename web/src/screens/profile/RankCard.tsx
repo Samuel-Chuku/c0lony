@@ -1,7 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { Button, Card, Wif } from "../../ui";
-import { fmtInt, fmtWif } from "../../lib/format";
+import { fmtDuration, fmtInt, fmtWif } from "../../lib/format";
 import { Status, estimateShare, inRange, useColonies, useNow, type Profile } from "../../lib/game";
 import { useSession } from "../../lib/session";
 
@@ -32,6 +32,9 @@ export function RankCard({ addr, profile, rows, loading, pot, isMe }: {
     else if (them.shieldUntil > now) reason = "Shielded";
     else if (mine.workers < 10) reason = "Needs 10 ants";
     else if (!inRange(mine.workers, them.workers)) reason = "Out of range";
+    else if (mine.openIncoming > 0) reason = "Not while you're raided";
+    else if (them.openIncoming > 0) reason = "Under raid · busy";
+    else if (them.raidableAt > now) reason = `Raid in ${fmtDuration(them.raidableAt - now)}`;
   }
   const share = isMe && ranked && pot !== undefined ? estimateShare(pot, all, all[idx].id) : null;
 

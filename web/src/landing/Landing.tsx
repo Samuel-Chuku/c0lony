@@ -1,5 +1,6 @@
 "use client";
 import "./landing.css";
+import { Tracker } from "../screens/raids/Tracker";
 import type { ReactNode } from "react";
 import { APP_URL, BRAND } from "../brand";
 import { NETWORK, NETWORK_NAME, CONFIG } from "../config";
@@ -204,12 +205,7 @@ export function Landing() {
                   <span className="l-sample__title">Raid on a neighbour</span>
                   <span className="l-sample__time">waiting for the drand round</span>
                 </div>
-                <ol className="c0-track">
-                  <li className="c0-track__step"><span className="c0-track__box c0-track__box--done" />Sealed</li>
-                  <li className="c0-track__step"><span className="c0-track__box c0-track__box--done" />Marching</li>
-                  <li className="c0-track__step"><span className="c0-track__box c0-track__box--now" />Roll</li>
-                  <li className="c0-track__step"><span className="c0-track__box c0-track__box--next" />Home</li>
-                </ol>
+                <Tracker at="roll" progress={0.3} />
               </div>
               <p className="l-caption">Sample from the Raids tab</p>
             </div>
