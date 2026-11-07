@@ -7,6 +7,7 @@ import { useSession } from "../../lib/session";
 import { useXProfile } from "../../lib/useXProfile";
 import { useShell } from "../../shell/Providers";
 import { SoundToggle } from "../../shell/SoundToggle";
+import { TodoBell } from "../../shell/TodoBell";
 
 export function ColonyHeader() {
   const session = useSession();
@@ -28,6 +29,7 @@ export function ColonyHeader() {
           {fmtWif(balances.data.wif)}
         </span>
       ) : null}
+      <TodoBell />
       <SoundToggle />
       <button type="button" className="c0-header__avatar" aria-label="Open menu and profile" onClick={shell.openMenu} data-shortcut="m" data-tip="Menu · M">
         <Avatar src={me?.xAvatar ?? null} address={session.address ?? undefined} alt="Your avatar" />

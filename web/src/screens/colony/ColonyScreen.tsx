@@ -1,6 +1,7 @@
 "use client";
 // The Colony tab: resource bar, the living world, the queen, production and today's orders.
 import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { wantAmbience } from "../../lib/sound";
 import { Screen } from "../../shell/Screen";
 import { useShell } from "../../shell/Providers";
@@ -32,6 +33,9 @@ export function ColonyScreen() {
   const feed = useFeed("mine", addr, 50);
   const colonies = useColonies();
   const [buildOpen, setBuildOpen] = useState(false);
+  const router = useRouter();
+  const doParam = useSearchParams().get("do");
+  const [pantryAsk, setPantryAsk] = useState(0);
   // The underground hum and the ants' footsteps play while the colony is on screen.
   useEffect(() => {
     wantAmbience(true);
@@ -47,6 +51,16 @@ export function ColonyScreen() {
   const openBuild = () => setBuildOpen(true);
   const ranked = [...(colonies.data ?? [])].sort((a, b) => (a.score === b.score ? (a.id < b.id ? -1 : 1) : a.score > b.score ? -1 : 1));
   const rankIdx = addr ? ranked.findIndex((r) => r.owner === addr.toLowerCase()) : -1;
+
+  // Links from the bell and the orders land here: /?do=feed shows the queen, /?do=pantry opens the pantry.
+  const ready = hasColony && (doParam !== "pantry" || (!!view.data && !!cfg.data));
+  useEffect(() => {
+    if (!doParam || !ready) return;
+    if (doParam === "pantry") setPantryAsk((n) => n + 1);
+    const el = document.querySelector(doParam === "pantry" ? ".c0-prod" : ".c0-qcard");
+    el?.scrollIntoView({ behavior: "smooth", block: "center" });
+    router.replace("/", { scroll: false });
+  }, [doParam, ready, router]);
 
   return (
     <Screen header={<ColonyHeader />} tab="colony">
@@ -78,7 +92,7 @@ export function ColonyScreen() {
                 onBuy={shell.openMenu}
               />
               {alive && view.data && cfg.data ? (
-                <ProductionCard view={view.data} cfg={cfg.data} now={now} wif={wif} onBuy={shell.openMenu} />
+                <ProductionCard view={view.data} cfg={cfg.data} now={now} wif={wif} onBuy={shell.openMenu} pantryAsk={pantryAsk} />
               ) : null}
               {alive ? <OrdersPanel rows={feed.data} now={now} /> : null}
               {hasColony ? <RecentActivity rows={feed.data} me={addr} now={now} /> : null}

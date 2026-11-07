@@ -30,7 +30,11 @@
 .c0-orders__text { flex: 1; min-width: 0; }
 .c0-orders__title { font-family: var(--c0-f-display); font-size: 21px; line-height: var(--c0-lh-tight); }
 .c0-orders__next { color: var(--c0-muted); }
-.c0-stamps { display: flex; gap: var(--c0-s1); }
+.c0-stamps { display: flex; gap: 0; list-style: none; margin: 0; padding: 0; }
+.c0-stamp-link { display: inline-flex; align-items: center; justify-content: center; min-width: 32px; height: 44px; }
+.c0-stamp-link:hover .c0-stamp, .c0-stamp-link:focus-visible .c0-stamp { border-style: solid; border-color: var(--c0-paper); }
+.c0-orders__nextlink { color: inherit; text-decoration: none; }
+.c0-orders__nextlink:hover .c0-orders__next { text-decoration: underline; }
 .c0-stamp { width: 16px; height: 16px; box-sizing: border-box; border: var(--c0-bw-thin) dashed var(--c0-muted); }
 .c0-stamp--done { background: var(--c0-paper); border: var(--c0-bw-thin) solid var(--c0-ink); }
 .c0-link-under { display: block; font-size: 11px; color: var(--c0-sub); text-decoration: underline; }

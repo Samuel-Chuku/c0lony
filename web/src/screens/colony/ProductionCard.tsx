@@ -9,10 +9,10 @@ import { useAction } from "../../lib/tx";
 import { PANTRY_TRIPS, forageTrip, waitingNow } from "./data";
 import { PantrySheet } from "./PantrySheet";
 
-type Props = { view: ColonyView; cfg: GameConfig; now: number; wif: bigint | undefined; onBuy: () => void };
+type Props = { view: ColonyView; cfg: GameConfig; now: number; wif: bigint | undefined; onBuy: () => void; pantryAsk?: number };
 
 /** Trails, farms and hand foraging: one Tend collects everything that is home. */
-export function ProductionCard({ view, cfg, now, wif, onBuy }: Props) {
+export function ProductionCard({ view, cfg, now, wif, onBuy, pantryAsk = 0 }: Props) {
   const [open, setOpen] = useState(false);
   const [forage, setForage] = useState<number>(Resource.Leaves);
   const tendSnap = useRef<TendSnapshot | null>(null);
@@ -26,6 +26,10 @@ export function ProductionCard({ view, cfg, now, wif, onBuy }: Props) {
     tendSnap.current = w;
     void tend.run({ functionName: "tend" });
   };
+  // A link from the bell or the orders (/?do=pantry) opens the pantry.
+  useEffect(() => {
+    if (pantryAsk > 0) setPantry(true);
+  }, [pantryAsk]);
   // The pantry window closes once the claim lands; the result window takes over.
   useEffect(() => {
     if (tend.hash) setPantry(false);
