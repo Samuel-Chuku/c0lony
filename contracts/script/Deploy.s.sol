@@ -28,6 +28,8 @@ contract Deploy is Script {
         address deployer = vm.addr(pk);
         uint256 reserve = vm.envOr("TREASURY_WIF_RESERVE", uint256(0));
         uint256 treasuryEth = vm.envOr("TREASURY_ETH_WEI", uint256(0));
+        // Optional exact end for Season 1 (unix seconds), set in the same broadcast; 0 keeps the default length.
+        uint256 season1End = vm.envOr("SEASON1_END", uint256(0));
 
         if (block.chainid == MAINNET) {
             require(vm.envOr("ALLOW_MAINNET", false), "mainnet deploy needs ALLOW_MAINNET=true");
@@ -50,6 +52,7 @@ contract Deploy is Script {
         ColonyGame game = new ColonyGame(IWIF(wif), ISeasonPot(address(pot)), ITreasury(address(treasury)), deployer);
         pot.setGame(IColonyGameView(address(game)));
         treasury.wire(address(game), address(pot));
+        if (season1End > 0) game.setCurrentSeasonEnd(uint64(season1End));
         if (treasuryEth > 0) {
             (bool ok,) = address(treasury).call{value: treasuryEth}("");
             require(ok, "treasury funding failed");

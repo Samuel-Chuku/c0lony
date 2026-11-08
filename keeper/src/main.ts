@@ -13,6 +13,7 @@ import { Outbox } from "./feed/outbox.ts";
 import { PushClient } from "./push/client.ts";
 import { PushPlanner } from "./push/planner.ts";
 import { TelegramClient } from "./push/telegram.ts";
+import { SeasonCloser, viemCloserChain } from "./season/closer.ts";
 import { Scheduler } from "./push/scheduler.ts";
 import { makeUnsealer } from "./settle/unseal.ts";
 import { fetchDrandSignature } from "./settle/drand.ts";
@@ -85,6 +86,12 @@ if (reader && cfg.keeperPrivateKey) {
   log(`settle: on, ${n} past events replayed, ${settler.pendingCount} raids tracked`);
 } else {
   log("settle: off (needs KEEPER_PRIVATE_KEY and game addresses)");
+}
+
+// Closes each season when it ends (endSeason, then the ranking), so claims open within minutes.
+if (reader && cfg.keeperPrivateKey && cfg.seasonPotAddress) {
+  new SeasonCloser({ chain: viemCloserChain(cfg, makePublicClient(cfg)), log }).start(60_000);
+  log("season closer: on");
 }
 
 let starterGas: StarterGas | undefined;

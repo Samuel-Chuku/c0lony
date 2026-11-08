@@ -94,6 +94,7 @@ abstract contract Base is Test {
         vm.prank(owner);
         treasury.wire(address(game), address(pot));
         vm.deal(address(treasury), 0.002 ether);
+        _useShortSeasons();
 
         MockArbGasInfo m = new MockArbGasInfo();
         vm.etch(ARB_GAS_INFO, address(m).code);
@@ -122,6 +123,17 @@ abstract contract Base is Test {
     }
 
     // ------------------------------------------------------------------ helpers
+
+    /// @dev Most tests were written for 7-day seasons. Mainnet starts with a 30-day Season 1 and 10-day seasons after
+    ///      (checked in SeasonLengthTest); here the owner shortens them to 7 days, as allowed onchain.
+    function _useShortSeasons() internal {
+        ColonyGame.Config memory c = game.getConfig();
+        c.seasonLength = 7 days;
+        vm.startPrank(owner);
+        game.setConfig(c);
+        game.setCurrentSeasonEnd(game.seasonStart(1) + 7 days);
+        vm.stopPrank();
+    }
 
     function _found(address who) internal returns (uint64 id) {
         vm.prank(who);

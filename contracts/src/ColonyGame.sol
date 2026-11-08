@@ -86,7 +86,7 @@ contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView
     uint256 internal constant SETTLE_REFUND_PCT = 90;
 
     // Seasons
-    uint256 public constant MAX_SEASON_LENGTH = 21 days;
+    uint256 public constant MAX_SEASON_LENGTH = 35 days;
     uint256 public constant MIN_SEASON_LENGTH = 1 days;
 
     // WIF split (percent)
@@ -116,7 +116,7 @@ contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView
         uint64 revealWindow;
         uint64 shieldDuration;
         uint64 shieldCooldown;
-        uint64 seasonLength; // default for new seasons; 1 to 21 days
+        uint64 seasonLength; // default season length; 1 to 35 days
         // Voter's Pass discount on founding and feeding, in percent. Cap: 0 to 30.
         uint8 voterDiscountPct;
         // Base build costs in whole leaves/sugar (the minimum; costs grow with the colony). Cap: 0.25x to 4x launch.
@@ -143,7 +143,7 @@ contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView
         c.revealWindow = 24 hours;
         c.shieldDuration = 8 hours;
         c.shieldCooldown = 24 hours;
-        c.seasonLength = 7 days;
+        c.seasonLength = 10 days;
         c.voterDiscountPct = 20;
         c.chamberBase = 10;
         c.trailBase = 50;

@@ -467,11 +467,11 @@ contract CoreLoopTest is Base {
         uint64 start = game.seasonStart(1);
         vm.startPrank(owner);
         vm.expectRevert(ColonyGame.BadSeasonEnd.selector);
-        game.setCurrentSeasonEnd(start + 21 days + 1);
-        game.setCurrentSeasonEnd(start + 21 days);
+        game.setCurrentSeasonEnd(start + 35 days + 1);
+        game.setCurrentSeasonEnd(start + 35 days);
         vm.stopPrank();
-        assertEq(game.seasonEnd(1), start + 21 days);
-        assertEq(game.seasonEnd(2), start + 28 days);
+        assertEq(game.seasonEnd(1), start + 35 days);
+        assertEq(game.seasonEnd(2), start + 42 days);
     }
 
     function test_seasonRollover_freezesOldColonies() public {

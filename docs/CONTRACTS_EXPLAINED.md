@@ -105,7 +105,7 @@ Prices are set in WIF and the owner can tune them within the caps below, so they
 **What the owner can change, and the limits.**
 - **Prices and cooldowns:** between ¼ and 4× their launch values. This includes the raider cooldown (12 h at launch) and `raidProtection` (12 h at launch).
 - **Guard window:** between 1 and 8 hours.
-- **Season length:** between 1 and 21 days. The current season's end can be moved, but only to a time in the future and no later than 21 days after the season started.
+- **Season length:** 10 days by default; the deploy sets Season 1's exact end. The owner can set the length between 1 and 35 days. The current season's end can be moved, but only to a time in the future and no later than 35 days after the season started.
 - **Fixed in code, so the owner can never use them to hurt players:** the 72 h starvation timer, the 24 h revive window, the 48 h settle timeout and the 30 s randomness delay.
 
 Every change emits an event (`ConfigUpdated`, `SeasonEndChanged`) that anyone can watch.

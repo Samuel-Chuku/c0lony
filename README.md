@@ -23,7 +23,7 @@ _Screenshots are from the Robinhood Chain testnet deployment._
 
 ## What C0LONY is
 
-You run an ant colony. A season lasts up to 21 days (7 by default). The daily loop:
+You run an ant colony. Season 1 ends just before the hackathon final closes, and the keeper closes it and opens claims on its own; later seasons last 10 days by default (35 at most). The daily loop:
 
 1. **Tend** the colony: collect leaves and sugar from forage trips, trails and farms. Every ant on a trail or farm earns 2 a day, and the rest of your ants (the free ones) bring extra on each forage trip.
 2. **Feed the colony** (WIF plus 3 leaves for the queen, and every ant eats 1 sugar) at least once every 72 hours or she starves. Each feeding grows the colony and adds score.
@@ -252,7 +252,7 @@ cd web && pnpm test:functions         # feed and profile functions
 cd web && pnpm typecheck && pnpm typecheck:functions
 ```
 
-The Foundry suite has 156 tests, including fuzzed loot maths and real drand rounds; the keeper has 75 and the serverless functions 31. The economy and raid rules above were added on 2026-11-02, after the recorded seasons below, which ran on the older rules.
+The Foundry suite has 159 tests, including fuzzed loot maths and real drand rounds; the keeper has 80 and the serverless functions 31. The economy and raid rules above were added on 2026-11-02, after the recorded seasons below, which ran on the older rules.
 
 Recorded testnet runs with transaction links are in [docs/TESTNET_RUN.md](docs/TESTNET_RUN.md): two full seasons with real drand rounds on the earlier rules, and a set-and-forget raid on the current contracts that the keeper revealed and settled by itself, with the settle gas refund checked against the real receipt.
 
