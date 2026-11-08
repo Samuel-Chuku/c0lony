@@ -27,7 +27,7 @@ export const QUIET_TYPES = new Set(["paid", "assigned"]);
 /** A tappable handle (or "you") that opens that player's profile. */
 export function Handle({ addr, me, cap }: { addr: string; me?: string | null; cap?: boolean }) {
   const x = useXProfile(addr);
-  const label = me && addr.toLowerCase() === me.toLowerCase() ? (cap ? "You" : "you") : displayName(addr.toLowerCase(), x?.xHandle);
+  const label = me && addr.toLowerCase() === me.toLowerCase() ? (cap ? "You" : "you") : displayName(addr.toLowerCase(), x);
   return (
     <b>
       <Link className="c0-handle" href={`/colony?addr=${addr.toLowerCase()}`}>{label}</Link>
@@ -88,6 +88,8 @@ export function describeEvent(ev: FeedEvent, me?: string | null): FeedLine | nul
       return { ...base, kind: "SPEED UP", tone: "sub", sentence: <>{S(a0, "sped up your foraging", "sped up foraging")}</> };
     case "shielded":
       return { ...base, kind: "SHIELD", tone: "sub", sentence: <>{S(a0, "raised a shield", "raised a shield")}</> };
+    case "named":
+      return { ...base, kind: "NAMED", tone: "sub", sentence: <>{S(a0, "named your colony", "named their colony")} <b>{String(d.name ?? "")}</b></> };
     case "revived":
       return { ...base, kind: "REVIVED", tone: "sub", sentence: <>{S(a0, "brought your queen back", "brought the queen back")}</> };
     case "collapsed":

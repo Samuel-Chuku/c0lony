@@ -7,7 +7,7 @@ export function feedFromBlock(network: string | undefined): number {
 }
 
 export const FEED_TYPES = [
-  "founded", "fed", "tended", "built", "assigned", "sped_up", "shielded", "revived", "collapsed",
+  "founded", "named", "fed", "tended", "built", "assigned", "sped_up", "shielded", "revived", "collapsed",
   "raid_launched", "guarded", "revealed", "settled", "collected", "avenge_granted", "paid",
   "sponsored", "season_ended", "season_finalized", "claimed", "unclaimed_rolled",
 ] as const;

@@ -196,3 +196,14 @@
 }
 .l-guide { font-size: 22px; gap: var(--c0-s2); }
 .l-guide__play { width: 12px; height: 14px; background: currentColor; clip-path: polygon(0 0, 100% 50%, 0 100%); flex: none; }
+/* Set and forget: four cards and a real Telegram alert card. */
+.l-alerts { list-style: none; margin: var(--c0-s6) 0 0; padding: 0; display: grid; gap: var(--c0-s3); }
+.l-alert { display: flex; gap: var(--c0-s3); align-items: flex-start; }
+.l-alert h3 { margin: 0 0 var(--c0-s1); font-family: var(--c0-f-display); font-weight: 400; font-size: 24px; line-height: 1; color: var(--c0-ink); }
+.l-alert p { margin: 0; font-size: 15px; line-height: 1.5; color: var(--c0-sub); }
+.l-alert__icon { flex: none; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: var(--c0-ink); }
+.l-tgsample { display: flex; flex-direction: column; gap: var(--c0-s2); align-self: center; }
+.l-tgsample img { width: 100%; height: auto; border: var(--c0-bw) solid var(--c0-ink); box-shadow: var(--c0-shadow-modal); image-rendering: pixelated; }
+.l-tgsample__btn { align-self: stretch; }
+.l-tgsample__btn { pointer-events: none; }
+.l-alert .l-redicon { color: var(--c0-red-text); }

@@ -3,7 +3,7 @@
 import { useQuery } from "./store";
 
 export type FeedType =
-  | "founded" | "fed" | "tended" | "built" | "assigned" | "sped_up" | "shielded" | "revived" | "collapsed"
+  | "founded" | "named" | "fed" | "tended" | "built" | "assigned" | "sped_up" | "shielded" | "revived" | "collapsed"
   | "raid_launched" | "guarded" | "revealed" | "settled" | "collected" | "avenge_granted" | "paid"
   | "sponsored" | "season_ended" | "season_finalized" | "claimed" | "unclaimed_rolled";
 
@@ -19,7 +19,19 @@ export type FeedEvent = {
 };
 
 export type FeedFilter = "all" | "raids" | "mine" | "pot";
-export type XProfile = { xHandle: string | null; xAvatar: string | null };
+/**
+ * How a player shows up. Players who linked X show their X handle and picture. Everyone else shows the name they
+ * set onchain (`name`) and the picture they uploaded, which the loader below puts in `xAvatar` so every avatar
+ * on screen follows the same rule.
+ */
+export type XProfile = { xHandle: string | null; xAvatar: string | null; name?: string; avatar?: string };
+
+/** Applies the rule: X first; otherwise the chosen name and the uploaded picture. */
+export function resolveProfile(p: XProfile | null | undefined): XProfile | null {
+  if (!p) return null;
+  if (p.xHandle) return { xHandle: p.xHandle, xAvatar: p.xAvatar };
+  return { xHandle: null, xAvatar: p.avatar ?? null, name: p.name };
+}
 
 async function getJson<T>(url: string): Promise<T> {
   const res = await fetch(url);
@@ -77,7 +89,7 @@ function flush() {
   if (pending.size) timer = setTimeout(flush, 50);
   if (!wallets.length) return;
   getJson<{ profiles: Record<string, XProfile> }>(`/api/profiles?wallets=${wallets.join(",")}`)
-    .then((r) => wallets.forEach((w) => profileCache.set(w, r.profiles[w] ?? null)))
+    .then((r) => wallets.forEach((w) => profileCache.set(w, resolveProfile(r.profiles[w]))))
     .catch(() => wallets.forEach((w) => profileCache.set(w, null)))
     .finally(() => subscribers.forEach((s) => s()));
 }
@@ -90,6 +102,13 @@ export function requestProfile(wallet: string): XProfile | null | undefined {
     if (!timer) timer = setTimeout(flush, 50);
   }
   return undefined;
+}
+
+/** Forgets a wallet's cached profile and loads it again (after a rename or a new picture). */
+export function reloadProfile(wallet: string) {
+  const w = wallet.toLowerCase();
+  profileCache.delete(w);
+  subscribers.forEach((s) => s());
 }
 
 export function subscribeProfiles(cb: () => void) {

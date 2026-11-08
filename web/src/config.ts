@@ -7,6 +7,7 @@ export const NETWORKS = {
   testnet: {
     chainId: 46630,
     telegram: false, // Telegram alerts run on mainnet only
+    names: false, // this deployment predates setName; names arrive with the next deploy
     // First block of the current game deployment. The live feed ignores older events (earlier test games).
     deployBlock: 149189109,
     name: "Robinhood Chain Testnet",
@@ -22,6 +23,7 @@ export const NETWORKS = {
   mainnet: {
     chainId: 4663,
     telegram: true,
+    names: true, // ColonyGame.setName (colony names on the NFT and in place of addresses)
     deployBlock: 0, // set with the mainnet deploy
     name: "Robinhood Chain",
     rpcUrl: "https://rpc.mainnet.chain.robinhood.com",

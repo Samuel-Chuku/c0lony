@@ -7,6 +7,7 @@ import { verifyHmac } from "./hmac.ts";
 import { enabled, fail, json, parseJson, readBody } from "./http.ts";
 import { bearer, profileFor, refreshProfile, userWallets, verifyPrivyToken } from "./privy.ts";
 import { clampInt, isRecord, normAddr, sanitizePrefs } from "./validate.ts";
+import { avatarUrl, setNameFromChain, type Identity } from "./identity.ts";
 
 type Res = Promise<Response>;
 const CHUNK = 90; // D1 allows 100 bound parameters per statement
@@ -48,6 +49,8 @@ export async function ingest(request: Request, env: Env): Res {
     );
     await db.batch(withActors.flatMap((e) => e.actors.map((w) => link.bind(w, e.tx, e.logIndex))));
   }
+  // Names set onchain become the display name of players without X (applied in chain order).
+  for (const e of fresh) if (e.type === "named" && e.actors[0]) await setNameFromChain(env, e.actors[0], e.data.name);
   return json({ inserted: fresh.length });
 }
 
@@ -125,12 +128,21 @@ export async function profiles(request: Request, env: Env): Res {
   const wallets = [...new Set(raw.split(",").map((w) => normAddr(w)).filter((w): w is string => !!w))];
   if (raw && wallets.length === 0) return fail(400, "No valid wallets were given.");
   if (raw.split(",").length > 100) return fail(400, "At most 100 wallets at a time.");
-  const out: Record<string, { xHandle: string | null; xAvatar: string | null }> = {};
+  type Out = { xHandle: string | null; xAvatar: string | null; name?: string; avatar?: string };
+  const out: Record<string, Out> = {};
   if (env.PROFILES && wallets.length) {
-    const got = (await env.PROFILES.get(wallets.map((w) => `w:${w}`), "json")) as Map<string, unknown>;
-    for (const w of wallets) {
-      const r = got.get(`w:${w}`) as { xHandle?: string | null; xAvatar?: string | null } | null | undefined;
-      if (r && (r.xHandle || r.xAvatar)) out[w] = { xHandle: r.xHandle ?? null, xAvatar: r.xAvatar ?? null };
+    // Two records per wallet (X, and name/picture); KV reads at most 100 keys at a time.
+    for (let i = 0; i < wallets.length; i += 50) {
+      const part = wallets.slice(i, i + 50);
+      const got = (await env.PROFILES.get(part.flatMap((w) => [`w:${w}`, `id:${w}`]), "json")) as Map<string, unknown>;
+      for (const w of part) {
+        const r = got.get(`w:${w}`) as { xHandle?: string | null; xAvatar?: string | null } | null | undefined;
+        const id = (got.get(`id:${w}`) ?? {}) as Identity;
+        const o: Out = { xHandle: r?.xHandle ?? null, xAvatar: r?.xAvatar ?? null };
+        if (id.name) o.name = id.name;
+        if (id.avatarV) o.avatar = avatarUrl(w, id.avatarV);
+        if (o.xHandle || o.xAvatar || o.name || o.avatar) out[w] = o;
+      }
     }
   }
   return json({ profiles: out }, 200, "public, max-age=60");

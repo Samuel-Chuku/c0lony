@@ -81,6 +81,19 @@ export const colonyGameAbi = [
   },
   {
     "type": "function",
+    "name": "NAME_COOLDOWN",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint64",
+        "internalType": "uint64"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "REVIVE_WINDOW",
     "inputs": [],
     "outputs": [
@@ -1378,6 +1391,63 @@ export const colonyGameAbi = [
   },
   {
     "type": "function",
+    "name": "nameHolder",
+    "inputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "nameOf",
+    "inputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "string",
+        "internalType": "string"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "nameSetAt",
+    "inputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint64",
+        "internalType": "uint64"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "nextColonyId",
     "inputs": [],
     "outputs": [
@@ -1874,6 +1944,19 @@ export const colonyGameAbi = [
         "name": "newEnd",
         "type": "uint64",
         "internalType": "uint64"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setName",
+    "inputs": [
+      {
+        "name": "name",
+        "type": "string",
+        "internalType": "string"
       }
     ],
     "outputs": [],
@@ -2626,6 +2709,25 @@ export const colonyGameAbi = [
   },
   {
     "type": "event",
+    "name": "NameSet",
+    "inputs": [
+      {
+        "name": "player",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "name",
+        "type": "string",
+        "indexed": false,
+        "internalType": "string"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
     "name": "OwnershipTransferred",
     "inputs": [
       {
@@ -3265,6 +3367,11 @@ export const colonyGameAbi = [
   },
   {
     "type": "error",
+    "name": "BadName",
+    "inputs": []
+  },
+  {
+    "type": "error",
     "name": "BadResource",
     "inputs": []
   },
@@ -3409,6 +3516,16 @@ export const colonyGameAbi = [
   {
     "type": "error",
     "name": "InvalidShortString",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "NameCooldown",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "NameTaken",
     "inputs": []
   },
   {

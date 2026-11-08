@@ -98,6 +98,8 @@ Prices are set in WIF and the owner can tune them within the caps below, so they
 | `setVoterRoot` | The owner, or the voter-root setter (the keeper) |
 | `claimVoterPass` | Any wallet, with a signature from a voting address naming that wallet |
 | `avengeAvailable`, `getProfile`, `seasonDay` | Anyone (read-only views) |
+| `setName` | Any player with a colony this season, for their own wallet only. 3 to 16 characters (a to z, 0 to 9, _), unique across players, changeable once per 21 days. Costs gas only, no WIF. |
+| `tokenURI`, `nameOf`, `nameHolder`, `nameSetAt` | Anyone (read-only). `tokenURI` builds the colony NFT's name, picture and stats onchain, so nothing is hosted elsewhere. |
 | `unlockSeasonNfts` | Owner only, and it always reverts (`NotYetAvailable`). A placeholder for the post-hackathon Season NFTs in [ROADMAP.md](ROADMAP.md). It cannot unlock anything. |
 
 **What the owner can change, and the limits.**
@@ -122,6 +124,8 @@ Every change emits an event (`ConfigUpdated`, `SeasonEndChanged`) that anyone ca
 - **Lock garbage so the raid can never reveal, then reveal by hand only if it's going well.** The drand round for the roll is fixed at reveal, after the target is already known, so waiting gains nothing. And an unrevealed raid loses every marching ant.
 - **Trap a colony with the raid lock.** The lock covers 60% of leaves and sugar, never more, feeding ignores it, and it clears on settle or collect, including the 48 h timeout path. One raid at a time stops locks stacking.
 - **Spam raids.** Each colony can launch one normal raid per 12 h (avenge raids skip this cooldown, but each needs a live grant from a raid you lost), a target can face only 1 open raid, no normal raid can be launched on a colony for 12 h after the last one (so at most twice a day, three times with an Avenge), you cannot launch while a raid marches on you, and you must close your finished raids before launching another. `raidableAt(colonyId)` shows the later of shield end and protection end.
+- **Take someone's name, or squat names.** Names are unique and first come, first served. Only the wallet itself can set its own name, so nobody can rename another player. Setting a name needs a colony this season (which costs a founding fee), and each wallet holds one name and can change it only once every 21 days, so squatting many names costs a colony per name.
+- **Break the NFT picture or the app with a crafted name.** Names only allow a to z, 0 to 9 and _, so they can't carry quotes, markup or script into the onchain JSON or SVG.
 - **Transfer a colony to dodge the one-per-wallet rule.** Colony NFTs can't be transferred between wallets.
 - **Use avenge against someone else.** It fails. The grant is stored for the exact pair of wallets (defender, raider), so `avenge` against any other wallet reverts with `NoAvenge`.
 - **Farm score by trading avenge raids with a friend.** Each avenge raid still needs the 4 h guard window, a reveal, a drand roll, the one-raid-at-a-time rule, the 12 h cooldown on the grant holder's own normal raids and the collect-first rule. It is slower than normal raiding, and a raid win is worth the same +25 as any other. Each avenge also needs a fresh win by the other side, and expires after 24 h.

@@ -252,7 +252,7 @@ cd web && pnpm test:functions         # feed and profile functions
 cd web && pnpm typecheck && pnpm typecheck:functions
 ```
 
-The Foundry suite has 150 tests, including fuzzed loot maths and real drand rounds; the keeper has 65 and the serverless functions 23. The economy and raid rules above were added on 2026-11-02, after the recorded seasons below, which ran on the older rules.
+The Foundry suite has 156 tests, including fuzzed loot maths and real drand rounds; the keeper has 75 and the serverless functions 31. The economy and raid rules above were added on 2026-11-02, after the recorded seasons below, which ran on the older rules.
 
 Recorded testnet runs with transaction links are in [docs/TESTNET_RUN.md](docs/TESTNET_RUN.md): two full seasons with real drand rounds on the earlier rules, and a set-and-forget raid on the current contracts that the keeper revealed and settled by itself, with the settle gas refund checked against the real receipt.
 

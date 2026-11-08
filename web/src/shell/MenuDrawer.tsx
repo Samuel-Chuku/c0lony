@@ -61,7 +61,7 @@ export function MenuDrawer({ open, onClose }: { open: boolean; onClose: () => vo
             <div className="c0-menu__who">
               <Avatar size={56} src={x?.xAvatar ?? null} address={me} alt="Your avatar" />
               <div>
-                <span className="c0-menu__handle">{displayName(me, x?.xHandle)}</span>
+                <span className="c0-menu__handle">{displayName(me, x)}</span>
                 <Link href={`/colony?addr=${me}`} className="c0-menu__profile" onClick={onClose}>view your profile ›</Link>
               </div>
             </div>

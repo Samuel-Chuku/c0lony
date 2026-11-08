@@ -54,6 +54,10 @@ export function shortAddress(addr: string): string {
 }
 
 /** A handle for display: "@name" when X is linked, else the short address. */
-export function displayName(address: string, xHandle?: string | null): string {
-  return xHandle ? `@${xHandle}` : shortAddress(address);
+/** "@handle" for X players, else the name they chose, else 0x12ab…cd34. Takes a profile or a bare X handle. */
+export function displayName(address: string, p?: string | { xHandle: string | null; name?: string } | null): string {
+  if (typeof p === "string") return p ? `@${p}` : shortAddress(address);
+  if (p?.xHandle) return `@${p.xHandle}`;
+  if (p?.name) return p.name;
+  return shortAddress(address);
 }

@@ -53,6 +53,29 @@ const STEPS: { icon: ReactNode; title: string; body: string }[] = [
   },
 ];
 
+const ALERTS: { icon: ReactNode; title: string; body: string }[] = [
+  {
+    icon: <span className="l-redicon"><PixelIcon name="raids" size={30} /></span>,
+    title: "Raids that finish themselves",
+    body: "Launch a raid and walk away. When the guard window closes, the game's keeper opens the sealed target, waits for the drand round and settles it. You come back to the result.",
+  },
+  {
+    icon: <PixelIcon name="bell" size={30} />,
+    title: "A to-do bell",
+    body: "The bell in the top bar counts what needs you: a raid to guard, a hungry queen, a full pantry. A red strip follows you round the app until you guard.",
+  },
+  {
+    icon: <PixelIcon name="live" size={30} />,
+    title: "Alerts on your phone",
+    body: "Push alerts when you are raided, when a result is in, when the queen gets hungry and when foragers are home. Each one has its own switch.",
+  },
+  {
+    icon: <PixelIcon name="telegram" size={30} />,
+    title: "Alerts on Telegram",
+    body: "Link your colony to the C0LONY bot from Settings. Every alert arrives as a picture card with a button straight to the right screen, with its own switches.",
+  },
+];
+
 const FAQ: { q: string; a: ReactNode }[] = [
   {
     q: "Do I need a crypto wallet?",
@@ -64,11 +87,11 @@ const FAQ: { q: string; a: ReactNode }[] = [
   },
   {
     q: "Can I play on a phone and on a desktop?",
-    a: "Yes, it is a web app that works in either. On a phone you can add it to your Home Screen (iPhone Safari: Share, then Add to Home Screen. Android Chrome: menu, then Install app). On iPhone that is also what lets it send push alerts.",
+    a: "Yes, it is a web app that works in either. On a phone you can add it to your Home Screen (iPhone Safari: Share, then Add to Home Screen. Android Chrome: menu, then Install app). On iPhone that is also what lets it send push alerts. You can also get every alert on Telegram instead.",
   },
   {
     q: "How do I get WIF?",
-    a: "Use Get WIF inside the game to swap ETH for WIF through the KyberSwap aggregator. A 0.5% fee on that swap is paid in ETH to the Treasury. You can also bring WIF you already hold.",
+    a: "Use Get WIF inside the game to swap ETH for WIF through the KyberSwap aggregator. A 0.5% fee on that swap is paid in ETH to the Treasury. If you play from your own wallet, you can also buy WIF on Pons, which opens in a new tab. Or bring WIF you already hold.",
   },
   {
     q: "Is the randomness fair?",
@@ -86,6 +109,10 @@ const FAQ: { q: string; a: ReactNode }[] = [
       NETWORK_NAME === "testnet"
         ? "Right now C0LONY runs on Robinhood Chain testnet with a test version of WIF, so you can learn the game for free. Mainnet with real WIF is the next step, and the mainnet contract addresses will be published on this page and in the repo when it launches."
         : "C0LONY runs on Robinhood Chain mainnet with real WIF. Every contract address is listed on this page and verified on the explorer.",
+  },
+  {
+    q: "Do I have to stay online while a raid runs?",
+    a: "No. A raid takes about four hours to land. The game's keeper reveals and settles every raid on its own, and push or Telegram alerts tell you when you are raided and when a result is in. If the keeper were ever down, you can still reveal and settle by hand from the app.",
   },
   {
     q: "Do I get my WIF back?",
@@ -107,6 +134,7 @@ export function Landing() {
           <nav className="l-nav" aria-label="Sections">
             <a href="#how">How it works</a>
             <a href="#raids">Raids</a>
+            <a href="#alerts">Alerts</a>
             <a href="#wif">WIF</a>
             <a href="#fair">Fair play</a>
             <a href="#faq">FAQ</a>
@@ -217,8 +245,38 @@ export function Landing() {
           </div>
         </section>
 
+        {/* 3b. Set and forget */}
+        <section className="l-band l-band--deep" id="alerts" aria-labelledby="h-alerts">
+          <div className="l-wrap l-split">
+            <div>
+              <h2 id="h-alerts">Set it, then get on with your day</h2>
+              <p className="l-sub">
+                A raid takes hours to land, so <BrandName /> does the waiting for you and tells you when something needs
+                your hand.
+              </p>
+              <ul className="l-alerts">
+                {ALERTS.map((a) => (
+                  <li key={a.title} className="c0-card l-alert">
+                    <span className="l-alert__icon">{a.icon}</span>
+                    <div>
+                      <h3>{a.title}</h3>
+                      <p>{withBrand(a.body)}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="l-tgsample">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/tg/raided.png" width={800} height={400} alt="A C0LONY Telegram alert: raid incoming, guard leaves or sugar, with a Guard now button" />
+              <span className="c0-btn c0-btn--paper c0-btn--compact l-tgsample__btn" aria-hidden="true">Guard now</span>
+              <p className="l-caption">A Telegram alert{NETWORK.telegram ? "" : " (Telegram alerts open with the mainnet launch)"}</p>
+            </div>
+          </div>
+        </section>
+
         {/* 4. WIF */}
-        <section className="l-band l-band--deep" id="wif" aria-labelledby="h-wif">
+        <section className="l-band" id="wif" aria-labelledby="h-wif">
           <div className="l-wrap">
             <h2 id="h-wif">Why WIF, and where it goes</h2>
             <p className="l-sub">
@@ -274,7 +332,7 @@ export function Landing() {
         </section>
 
         {/* 5. Fair and open */}
-        <section className="l-band" id="fair" aria-labelledby="h-fair">
+        <section className="l-band l-band--deep" id="fair" aria-labelledby="h-fair">
           <div className="l-wrap">
             <h2 id="h-fair">Fair and open</h2>
             <p className="l-sub">Specific things you can check yourself, and the honest limits.</p>
@@ -321,7 +379,7 @@ export function Landing() {
         </section>
 
         {/* 6. FAQ */}
-        <section className="l-band l-band--deep" id="faq" aria-labelledby="h-faq">
+        <section className="l-band" id="faq" aria-labelledby="h-faq">
           <div className="l-wrap l-faqwrap">
             <h2 id="h-faq">Questions</h2>
             <div className="l-faq">
@@ -336,7 +394,7 @@ export function Landing() {
         </section>
 
         {/* 7. Final CTA */}
-        <section className="l-band l-final" aria-labelledby="h-final">
+        <section className="l-band l-band--deep l-final" aria-labelledby="h-final">
           <div className="l-wrap l-final__in">
             <h2 id="h-final">Your queen is waiting.</h2>
             <p className="l-sub">Look around for free, found a colony when you are ready, and come back tomorrow.</p>

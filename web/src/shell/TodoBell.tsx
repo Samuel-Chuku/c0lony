@@ -13,7 +13,7 @@ function Raider({ raid }: { raid: NonNullable<Todo["raid"]> }) {
   // Plain text, not a profile link: these rows are links themselves.
   const owner = useColonyView(raid.raider).data?.data.owner.toLowerCase();
   const x = useXProfile(owner);
-  return <b>{owner ? displayName(owner, x?.xHandle) : "A neighbour"}</b>;
+  return <b>{owner ? displayName(owner, x) : "A neighbour"}</b>;
 }
 
 function Row({ t, onGo }: { t: Todo; onGo: () => void }) {

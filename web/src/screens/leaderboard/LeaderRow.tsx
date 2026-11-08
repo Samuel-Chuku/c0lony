@@ -9,7 +9,7 @@ import { useXProfile } from "../../lib/useXProfile";
 export const LeaderRow = forwardRef<HTMLDivElement, { row: ColonyRow; rank: number; mine?: boolean }>(function LeaderRow({ row, rank, mine }, ref) {
   const router = useRouter();
   const x = useXProfile(row.owner);
-  const handle = displayName(row.owner, x?.xHandle);
+  const handle = displayName(row.owner, x);
   return (
     <div ref={ref}>
       <Card className={`c0-nrow c0-lrow${mine ? " c0-card--clay" : ""}`}>

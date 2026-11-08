@@ -3,10 +3,11 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Avatar, Card, StatRow, StatTile, Underway } from "../../ui";
 import { Screen } from "../../shell/Screen";
-import { displayName, fmtDuration, fmtInt, fmtRes, shortAddress } from "../../lib/format";
+import { displayName, fmtDuration, fmtInt, fmtRes } from "../../lib/format";
 import { useColonies, useNow, useProfile, useSeason } from "../../lib/game";
 import { useSession } from "../../lib/session";
 import { useXProfile } from "../../lib/useXProfile";
+import type { XProfile } from "../../lib/api";
 import { ActivityCard } from "./ActivityCard";
 import { ClaimButton } from "./ClaimButton";
 import { RankCard } from "./RankCard";
@@ -35,7 +36,7 @@ export function ProfileScreen() {
   if (!p) {
     return (
       <Screen back>
-        <Header addr={addr} xHandle={x?.xHandle} xAvatar={x?.xAvatar} />
+        <Header addr={addr} x={x} />
         <Underway label="Reading the colony…" />
       </Screen>
     );
@@ -43,7 +44,7 @@ export function ProfileScreen() {
   if (p.colonyId === 0n) {
     return (
       <Screen back>
-        <Header addr={addr} xHandle={x?.xHandle} xAvatar={x?.xAvatar} />
+        <Header addr={addr} x={x} />
         <Card>
           <p className="c0-pf__empty">
             {isMe
@@ -60,7 +61,7 @@ export function ProfileScreen() {
   const ago = Math.max(0, now - Number(p.foundedAt));
   return (
     <Screen back>
-      <Header addr={addr} xHandle={x?.xHandle} xAvatar={x?.xAvatar} founded={`founded on day ${p.foundedDay} · ${ago < 86400 ? `${fmtDuration(ago)} ago` : `${Math.floor(ago / 86400)} days ago`}`} />
+      <Header addr={addr} x={x} founded={`founded on day ${p.foundedDay} · ${ago < 86400 ? `${fmtDuration(ago)} ago` : `${Math.floor(ago / 86400)} days ago`}`} />
       <RankCard addr={addr} profile={p} rows={colonies.data} loading={colonies.loading} pot={season.data?.pot} isMe={isMe} />
       <StatRow>
         <StatTile res="ant" value={`${fmtInt(p.ants)}/${fmtInt(p.capacity)}`} caption="ants" />
@@ -80,11 +81,13 @@ export function ProfileScreen() {
   );
 }
 
-function Header({ addr, xHandle, xAvatar, founded }: { addr: string; xHandle?: string | null; xAvatar?: string | null; founded?: string }) {
-  const name = displayName(addr, xHandle);
+function Header({ addr, x, founded }: { addr: string; x?: XProfile | null; founded?: string }) {
+  const xHandle = x?.xHandle;
+  const xAvatar = x?.xAvatar;
+  const name = displayName(addr, x);
   return (
     <section className="c0-pf__head" aria-label="Player">
-      <Avatar size={64} src={xAvatar ?? null} address={addr} alt={xHandle ? `@${xHandle}` : shortAddress(addr)} />
+      <Avatar size={64} src={xAvatar ?? null} address={addr} alt={name} />
       <div className="c0-pf__who">
         <div className="c0-pf__name">{name}</div>
         {founded ? <div className="c0-pf__founded">{founded}</div> : null}

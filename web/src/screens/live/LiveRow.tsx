@@ -15,7 +15,7 @@ export function LiveRow({ ev, me, now, compact }: { ev: FeedEvent; me: string | 
   const own = !!me && ev.actors.some((a) => a.toLowerCase() === me);
   return (
     <FeedRow
-      avatar={{ src: x?.xAvatar ?? null, address: actor, alt: x?.xHandle ? `@${x.xHandle}` : "Player" }}
+      avatar={{ src: x?.xAvatar ?? null, address: actor, alt: x?.xHandle ? `@${x.xHandle}` : x?.name ?? "Player" }}
       kind={line.kind}
       kindTone={line.tone}
       timeAgo={timeAgo(ev.ts, now).replace(" ago", "")}

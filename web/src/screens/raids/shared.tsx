@@ -16,7 +16,7 @@ export function useColonyView(id: bigint | null | undefined) {
 /** Handle and avatar for a wallet: "@name" when X is linked, else the short address. */
 export function useWho(wallet: string | null | undefined) {
   const x = useXProfile(wallet);
-  const name = wallet ? displayName(wallet, x?.xHandle) : "…";
+  const name = wallet ? displayName(wallet, x) : "…";
   return { name, avatar: x?.xAvatar ?? null, wallet: wallet ?? undefined };
 }
 

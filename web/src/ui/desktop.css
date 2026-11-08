@@ -146,3 +146,12 @@
   html .c0-rtrack__title { font-size: 26px; }
   html .c0-rtrack__time { font-size: 14px; color: var(--c0-paper); }
 }
+/* Raids tab, under the neighbour list: out-of-range colonies. */
+.c0-oor__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; border: var(--c0-bw) solid var(--c0-ink); background: var(--c0-paper); box-shadow: var(--c0-shadow-card); }
+.c0-oor__row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px var(--c0-s3); padding: var(--c0-s2) var(--c0-s3); border-bottom: 2px dashed var(--c0-rule); color: var(--c0-ink); font-size: 14px; }
+.c0-oor__row:last-child { border-bottom: 0; }
+.c0-oor__row .c0-handle { font-family: var(--c0-f-display); font-size: 20px; color: var(--c0-ink); }
+.c0-oor__ants { justify-self: end; font-family: var(--c0-f-display); font-size: 20px; }
+.c0-oor__ants svg { vertical-align: -4px; }
+.c0-oor__why { grid-column: 1 / -1; color: var(--c0-sub); }
+.c0-oor { margin-top: var(--c0-s4); }

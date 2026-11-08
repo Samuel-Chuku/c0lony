@@ -15,7 +15,7 @@ import { Tracker } from "./Tracker";
 import { SITE_URL, xIntent } from "./shared";
 import { fmtDuration } from "../../lib/format";
 import { demoCfg, demoData } from "./demo";
-import { RaidRules, RecentRaids, YourRaiders } from "./DeskRaidPanels";
+import { OutOfRange, RaidRules, RaidsAround, RecentRaids, YourRaiders } from "./DeskRaidPanels";
 import { RaidsList } from "./RaidsList";
 
 export function RaidsScreen() {
@@ -170,6 +170,8 @@ export function RaidsScreen() {
               ))}
             </div>
           )}
+          {profile ? <OutOfRange colonies={colonies} me={myAddr} myAnts={profile.ants} now={now} /> : null}
+          <RaidsAround me={session.address} now={now} />
           </>
           )}
           </div>

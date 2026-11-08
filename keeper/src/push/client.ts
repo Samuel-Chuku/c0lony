@@ -22,7 +22,7 @@ export class PushClient {
   private readonly o: {
     apiBase: string; secret: string; send?: SendFn; telegram?: TelegramClient; fetchFn: FetchFn; log: (m: string) => void;
   };
-  private readonly handleCache = new Map<string, string | null>();
+  private readonly handleCache = new Map<string, { label: string | null; at: number }>();
 
   /** `send` is Web Push (omit when push is off); `telegram` adds Telegram delivery of the same alerts. */
   constructor(opts: { apiBase: string; secret: string; send?: SendFn; telegram?: TelegramClient; fetchFn?: FetchFn; log?: (m: string) => void }) {
@@ -41,24 +41,24 @@ export class PushClient {
     if (!res.ok) this.o.log(`push: prune failed HTTP ${res.status}`);
   }
 
-  /** "@handle" when the wallet has a linked X account, else 0x12ab…cd34. Never throws. */
+  /** "@handle" when the wallet has a linked X account, else the name set onchain, else 0x12ab…cd34. Never throws. */
   async label(wallet: string): Promise<string> {
     const w = wallet.toLowerCase();
-    if (!this.handleCache.has(w)) {
-      let handle: string | null = null;
+    const hit = this.handleCache.get(w);
+    if (!hit || Date.now() - hit.at > 10 * 60_000) {
+      let label: string | null = null;
       try {
         const res = await this.o.fetchFn(`${this.o.apiBase}/api/profiles?wallets=${w}`);
         if (res.ok) {
-          const p = ((await res.json()) as { profiles: Record<string, { xHandle?: string }> }).profiles?.[w];
-          handle = p?.xHandle ? p.xHandle.replace(/^@/, "") : null;
+          const p = ((await res.json()) as { profiles: Record<string, { xHandle?: string; name?: string }> }).profiles?.[w];
+          label = p?.xHandle ? `@${p.xHandle.replace(/^@/, "")}` : p?.name ? p.name : null;
         }
       } catch {
         return shortAddr(w); // do not cache a failure
       }
-      this.handleCache.set(w, handle);
+      this.handleCache.set(w, { label, at: Date.now() });
     }
-    const h = this.handleCache.get(w);
-    return h ? `@${h}` : shortAddr(w);
+    return this.handleCache.get(w)?.label ?? shortAddr(w);
   }
 
   /** Sends to every subscribed browser and the linked Telegram chat of `wallet` that has `pref` on. */

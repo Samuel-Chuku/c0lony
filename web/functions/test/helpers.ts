@@ -42,6 +42,7 @@ export function fakeKV() {
   return {
     m,
     put: async (k: string, v: string) => void m.set(k, v),
+    delete: async (k: string) => void m.delete(k),
     get: async (k: string | string[]) => {
       const one = (key: string) => (m.has(key) ? JSON.parse(m.get(key)!) : null);
       return Array.isArray(k) ? new Map(k.map((x) => [x, one(x)])) : one(k);

@@ -7,7 +7,7 @@ import type { Rpc } from "../intake/rpc.ts";
 import { JsonStore } from "../state.ts";
 
 export type FeedType =
-  | "founded" | "fed" | "tended" | "built" | "assigned" | "sped_up" | "shielded" | "revived" | "collapsed"
+  | "founded" | "named" | "fed" | "tended" | "built" | "assigned" | "sped_up" | "shielded" | "revived" | "collapsed"
   | "raid_launched" | "guarded" | "revealed" | "settled" | "collected" | "avenge_granted" | "paid"
   | "sponsored" | "season_ended" | "season_finalized" | "claimed" | "unclaimed_rolled";
 
@@ -223,6 +223,8 @@ async function mapEvent(
         actors: [a.defender, a.raider],
         data: { raidId: String(a.raidId), defender: lc(a.defender), raider: lc(a.raider), expiresAt: id(a.expiresAt) },
       };
+    case "NameSet":
+      return { type: "named", actors: [a.player], data: { name: String(a.name).slice(0, 16) } };
     case "Paid":
       return {
         type: "paid",

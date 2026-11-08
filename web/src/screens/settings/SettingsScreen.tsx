@@ -1,6 +1,6 @@
 "use client";
 import { useExportWallet, useLinkAccount } from "@privy-io/react-auth";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button, PixelIcon, Switch, withBrand } from "../../ui";
 import { Screen } from "../../shell/Screen";
 import { useShell } from "../../shell/Providers";
@@ -15,6 +15,7 @@ import {
 import { TELEGRAM_ON, tgLinkUrl, tgSavePrefs, tgStatus, tgUnlink } from "../../lib/telegram";
 import { WithdrawSheet } from "../wallet/WithdrawSheet";
 import { VoterPass } from "./VoterPass";
+import { IdentityRows } from "./IdentityRows";
 import "./settings.css";
 
 const PREFS_KEY = "c0lony:pushPrefs";
@@ -159,7 +160,9 @@ function TelegramAlerts() {
   const [waiting, setWaiting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [open, setOpen] = useState(false);
   const addr = session.address;
+  const chosen = useRef<PushPrefs | null>(null); // switches picked before linking, saved once the link lands
 
   // Read whether this wallet is linked; when it isn't, have a fresh start link ready so Connect is one tap.
   useEffect(() => {
@@ -171,7 +174,13 @@ function TelegramAlerts() {
         if (!token || !live) return;
         const st = await tgStatus(addr, token);
         if (!live) return;
-        setStatus(st);
+        if (st.linked && chosen.current) {
+          const picked = chosen.current;
+          chosen.current = null;
+          await tgSavePrefs(addr, token, picked).catch(() => {});
+          st.prefs = picked;
+        }
+        setStatus((cur) => (st.linked || !cur ? st : { ...st, prefs: cur.prefs }));
         if (!st.linked && (!link || Date.now() - link.at > LINK_FRESH_MS)) {
           const url = await tgLinkUrl(addr, token, st.prefs);
           if (live) setLink({ url, at: Date.now() });
@@ -201,9 +210,10 @@ function TelegramAlerts() {
   }
 
   async function savePref(key: keyof PushPrefs, v: boolean) {
-    if (!status || !addr) return;
-    const next = { ...status.prefs, [key]: v };
-    setStatus({ ...status, prefs: next });
+    if (!addr) return;
+    const next = { ...(status?.prefs ?? DEFAULT_PREFS), [key]: v };
+    setStatus({ linked: !!status?.linked, prefs: next });
+    if (!status?.linked) { chosen.current = next; return; }
     try {
       const token = await session.getToken();
       if (token) await tgSavePrefs(addr, token, next);
@@ -229,6 +239,7 @@ function TelegramAlerts() {
   }
 
   const linked = !!status?.linked;
+  const prefs = status?.prefs ?? DEFAULT_PREFS;
   return (
     <>
       <div className="c0-srow">
@@ -239,24 +250,34 @@ function TelegramAlerts() {
             {!addr ? "Sign in to get alerts on Telegram."
               : linked ? "Linked · alerts arrive in Telegram with a button to act"
               : waiting ? "Press Start in Telegram. This page updates once you do."
-              : "Get raids, results and a hungry queen on Telegram, with a picture and a button to act."}
+              : "Raids, results and a hungry queen on Telegram, with a picture and a button to act."}
           </span>
         </div>
-        {!addr ? null : linked ? (
-          <Button variant="paper" size="compact" busy={busy ? "Unlinking…" : undefined} onClick={() => void unlink()}>Unlink</Button>
-        ) : link ? (
-          <a className="c0-btn c0-btn--paper c0-btn--compact c0-tglink" href={link.url} target="_blank" rel="noopener noreferrer" onClick={() => setWaiting(true)}>
-            {waiting ? "Open again" : "Connect"}
-          </a>
-        ) : (
-          <Button variant="paper" size="compact" busy="Loading…" />
-        )}
+        {addr ? (
+          <Button variant="paper" size="compact" aria-expanded={open} aria-controls="tg-drop" onClick={() => setOpen((o) => !o)}>
+            {open ? "Done" : linked ? "Choose alerts" : "Connect"}
+          </Button>
+        ) : null}
       </div>
-      {linked && status
-        ? PREF_ROWS.map((r) => (
-            <Switch key={r.key} id={`t-${r.key}`} label={r.label} hint={r.hint} checked={status.prefs[r.key]} onChange={(v) => void savePref(r.key, v)} />
-          ))
-        : null}
+      {open && addr ? (
+        <div className="c0-tgdrop" id="tg-drop">
+          <p className="c0-tgdrop__cap">{linked ? "Alerts sent to Telegram" : "Pick the alerts you want, then open Telegram and press Start."}</p>
+          {PREF_ROWS.map((r) => (
+            <Switch key={r.key} id={`t-${r.key}`} label={r.label} hint={r.hint} checked={prefs[r.key]} onChange={(v) => void savePref(r.key, v)} />
+          ))}
+          <div className="c0-tgdrop__foot">
+            {linked ? (
+              <Button variant="paper" size="compact" busy={busy ? "Unlinking…" : undefined} onClick={() => void unlink()}>Unlink Telegram</Button>
+            ) : link ? (
+              <a className="c0-btn c0-btn--paper c0-btn--compact c0-tglink" href={link.url} target="_blank" rel="noopener noreferrer" onClick={() => setWaiting(true)}>
+                {waiting ? "Open Telegram again ›" : "Open Telegram ›"}
+              </a>
+            ) : (
+              <Button variant="paper" size="compact" busy="Loading…" />
+            )}
+          </div>
+        </div>
+      ) : null}
       {error ? <div className="c0-blocked" role="alert">{error}</div> : null}
     </>
   );
@@ -301,6 +322,7 @@ export function SettingsScreen() {
       <div className="c0-set">
         <h2 className="c0-set__label">Account</h2>
         <XRow />
+        <IdentityRows />
         <WalletRow />
         {session.signedIn && session.wallet ? (
           <div className="c0-srow">

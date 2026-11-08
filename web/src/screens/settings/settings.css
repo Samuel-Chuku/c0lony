@@ -12,3 +12,16 @@
 /* The Telegram Connect link looks like a compact paper button. */
 .c0-tglink { text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
 .c0-srow > .c0-icon { flex: none; color: var(--c0-fg); }
+.c0-srow--stack { flex-direction: column; align-items: stretch; }
+.c0-namefield { display: flex; gap: var(--c0-s2); align-items: flex-start; }
+.c0-namefield .c0-input { flex: 1; min-width: 0; }
+.c0-srow__btns { display: flex; gap: var(--c0-s2); }
+.c0-input { min-height: 44px; box-sizing: border-box; padding: 0 var(--c0-s3); background: var(--c0-paper-hi); color: var(--c0-ink); border: var(--c0-bw) solid var(--c0-ink); border-radius: 0; font-family: var(--c0-f-body); font-size: 16px; }
+.c0-input:focus-visible { outline: 3px solid var(--c0-paper); outline-offset: 2px; }
+/* Telegram: the alert switches drop down under the row and close again with Done. */
+.c0-tgdrop { margin: 0 0 var(--c0-s3); padding: var(--c0-s2) var(--c0-s3) var(--c0-s3); background: var(--c0-paper); color: var(--c0-ink); border: var(--c0-bw) solid var(--c0-ink); box-shadow: var(--c0-shadow-card); }
+.c0-tgdrop .c0-switch { border-bottom-color: var(--c0-rule); }
+.c0-tgdrop .c0-switch__label { color: var(--c0-ink); }
+.c0-tgdrop .c0-switch__hint { color: var(--c0-sub); }
+.c0-tgdrop__cap { margin: 0 0 var(--c0-s1); font-size: var(--c0-fs-body); color: var(--c0-sub); }
+.c0-tgdrop__foot { display: flex; justify-content: flex-end; padding-top: var(--c0-s3); }

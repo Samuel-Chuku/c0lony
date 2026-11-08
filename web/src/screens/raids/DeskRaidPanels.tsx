@@ -4,8 +4,9 @@
 import Link from "next/link";
 import { Card, Hand, ResIcon } from "../../ui";
 import { fmtDuration, fmtInt } from "../../lib/format";
-import { LOOT, type Profile } from "../../lib/game";
-import type { FeedEvent } from "../../lib/api";
+import { LOOT, Status, inRange, type ColonyRow, type Profile } from "../../lib/game";
+import { useFeed, type FeedEvent } from "../../lib/api";
+import { Handle } from "../live/feedText";
 import { LiveRow } from "../live/LiveRow";
 
 export function YourRaiders({ me, cooldownLeft, underAttack }: { me: Profile; cooldownLeft: number; underAttack: boolean }) {
@@ -53,6 +54,53 @@ export function RecentRaids({ rows, me, now }: { rows: FeedEvent[] | undefined; 
           {shown.map((ev) => <li key={ev.id}><LiveRow ev={ev} me={me} now={now} compact /></li>)}
         </ul>
       )}
+    </section>
+  );
+}
+
+/** Computer only, under the neighbour list: living colonies you can't raid yet, and why. */
+export function OutOfRange({ colonies, me, myAnts, now }: { colonies: ColonyRow[] | undefined; me: string | null; myAnts: number; now: number }) {
+  const rows = (colonies ?? [])
+    .filter((c) => c.owner !== me && c.status === Status.Alive && !inRange(myAnts, c.workers))
+    .sort((a, b) => b.workers - a.workers)
+    .slice(0, 6);
+  if (rows.length === 0) return null;
+  return (
+    <section className="c0-desk c0-recent c0-oor" aria-label="Colonies out of range">
+      <div className="c0-sect">
+        <h2>Out of range</h2>
+        <span>you can raid {Math.ceil(myAnts / 2)} to {myAnts * 2} ants</span>
+      </div>
+      <ul className="c0-oor__list">
+        {rows.map((c) => (
+          <li key={String(c.id)} className="c0-oor__row">
+            <Handle addr={c.owner} />
+            <span className="c0-oor__ants"><ResIcon name="ant" size={18} label="ants" /> {c.workers}</span>
+            <span className="c0-oor__why">
+              {c.workers > myAnts * 2 ? `grow to ${Math.ceil(c.workers / 2)} ants to raid them` : "too small to raid"}
+              {c.shieldUntil > now ? " · shielded" : ""}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+/** Computer only: the latest raid results across the game. */
+export function RaidsAround({ me, now }: { me: string | null; now: number }) {
+  const feed = useFeed("raids", null, 20);
+  const shown = (feed.data ?? []).filter((e) => e.type === "settled" || e.type === "raid_launched").slice(0, 5);
+  if (shown.length === 0) return null;
+  return (
+    <section className="c0-desk c0-recent" aria-label="Raids around the game">
+      <div className="c0-sect">
+        <h2>Raids around you</h2>
+        <Link href="/?tab=live">live feed ›</Link>
+      </div>
+      <ul className="c0-feedlist">
+        {shown.map((ev) => <li key={ev.id}><LiveRow ev={ev} me={me} now={now} compact /></li>)}
+      </ul>
     </section>
   );
 }

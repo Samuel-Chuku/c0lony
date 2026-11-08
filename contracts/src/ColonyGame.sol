@@ -13,6 +13,8 @@ import {MerkleProof} from "@openzeppelin/contracts/utils/cryptography/MerkleProo
 import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import {SignatureChecker} from "@openzeppelin/contracts/utils/cryptography/SignatureChecker.sol";
 import {DrandVerifier} from "./DrandVerifier.sol";
+import {Base64} from "@openzeppelin/contracts/utils/Base64.sol";
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
 /// @title ColonyGame
 /// @notice Onchain ant-colony strategy game. Holds all game state. Every WIF payment is split
@@ -353,12 +355,16 @@ contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView
     event VoterRootSetterUpdated(address setter);
     event VoterPassGranted(address indexed player);
     event VoterPassLinked(address indexed voter, address indexed gameWallet);
+    event NameSet(address indexed player, string name);
 
     // ================================================================== errors
 
     error BadConfig();
     error BadSeasonEnd();
     error Soulbound();
+    error BadName();
+    error NameTaken();
+    error NameCooldown();
     error AlreadyHasColony();
     error NoColony();
     error NotAlive();
@@ -1339,6 +1345,87 @@ contract ColonyGame is ERC721, EIP712, Ownable, ReentrancyGuard, IColonyGameView
         fedTwice = c.feedCount >= 2;
         uint256 end = seasonEnd(season);
         qualifies = fedTwice && !c.collapseMarked && uint256(c.lastFed) + STARVE_AFTER >= end;
+    }
+
+    // ================================================================== names and the NFT card
+
+    /// @notice A player's name can change once per 21 days.
+    uint64 public constant NAME_COOLDOWN = 21 days;
+    /// @notice The name a player chose (shown for players who did not link X), "" if none.
+    mapping(address => string) public nameOf;
+    /// @notice Who holds a name, by keccak256 of the name. Names are lowercase, so each is unique.
+    mapping(bytes32 => address) public nameHolder;
+    /// @notice When the player last set a name (0 = never).
+    mapping(address => uint64) public nameSetAt;
+
+    /// @notice Names the caller's colony. 3 to 16 characters from a-z, 0-9 and _. Unique across players.
+    ///         Needs a colony this season. Can change again 21 days after the last change; the old name is freed.
+    function setName(string calldata name) external {
+        if (colonyOf[currentSeason()][msg.sender] == 0) revert NoColony();
+        bytes memory b = bytes(name);
+        if (b.length < 3 || b.length > 16) revert BadName();
+        for (uint256 i; i < b.length; ++i) {
+            bytes1 ch = b[i];
+            if (!((ch >= 0x61 && ch <= 0x7a) || (ch >= 0x30 && ch <= 0x39) || ch == 0x5f)) revert BadName();
+        }
+        uint64 last = nameSetAt[msg.sender];
+        if (last != 0 && block.timestamp < uint256(last) + NAME_COOLDOWN) revert NameCooldown();
+        bytes32 key = keccak256(b);
+        if (nameHolder[key] != address(0)) revert NameTaken();
+        bytes memory old = bytes(nameOf[msg.sender]);
+        if (old.length > 0) delete nameHolder[keccak256(old)];
+        nameHolder[key] = msg.sender;
+        nameOf[msg.sender] = name;
+        nameSetAt[msg.sender] = uint64(block.timestamp);
+        emit NameSet(msg.sender, name);
+    }
+
+    /// @notice Onchain metadata: the colony's name, a small card image and its stats. Nothing is hosted elsewhere.
+    function tokenURI(uint256 tokenId) public view override returns (string memory) {
+        _requireOwned(tokenId);
+        Colony storage c = colonies[uint64(tokenId)];
+        string memory id = Strings.toString(tokenId);
+        string memory who = nameOf[c.owner];
+        string memory title = bytes(who).length > 0 ? string.concat(who, "'s colony") : string.concat("Colony #", id);
+        string memory status = _statusName(_status(c, currentSeason()));
+        string memory ants = Strings.toString(c.workers);
+        string memory score = Strings.toString(c.score);
+        string memory season = Strings.toString(c.season);
+        string memory svg = string.concat(
+            "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 400'>",
+            "<rect width='400' height='400' fill='#24180F'/>",
+            "<rect x='28' y='28' width='344' height='344' fill='#E9D8B4' stroke='#1A110A' stroke-width='8'/>",
+            "<rect x='28' y='28' width='344' height='72' fill='#1A110A'/>",
+            "<text x='200' y='80' font-family='monospace' font-size='44' font-weight='bold' fill='#E9D8B4' text-anchor='middle'>C0LONY</text>",
+            "<text x='200' y='170' font-family='monospace' font-size='30' font-weight='bold' fill='#1A110A' text-anchor='middle'>",
+            title,
+            "</text><text x='200' y='212' font-family='monospace' font-size='18' fill='#4A3020' text-anchor='middle'>#",
+            id,
+            " &#183; season ",
+            season,
+            "</text><text x='200' y='280' font-family='monospace' font-size='22' fill='#1A110A' text-anchor='middle'>",
+            ants,
+            " ants &#183; score ",
+            score,
+            "</text><text x='200' y='330' font-family='monospace' font-size='18' fill='#4A3020' text-anchor='middle'>",
+            status,
+            "</text></svg>"
+        );
+        string memory json = string.concat(
+            '{"name":"', title, '","description":"An ant colony in C0LONY, an onchain strategy game on Robinhood Chain paid in $WIF. https://c0lony.xyz",',
+            '"image":"data:image/svg+xml;base64,', Base64.encode(bytes(svg)), '",',
+            '"attributes":[{"trait_type":"Season","value":', season, '},{"trait_type":"Ants","value":', ants,
+            '},{"trait_type":"Score","value":', score, '},{"trait_type":"Status","value":"', status, '"}]}'
+        );
+        return string.concat("data:application/json;base64,", Base64.encode(bytes(json)));
+    }
+
+    function _statusName(Status st) internal pure returns (string memory) {
+        if (st == Status.Alive) return "Alive";
+        if (st == Status.Starving) return "Starving";
+        if (st == Status.Collapsed) return "Collapsed";
+        if (st == Status.SeasonOver) return "Season over";
+        return "None";
     }
 
     // ================================================================== locked colony NFT

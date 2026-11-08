@@ -73,3 +73,15 @@ test("PushClient delivers to Telegram even with push off, and a Telegram outage 
   assert.equal(await both.notify(BOB, "forage", P), 1);
   assert.deepEqual(pushed, ["https://p"]);
 });
+
+test("alert labels: X handle first, then the onchain name, then a short address", async () => {
+  const profiles: Record<string, unknown> = { [ALICE]: { xHandle: "alice", name: "ignored" }, [BOB]: { xHandle: null, name: "bobs_ants" } };
+  const fetchFn = (async (url: string) => {
+    const w = new URL(url).searchParams.get("wallets")!;
+    return new Response(JSON.stringify({ profiles: profiles[w] ? { [w]: profiles[w] } : {} }));
+  }) as unknown as typeof fetch;
+  const c = new PushClient({ apiBase: "https://app.x", secret: "k", fetchFn });
+  assert.equal(await c.label(ALICE), "@alice");
+  assert.equal(await c.label(BOB), "bobs_ants");
+  assert.match(await c.label("0x" + "c".repeat(40)), /^0xcccc…cccc$/);
+});

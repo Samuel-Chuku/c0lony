@@ -103,6 +103,9 @@ An honest self-audit of the C0LONY contracts written during the build. It is not
 | Forged messages to the bot's webhook | Telegram sends a secret header set with `setWebhook`; requests without it are refused. | Closed |
 | Bot token leaks | It lives only in the app's encrypted secrets and the keeper's `.env`, never in the site or the repo. Logs never print it. | Closed |
 | Alerts reveal a sealed target | Alerts are built from the public feed, which strips targets and guard choices until the reveal. | Closed |
+| Uploaded pictures carry script | Only PNG, JPEG and WebP are accepted, checked by their first bytes rather than the file name; SVG is refused. Pictures are capped at 100 KB, served with their real type, `nosniff` and a `default-src 'none'` policy. Only the signed-in owner of a wallet can change its picture. | Closed |
+| Offensive names or pictures | Names are limited to a to z, 0 to 9 and _ and cost a colony to claim. There is no automatic moderation of pictures. | Accepted for the hackathon |
+| Fake names in the app | Names reach the app only from the keeper's signed feed of onchain `NameSet` events, and are checked against the same rules again. | Closed |
 | Spam to a player | The bot only messages chats that linked themselves, honours each chat's switches, `/stop` unlinks every wallet, and chats that block the bot are removed. | Closed |
 
 ## Settle gas
@@ -115,7 +118,7 @@ An honest self-audit of the C0LONY contracts written during the build. It is not
 - Auto-reveal depends on the keeper and on drand quicknet being reachable. If either is down past the 24 h reveal window and the raider does not reveal by hand, the marching ants are lost. The app offers a by-hand Reveal 15 minutes after the guard window if the raid has not revealed itself.
 - The keeper pays reveal gas from its own float (not refunded by the treasury, which only refunds `settle`).
 - Ranking gas grows linearly with the number of colonies that were fed twice. That's fine for hundreds of colonies, but would need batching across several transactions for many thousands.
-- The new raid loop (all-ants march, 60% lock, protection timers, timelocked auto-reveal) has unit and fuzz tests (150 pass) and has run end to end on testnet (Run 3 in [TESTNET_RUN.md](TESTNET_RUN.md)), but not yet a full season with many players. Balance numbers are untested with real players, and the owner can tune the timers within their caps.
+- The new raid loop (all-ants march, 60% lock, protection timers, timelocked auto-reveal) has unit and fuzz tests (156 pass) and has run end to end on testnet (Run 3 in [TESTNET_RUN.md](TESTNET_RUN.md)), but not yet a full season with many players. Balance numbers are untested with real players, and the owner can tune the timers within their caps.
 - Guaranteed wins on unguarded raids are a design choice. If play shows raiding is too strong, the tools are `raidProtection` and the raider cooldown, each within 0.25x to 4x.
 - Avenge collusion is slowed, not prevented. Two coordinated wallets can still trade raids. The score value of a win is the same as a normal raid.
 - Avenge grants survive refounding and season boundaries for up to 24 h.

@@ -7,6 +7,13 @@ import { RES, displayName, fmtDuration, fmtRes, fmtWif } from "./format";
 import { Outcome, Resource } from "./game";
 import { eventsOf, type SuccessContent } from "./tx";
 import { Wif } from "../ui";
+import { useXProfile } from "./useXProfile";
+
+/** A player's name as shown everywhere (X handle, else their chosen name, else a short address). */
+function Name({ addr }: { addr: string }) {
+  const x = useXProfile(addr);
+  return <>{displayName(addr.toLowerCase(), x)}</>;
+}
 
 type Rec = TransactionReceipt;
 
@@ -214,31 +221,31 @@ export function raidResult(o: RaidOutcome, me: string | null): SuccessContent {
   const meL = me?.toLowerCase() ?? "";
   const asRaider = o.raider.toLowerCase() === meL;
   const asDefender = o.defender.toLowerCase() === meL;
-  const them = displayName(asRaider ? o.defender : o.raider);
+  const them = <Name addr={asRaider ? o.defender : o.raider} />;
   const lostAnts = o.lost > 0 ? delta(-BigInt(o.lost), "ant") : null;
   const report = { href: `/report?raid=${o.raidId}`, label: "Read the raid report" };
   if (o.outcome === "won") {
     if (asRaider) {
       return { title: "Raid won", tone: "raid", link: report, lines: [
         deltas(o.loot >= RES ? delta(o.loot, o.lootKind) : null, lostAnts),
-        `Your ants raided ${them} and took ${o.pct}% of the ${o.lootKind === "leaf" ? "leaves" : "sugar"}`,
+        <>Your ants raided {them} and took {o.pct}% of the {o.lootKind === "leaf" ? "leaves" : "sugar"}</>,
         "+25 score at your next feeding",
       ] };
     }
     if (asDefender) {
       return { title: "You were raided", tone: "raid", link: { href: `/?tab=raids&avenge=${o.raider.toLowerCase()}`, label: "Avenge · raid them back for free" }, lines: [
         deltas(o.loot >= RES ? delta(-o.loot, o.lootKind) : null),
-        `${them} took ${o.pct}% of your ${o.lootKind === "leaf" ? "leaves" : "sugar"}`,
+        <>{them} took {o.pct}% of your {o.lootKind === "leaf" ? "leaves" : "sugar"}</>,
       ] };
     }
   }
   if (o.outcome === "guarded") {
-    if (asRaider) return { title: "Raid lost", tone: "raid", link: report, lines: [deltas(lostAnts), `${them} guarded the right store`, `${o.lost} of your marching ants fell`] };
-    if (asDefender) return { title: "Your guard held", tone: "raid", link: report, lines: [`You guarded the right store against ${them}`, o.lost > 0 ? `${o.lost} of their ants fell` : "Their ants went home empty", "+10 score at your next feeding"] };
+    if (asRaider) return { title: "Raid lost", tone: "raid", link: report, lines: [deltas(lostAnts), <>{them} guarded the right store</>, `${o.lost} of your marching ants fell`] };
+    if (asDefender) return { title: "Your guard held", tone: "raid", link: report, lines: [<>You guarded the right store against {them}</>, o.lost > 0 ? `${o.lost} of their ants fell` : "Their ants went home empty", "+10 score at your next feeding"] };
   }
-  if (asRaider) return { title: "Raid lost", tone: "raid", link: report, lines: [lostAnts ? deltas(lostAnts) : "No loot this time", `${them} held your ants off`] };
-  if (asDefender) return { title: "Raid held off", tone: "raid", link: report, lines: ["Nothing taken", `Your colony held off ${them}`] };
-  return { title: "Raid settled", tone: "raid", link: report, lines: [o.outcome === "won" ? `${displayName(o.raider)} raided ${displayName(o.defender)}` : `${displayName(o.defender)} held`] };
+  if (asRaider) return { title: "Raid lost", tone: "raid", link: report, lines: [lostAnts ? deltas(lostAnts) : "No loot this time", <>{them} held your ants off</>] };
+  if (asDefender) return { title: "Raid held off", tone: "raid", link: report, lines: ["Nothing taken", <>Your colony held off {them}</>] };
+  return { title: "Raid settled", tone: "raid", link: report, lines: [o.outcome === "won" ? <><Name addr={o.raider} /> raided <Name addr={o.defender} /></> : <><Name addr={o.defender} /> held</>] };
 }
 
 export const settleResult = (r: Rec, myOwner: string | null): SuccessContent => {
