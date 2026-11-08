@@ -221,7 +221,17 @@ flowchart TB
 
 ## Contracts
 
-Current Robinhood Chain **testnet** (46630) deployment (sixth, 2026-11-05), all verified on Blockscout. Mainnet addresses are added here at launch.
+**Robinhood Chain mainnet (4663)**, deployed 2026-11-08, verified on [Sourcify](https://sourcify.dev). Season 1 ends 2026-11-16 07:30 UTC, and its pot was seeded with 10,000 WIF ([sponsor transaction](https://robinhoodchain.blockscout.com/tx/0xc3666a53145323679305726a6708bf06efcf353a40ba3f92456c37d294b1b1ea)). Play at [app.c0lony.xyz](https://app.c0lony.xyz).
+
+| Contract | Address |
+| --- | --- |
+| ColonyGame | [`0x403988c9cAdE46293a4561ADC6fbb0BDA02647FF`](https://robinhoodchain.blockscout.com/address/0x403988c9cAdE46293a4561ADC6fbb0BDA02647FF) |
+| SeasonPot | [`0x74f955C7b01Ad3649d50a93149b9ad9C5594c8b9`](https://robinhoodchain.blockscout.com/address/0x74f955C7b01Ad3649d50a93149b9ad9C5594c8b9) |
+| Treasury | [`0x653a93f2018DfcCf6bE8b70d7cA227b27ADE6037`](https://robinhoodchain.blockscout.com/address/0x653a93f2018DfcCf6bE8b70d7cA227b27ADE6037) |
+| DrandVerifier (library) | [`0x2513832059bac29e5a5115634694F22B6B302Ae1`](https://robinhoodchain.blockscout.com/address/0x2513832059bac29e5a5115634694F22B6B302Ae1) |
+| WIF | [`0x5173b8eA6923c2d40267890D45C46a3480954773`](https://robinhoodchain.blockscout.com/address/0x5173b8eA6923c2d40267890D45C46a3480954773) |
+
+**Robinhood Chain testnet (46630)**, kept running as a free practice game at [test.c0lony.xyz](https://test.c0lony.xyz) (sixth deployment, 2026-11-05, verified on Blockscout):
 
 | Contract | Address |
 | --- | --- |
@@ -231,7 +241,7 @@ Current Robinhood Chain **testnet** (46630) deployment (sixth, 2026-11-05), all 
 | DrandVerifier (library) | [`0x2513832059bac29e5a5115634694F22B6B302Ae1`](https://explorer.testnet.chain.robinhood.com/address/0x2513832059bac29e5a5115634694F22B6B302Ae1) |
 | MockWIF (testnet only) | [`0xC7524F3D78E5f6150aff0Eac811e9Bd0D0Fd9B68`](https://explorer.testnet.chain.robinhood.com/address/0xC7524F3D78E5f6150aff0Eac811e9Bd0D0Fd9B68) |
 
-Mainnet WIF is `0x5173b8eA6923c2d40267890D45C46a3480954773` (source and checks in [docs/DEPLOYMENTS.md](docs/DEPLOYMENTS.md)). Plain-English contract guide: [docs/CONTRACTS_EXPLAINED.md](docs/CONTRACTS_EXPLAINED.md). Self-audit: [docs/SECURITY_REVIEW.md](docs/SECURITY_REVIEW.md).
+Sources and checks for every address are in [docs/DEPLOYMENTS.md](docs/DEPLOYMENTS.md). Plain-English contract guide: [docs/CONTRACTS_EXPLAINED.md](docs/CONTRACTS_EXPLAINED.md). Self-audit: [docs/SECURITY_REVIEW.md](docs/SECURITY_REVIEW.md).
 
 ## How to play
 
@@ -252,7 +262,7 @@ cd web && pnpm test:functions         # feed and profile functions
 cd web && pnpm typecheck && pnpm typecheck:functions
 ```
 
-The Foundry suite has 159 tests, including fuzzed loot maths and real drand rounds; the keeper has 80 and the serverless functions 31. The economy and raid rules above were added on 2026-11-02, after the recorded seasons below, which ran on the older rules.
+The Foundry suite has 159 tests, including fuzzed loot maths and real drand rounds; the keeper has 80 and the serverless functions 32. The economy and raid rules above were added on 2026-11-02, after the recorded seasons below, which ran on the older rules.
 
 Recorded testnet runs with transaction links are in [docs/TESTNET_RUN.md](docs/TESTNET_RUN.md): two full seasons with real drand rounds on the earlier rules, and a set-and-forget raid on the current contracts that the keeper revealed and settled by itself, with the settle gas refund checked against the real receipt.
 

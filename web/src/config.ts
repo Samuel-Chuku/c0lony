@@ -24,14 +24,14 @@ export const NETWORKS = {
     chainId: 4663,
     telegram: true,
     names: true, // ColonyGame.setName (colony names on the NFT and in place of addresses)
-    deployBlock: 0, // set with the mainnet deploy
+    deployBlock: 108987777, // 2026-11-08 mainnet deploy (DrandVerifier, the first transaction)
     name: "Robinhood Chain",
     rpcUrl: "https://rpc.mainnet.chain.robinhood.com",
     explorerUrl: "https://robinhoodchain.blockscout.com",
     contracts: {
-      colonyGame: "", // filled in after the mainnet deploy
-      seasonPot: "",
-      treasury: "",
+      colonyGame: "0x403988c9cAdE46293a4561ADC6fbb0BDA02647FF",
+      seasonPot: "0x74f955C7b01Ad3649d50a93149b9ad9C5594c8b9",
+      treasury: "0x653a93f2018DfcCf6bE8b70d7cA227b27ADE6037", // also receives the 0.5% swap fee
       wif: "0x5173b8eA6923c2d40267890D45C46a3480954773",
     },
   },

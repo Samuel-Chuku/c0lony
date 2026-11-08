@@ -130,3 +130,12 @@ test("wif faucet: wallet must belong to the signed-in user", async () => {
   const { env } = mkEnv("testnet");
   assert.equal((await faucet(env, "0x" + "7".repeat(40))).status, 403);
 });
+
+test("the keeper's queue only holds this site's network, so a mainnet keeper never pays a testnet request", async () => {
+  const { env, d1 } = mkEnv("mainnet");
+  d1.raw.prepare("INSERT INTO gas_requests (did, wallet, network, status, createdAt, updatedAt, kind) VALUES ('d', ?, 'testnet', 'pending', 1, 1, 'gas')").run(A);
+  d1.raw.prepare("INSERT INTO gas_requests (did, wallet, network, status, createdAt, updatedAt, kind) VALUES ('d', ?, 'testnet', 'pending', 1, 1, 'wif')").run(A);
+  d1.raw.prepare("INSERT INTO gas_requests (did, wallet, network, status, createdAt, updatedAt, kind) VALUES ('e', ?, 'mainnet', 'pending', 2, 2, 'gas')").run(B);
+  const list = (await (await gasPending(await signedReq("/api/gas/pending", {}), env)).json()) as { requests: { wallet: string }[] };
+  assert.deepEqual(list.requests.map((r) => r.wallet), [B]);
+});

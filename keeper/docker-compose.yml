@@ -13,3 +13,20 @@ services:
     volumes:
       - ./state:/app/keeper/state
       - ./public/voters:/app/keeper/public/voters
+
+  # The testnet game keeps running beside mainnet (free practice for players and voters). Its own env file and
+  # state; voter files stay inside it (the public ones come from the mainnet keeper). Start both with:
+  #   docker compose --profile testnet up -d --build
+  keeper-testnet:
+    profiles: ["testnet"]
+    build:
+      context: ..
+      dockerfile: keeper/Dockerfile
+    container_name: c0lony-keeper-testnet
+    restart: unless-stopped
+    env_file: .env.testnet
+    ports:
+      - "127.0.0.1:8791:8787"
+    volumes:
+      - ./state-testnet:/app/keeper/state
+      - ./public/voters-testnet:/app/keeper/public/voters

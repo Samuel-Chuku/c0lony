@@ -192,6 +192,28 @@ Environment variable names (see `keeper/.env.example`): `FEED_API_BASE`, `FEED_I
 
 ## Deployed contracts
 
+### Robinhood Chain mainnet (4663), 2026-11-08
+
+Deployed once by `script/Deploy.s.sol` from `0x4B11611CF7C90aEc2003721d71107d7E1cBf37c2` (the owner), blocks 108,987,777–108,987,853, 8 transactions, 0.00031 ETH in gas. The Treasury was funded with 0.002 ETH in the same broadcast, and Season 1's end was set to **2026-11-16 07:30 UTC** (`1794814200`), 10 hours before the hackathon final closes. Later seasons default to 10 days. All four contracts are verified on [Sourcify](https://sourcify.dev) (exact match for DrandVerifier, Treasury and SeasonPot; match for ColonyGame); Blockscout's API sits behind a bot challenge for scripted requests.
+
+| Contract | Address |
+| --- | --- |
+| ColonyGame | [`0x403988c9cAdE46293a4561ADC6fbb0BDA02647FF`](https://robinhoodchain.blockscout.com/address/0x403988c9cAdE46293a4561ADC6fbb0BDA02647FF) |
+| SeasonPot | [`0x74f955C7b01Ad3649d50a93149b9ad9C5594c8b9`](https://robinhoodchain.blockscout.com/address/0x74f955C7b01Ad3649d50a93149b9ad9C5594c8b9) |
+| Treasury | [`0x653a93f2018DfcCf6bE8b70d7cA227b27ADE6037`](https://robinhoodchain.blockscout.com/address/0x653a93f2018DfcCf6bE8b70d7cA227b27ADE6037) |
+| DrandVerifier (library) | [`0x2513832059bac29e5a5115634694F22B6B302Ae1`](https://robinhoodchain.blockscout.com/address/0x2513832059bac29e5a5115634694F22B6B302Ae1) |
+| WIF | [`0x5173b8eA6923c2d40267890D45C46a3480954773`](https://robinhoodchain.blockscout.com/address/0x5173b8eA6923c2d40267890D45C46a3480954773) |
+
+Launch setup, each from the owner:
+
+| Step | Transaction |
+| --- | --- |
+| Deploy ColonyGame | [`0x86b50402…`](https://robinhoodchain.blockscout.com/tx/0x86b50402d8d36d5021dc034383cdb9b931fec4f12def10408ac5fde5a2029f4c) |
+| Set Season 1's end | [`0x7e2b7bb3…`](https://robinhoodchain.blockscout.com/tx/0x7e2b7bb381822194171ab81549ea18b6b8460eafde59601e60ab06f251e0fab1) |
+| Fund the Treasury (0.002 ETH) | [`0x043e887a…`](https://robinhoodchain.blockscout.com/tx/0x043e887a1180a8e61d1d24022aff030f69aa064db899c1ced86be672385365e3) |
+| Keeper may post the Voter's Pass root | [`0x028d2e02…`](https://robinhoodchain.blockscout.com/tx/0x028d2e02baf1a0e1c7161fc6e3da0aa18c0d41295f2b4f1e5ad0df903fde2cc4) |
+| Sponsor the Season 1 pot with 10,000 WIF | [`0xc3666a53…`](https://robinhoodchain.blockscout.com/tx/0xc3666a53145323679305726a6708bf06efcf353a40ba3f92456c37d294b1b1ea) |
+
 ### Robinhood Chain testnet (46630), current deployment (2026-11-05, sixth)
 
 Redeployed so raids reveal themselves. `launchRaid` and `avenge` take a third argument, the target and salt timelocked to a drand quicknet round after the guard window, published in a new `RaidSealed` event (max 1,024 bytes). `reveal` is open to anyone whose target and salt match the commitment, so the keeper reveals once the timelock opens. Blocks 149,189,109–149,189,177, 10,398,402 gas in total. ColonyGame, SeasonPot and Treasury are verified on Blockscout; the DrandVerifier library and MockWIF are reused.

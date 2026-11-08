@@ -350,8 +350,11 @@ export async function wifFaucet(request: Request, env: Env, fetchImpl: typeof fe
 export async function gasPending(request: Request, env: Env): Res {
   const s = await signedBody(request, env);
   if (s instanceof Response) return s;
+  // Only this site's network: a testnet request left in the queue must never be paid by a mainnet keeper.
+  const network = env.NEXT_PUBLIC_NETWORK === "mainnet" ? "mainnet" : "testnet";
   const { results } = await env.FEED_DB!
-    .prepare("SELECT id, wallet, kind FROM gas_requests WHERE status = 'pending' ORDER BY createdAt ASC, id ASC LIMIT 50")
+    .prepare("SELECT id, wallet, kind FROM gas_requests WHERE status = 'pending' AND network = ? ORDER BY createdAt ASC, id ASC LIMIT 50")
+    .bind(network)
     .all<{ id: number; wallet: string; kind: string }>();
   return json({ requests: results.map((r) => ({ id: r.id, wallet: r.wallet, kind: r.kind === "wif" ? "wif" : "gas" })) });
 }

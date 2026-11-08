@@ -30,6 +30,8 @@ web/next-env.d.ts
 # Keeper
 keeper/dist/
 keeper/state/
+keeper/state-testnet/
+keeper/public/voters-testnet/
 keeper/logs/
 *.log
 
