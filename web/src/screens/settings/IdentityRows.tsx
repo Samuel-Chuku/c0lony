@@ -95,9 +95,12 @@ function NameRow() {
 
   const waitLeft = current && current.setAt > 0 ? current.setAt + COOLDOWN - now : 0;
   const hasColony = !!profile.data && profile.data.colonyId > 0n;
-  const reason = !addr ? "Sign in first"
-    : !hasColony ? "Found a colony first"
-    : waitLeft > 0 ? `You can change it again in ${Math.ceil(waitLeft / DAY)} days`
+  // Hard blocks get a full-width strip under the field so they can't be missed; typing hints stay small.
+  const block = !addr ? "Sign in first to name your colony."
+    : !hasColony ? "Found a colony first. Names belong to a living colony this season."
+    : waitLeft > 0 ? `You can change your name again in ${Math.ceil(waitLeft / DAY)} days.`
+    : undefined;
+  const reason = block ? "Not yet"
     : !NAME_RE.test(draft) ? "3 to 16 characters: a to z, 0 to 9 and _"
     : taken ? "That name is taken"
     : draft === current?.name ? "That's already your name"
@@ -140,6 +143,7 @@ function NameRow() {
           Save name
         </Button>
       </div>
+      {block ? <div className="c0-blocked" role="status">{block}</div> : null}
     </div>
   );
 }
