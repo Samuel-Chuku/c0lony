@@ -44,7 +44,7 @@ export function LiveScreen() {
           <div className="c0-potstrip__cap">SEASON {season.data ? season.data.season : ""} POT</div>
           <div className="c0-potstrip__num c0-potstrip__num--gold">{season.data ? <Wif size={20}>{fmtWif(season.data.pot)}</Wif> : "…"}</div>
         </div>
-        <Link className="c0-potstrip__right c0-potstrip__link" href="/?tab=season#burns" aria-label="See every burn">
+        <Link className="c0-potstrip__right c0-potstrip__link" href="/burns" aria-label="See every burn">
           <div className="c0-potstrip__cap">BURNED ›</div>
           <div className="c0-potstrip__num">{stats.data ? <Wif size={20}>{fmtInt(Math.floor(Number(stats.data.burnedWif)))}</Wif> : "·"}</div>
         </Link>

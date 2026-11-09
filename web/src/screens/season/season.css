@@ -15,7 +15,6 @@
 .c0-ss__more { align-self: flex-end; color: var(--c0-fg); font-family: var(--c0-f-display); font-size: 20px; text-decoration: none; min-height: 44px; display: inline-flex; align-items: center; }
 .c0-ss__h { margin: 0; font-family: var(--c0-f-display); font-weight: 400; font-size: 22px; color: var(--c0-fg); letter-spacing: 2px; }
 .c0-ss__burnlink { font-size: var(--c0-fs-caption); color: var(--c0-sub); text-underline-offset: 2px; }
-.c0-burns { scroll-margin-top: 72px; }
 .c0-burns__list { list-style: none; margin: 0 0 var(--c0-s2); padding: 0; display: flex; flex-direction: column; }
 .c0-burns__row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px var(--c0-s3); padding: var(--c0-s2) 0; border-bottom: 2px dashed var(--c0-rule); font-size: 14px; }
 .c0-burns__row:last-child { border-bottom: 0; }
@@ -23,3 +22,13 @@
 .c0-burns__amt { justify-self: end; font-family: var(--c0-f-display); font-weight: 400; font-size: 20px; }
 .c0-burns__when { color: var(--c0-sub); font-size: var(--c0-fs-caption); }
 .c0-burns__tx { justify-self: end; color: var(--c0-ink); font-family: var(--c0-f-display); font-size: 18px; min-height: 32px; display: inline-flex; align-items: center; }
+.c0-ss__burnbox, .c0-ss__meta > div > .c0-ss__burnbox { align-self: flex-start; display: inline-flex; align-items: center; gap: var(--c0-s1); background: var(--c0-gold); color: var(--c0-ink); border: var(--c0-bw-thin) solid var(--c0-ink); padding: 2px var(--c0-s2); font-family: var(--c0-f-display); font-size: 26px; line-height: var(--c0-lh-tight); margin-bottom: var(--c0-s1); }
+.c0-ss__burnbox--big { font-size: 40px; padding: var(--c0-s1) var(--c0-s3); }
+.c0-burns__pager { display: flex; align-items: center; justify-content: space-between; gap: var(--c0-s2); }
+.c0-burns__page { color: var(--c0-fg); font-family: var(--c0-f-display); font-size: 20px; }
+.c0-fire__b { visibility: hidden; }
+@keyframes c0-fire-a { 50% { visibility: hidden; } }
+@keyframes c0-fire-b { 50% { visibility: visible; } }
+.c0-fire__a { animation: c0-fire-a 0.5s steps(1) infinite; }
+.c0-fire__b { animation: c0-fire-b 0.5s steps(1) infinite; }
+@media (prefers-reduced-motion: reduce) { .c0-fire__a, .c0-fire__b { animation: none; } }

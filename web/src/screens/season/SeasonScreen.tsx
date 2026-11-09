@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { Card, Underway, Wif } from "../../ui";
+import { Card, Fire, Underway, Wif } from "../../ui";
 import { Screen } from "../../shell/Screen";
 import { useFeedStats } from "../../lib/api";
 import { fmtDuration, fmtInt, fmtWif } from "../../lib/format";
@@ -8,7 +8,6 @@ import { Status, estimateShare, seasonDays, useColonies, useNow, useSeason } fro
 import { useSession } from "../../lib/session";
 import { LeaderRow } from "../leaderboard/LeaderRow";
 import { ClaimButton } from "../profile/ClaimButton";
-import { Burns } from "./Burns";
 import "./season.css";
 
 const byScore = (a: { score: bigint; id: bigint }, b: { score: bigint; id: bigint }) =>
@@ -39,7 +38,7 @@ export function SeasonScreen() {
         <span className="c0-ss__big">{season ? <Wif size={30}>{fmtWif(season.pot)}</Wif> : "…"}</span>
         <div className="c0-ss__meta">
           <div><b>{season ? (left > 0 ? fmtDuration(left) : "Over") : "…"}</b><span>{left > 0 ? "left" : "claim your share"}</span></div>
-          <div><b>{burned === null ? "…" : <Wif>{fmtInt(burned)}</Wif>}</b><a className="c0-ss__burnlink" href="#burns">burned so far · see burns ›</a></div>
+          <div><span className="c0-ss__burnbox"><Fire size={26} />{burned === null ? "…" : <Wif size={22}>{fmtInt(Math.floor(burned))}</Wif>}</span><Link className="c0-ss__burnlink" href="/burns">burned so far · see burns ›</Link></div>
         </div>
         <p className="c0-ss__how">
           Half the pot is shared by score among every colony still alive at the end that was fed at least twice. The other half is shared by score among the top quarter.
@@ -70,7 +69,6 @@ export function SeasonScreen() {
         </Card>
       )}
       {session.address ? <ClaimButton wallet={session.address} season={season ? Number(season.season) : undefined} /> : null}
-      <Burns />
       </div>
 
       <div className="c0-split__side">
@@ -90,6 +88,7 @@ export function SeasonScreen() {
 
       <div className="c0-ss__links">
         <Link className="c0-ss__link" href="/how-to-play"><span>How to play</span><span aria-hidden="true">›</span></Link>
+        <Link className="c0-ss__link" href="/burns"><span>Burns</span><span aria-hidden="true">›</span></Link>
         <Link className="c0-ss__link" href="/invite"><span>Invite friends</span><span aria-hidden="true">›</span></Link>
       </div>
       </div>
