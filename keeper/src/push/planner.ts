@@ -22,6 +22,8 @@ export function fmtRes(raw: string): string {
 const pos = (e: FeedEvent) => e.block * 1_000_000 + e.logIndex;
 const payload = (body: string, url: string, tag: string, image?: string): PushPayload => ({ title: "C0LONY", body, url, tag, ...(image ? { image } : {}) });
 
+const SEASON_REMINDERS_H = [24, 12, 4, 1];
+
 export class PushPlanner {
   private readonly o: {
     sched: Scheduler;
@@ -135,18 +137,36 @@ export class PushPlanner {
     for (const w of this.rosterData[String(season)] ?? []) this.queueSeason(season, newEnd, w);
   }
 
+  /** On start: re-queue every roster wallet's season reminders from the chain's current end (safe to repeat). */
+  async resyncSeasons(): Promise<void> {
+    for (const key of Object.keys(this.rosterData)) {
+      const season = Number(key);
+      const wallets = this.rosterData[key] ?? [];
+      if (!wallets.length) continue;
+      const end = await this.o.chain.seasonEnd(season);
+      if (end <= this.o.now()) continue;
+      this.o.sched.cancelPrefix(`season:${season}:`);
+      for (const w of wallets) this.queueSeason(season, end, w);
+    }
+  }
+
   private async seasonJob(season: number, wallet: string): Promise<void> {
     this.queueSeason(season, await this.o.chain.seasonEnd(season), wallet);
   }
 
+  /** Reminders 24h, 12h, 4h and 1h before the end; ones already in the past are skipped. */
   private queueSeason(season: number, end: number, wallet: string): void {
-    this.o.sched.schedule({
-      key: `season:${season}:${end}:${wallet}`,
-      at: end - 24 * HOUR,
-      wallet,
-      pref: "season",
-      payload: payload(`Season ${season} ends in 24h.`, "/?tab=live", `season-${season}`),
-    });
+    for (const h of SEASON_REMINDERS_H) {
+      const at = end - h * HOUR;
+      if (at <= this.o.now()) continue;
+      this.o.sched.schedule({
+        key: `season:${season}:${end}:${h}:${wallet}`,
+        at,
+        wallet,
+        pref: "season",
+        payload: payload(`Season ${season} ends in ${h}h. Keep your queen fed to share the pot.`, "/?tab=season", `season-${season}-${h}`, "season"),
+      });
+    }
   }
 
   /** hungry12 and hungry2 for one fed/founded event; a newer event for the same wallet replaces older jobs. */

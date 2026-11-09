@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Card, Fire, Underway, Wif } from "../../ui";
 import { Screen } from "../../shell/Screen";
 import { useFeedStats } from "../../lib/api";
-import { fmtDuration, fmtInt, fmtWif } from "../../lib/format";
+import { fmtCountdown, fmtInt, fmtWif } from "../../lib/format";
 import { Status, estimateShare, seasonDays, useColonies, useNow, useSeason } from "../../lib/game";
 import { useSession } from "../../lib/session";
 import { LeaderRow } from "../leaderboard/LeaderRow";
@@ -15,7 +15,7 @@ const byScore = (a: { score: bigint; id: bigint }, b: { score: bigint; id: bigin
 
 export function SeasonScreen() {
   const session = useSession();
-  const now = useNow(30_000);
+  const now = useNow(1_000);
   const season = useSeason().data;
   const stats = useFeedStats().data;
   const colonies = useColonies();
@@ -37,7 +37,7 @@ export function SeasonScreen() {
         </div>
         <span className="c0-ss__big">{season ? <Wif size={30}>{fmtWif(season.pot)}</Wif> : "…"}</span>
         <div className="c0-ss__meta">
-          <div><b>{season ? (left > 0 ? fmtDuration(left) : "Over") : "…"}</b><span>{left > 0 ? "left" : "claim your share"}</span></div>
+          <div><b className={left > 0 && left <= 3600 ? "c0-ss__left c0-ss__left--last" : "c0-ss__left"} role="timer">{season ? (left > 0 ? fmtCountdown(left) : "Over") : "…"}</b><span>{left > 0 ? "left" : "claim your share"}</span></div>
           <div><span className="c0-ss__burnbox"><Fire size={26} />{burned === null ? "…" : <Wif size={22}>{fmtInt(Math.floor(burned))}</Wif>}</span><Link className="c0-ss__burnlink" href="/burns">burned so far · see burns ›</Link></div>
         </div>
         <p className="c0-ss__how">

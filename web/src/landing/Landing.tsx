@@ -192,7 +192,7 @@ export function Landing() {
               ))}
             </ol>
             <p className="l-note">
-              Season 1 ends just before the hackathon final closes, and later seasons last 10 days. When it ends, colonies that stayed alive share the pot by
+              Season 1 ends 4 hours before the hackathon final closes, and later seasons last 10 days. When it ends, colonies that stayed alive share the pot by
               score.
             </p>
           </div>

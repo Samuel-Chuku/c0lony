@@ -23,6 +23,7 @@ function Row({ t, onGo }: { t: Todo; onGo: () => void }) {
   else if (t.kind === "close") text = <>A raid ended without a roll. Close it to raid again</>;
   else if (t.kind === "revive") { icon = <ResIcon name="queen" size={20} />; text = <>Your queen is starving. Revive her before the colony falls</>; }
   else if (t.kind === "feed") { icon = <ResIcon name="queen" size={20} />; text = <>The queen can be fed</>; }
+  else if (t.kind === "season") { icon = <PixelIcon name="trophy" />; text = <>Season {t.season} ends in {fmtDuration(t.left ?? 0)}. Keep your queen fed to share the pot</>; }
   else { icon = <PixelIcon name="pantry" />; text = <>The pantry has {t.trips} {t.trips === 1 ? "trip" : "trips"} to claim</>; }
   return (
     <li>

@@ -32,3 +32,6 @@
 .c0-fire__a { animation: c0-fire-a 0.5s steps(1) infinite; }
 .c0-fire__b { animation: c0-fire-b 0.5s steps(1) infinite; }
 @media (prefers-reduced-motion: reduce) { .c0-fire__a, .c0-fire__b { animation: none; } }
+.c0-ss__left { font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* The one place red is not a raid: the season's last hour. */
+.c0-ss__left--last { color: var(--c0-red-text); }

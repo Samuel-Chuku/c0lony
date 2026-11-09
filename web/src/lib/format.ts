@@ -40,6 +40,18 @@ export function fmtDuration(sec: number): string {
   return `${s}s`;
 }
 
+/** A ticking countdown: "6d 22h 14m 05s", dropping leading zero units. */
+export function fmtCountdown(sec: number): string {
+  const s = Math.max(0, Math.floor(sec));
+  const d = Math.floor(s / 86400);
+  const h = Math.floor((s % 86400) / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const ss = String(s % 60).padStart(2, "0");
+  if (d > 0) return `${d}d ${h}h ${m}m ${ss}s`;
+  if (h > 0) return `${h}h ${m}m ${ss}s`;
+  return `${m}m ${ss}s`;
+}
+
 /** Unix seconds in the past → "2m ago", "3h ago", "2d ago". */
 export function timeAgo(ts: number, now: number): string {
   const s = Math.max(0, now - ts);

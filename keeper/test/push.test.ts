@@ -156,14 +156,27 @@ test("season reminders follow SeasonEndChanged", async () => {
   const s = setup();
   await s.planner.onEvent(ev("founded", [ALICE], { season: 1 }));
   const first = s.sched.pending.filter((j) => j.pref === "season");
-  assert.equal(first.length, 1);
+  assert.equal(first.length, 4);
   await s.planner.onSeasonEndChanged(1, 3_000_000_000);
   const after = s.sched.pending.filter((j) => j.pref === "season");
-  assert.equal(after.length, 1);
-  assert.equal(after[0].at, 3_000_000_000 - 24 * H);
+  assert.deepEqual(after.map((j) => j.at).sort(), [24, 12, 4, 1].map((h) => 3_000_000_000 - h * H).sort());
+  // Close to the end, only the reminders still ahead are queued.
+  await s.planner.onSeasonEndChanged(1, s.now.t + 5 * H);
+  assert.deepEqual(s.sched.pending.filter((j) => j.pref === "season").map((j) => j.at).sort(), [s.now.t + H, s.now.t + 4 * H].sort());
   await s.planner.onEvent(ev("collapsed", [ALICE], {}, 50));
   await s.planner.onSeasonEndChanged(1, 3_100_000_000);
   assert.equal(s.sched.pending.filter((j) => j.pref === "season").length, 0);
+});
+
+test("season reminders are re-queued on start", async () => {
+  const s = setup();
+  await s.planner.onEvent(ev("founded", [ALICE], { season: 1 }));
+  s.sched.cancelPrefix("season:1:");
+  assert.equal(s.sched.pending.filter((j) => j.pref === "season").length, 0);
+  await s.planner.resyncSeasons();
+  assert.equal(s.sched.pending.filter((j) => j.pref === "season").length, 4);
+  await s.planner.resyncSeasons();
+  assert.equal(s.sched.pending.filter((j) => j.pref === "season").length, 4);
 });
 
 test("subscriptions made with an older VAPID key (403) are pruned, not retried", async () => {

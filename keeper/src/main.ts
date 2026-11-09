@@ -67,6 +67,7 @@ if (reader && cfg.feedApiBase && cfg.feedIngestSecret && (pushReady || cfg.teleg
   scheduler = new Scheduler({ file: join(cfg.stateDir, "push-jobs.json"), fire: (job) => p!.fire(job), log });
   p = planner = new PushPlanner({ sched: scheduler, client, chain: reader, rosterFile: join(cfg.stateDir, "push-roster.json"), log });
   log(`alerts: push ${pushReady ? "on" : "off"} · telegram ${cfg.telegramEnabled ? "on" : "off"}`);
+  void planner.resyncSeasons().catch((e) => log(`push: season reminders not re-queued (${e instanceof Error ? e.message : e})`));
 } else {
   log("alerts: off (needs FEED_API_BASE, FEED_INGEST_SECRET, game addresses, and VAPID keys or a Telegram bot token)");
 }

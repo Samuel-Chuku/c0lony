@@ -23,7 +23,7 @@ _Screenshots are from the Robinhood Chain testnet deployment._
 
 ## What C0LONY is
 
-You run an ant colony. Season 1 ends just before the hackathon final closes, and the keeper closes it and opens claims on its own; later seasons last 10 days by default (35 at most). The daily loop:
+You run an ant colony. Season 1 ends 4 hours before the hackathon final closes, and the keeper closes it and opens claims on its own; later seasons last 10 days by default (35 at most). The daily loop:
 
 1. **Tend** the colony: collect leaves and sugar from forage trips, trails and farms. Every ant on a trail or farm earns 2 a day, and the rest of your ants (the free ones) bring extra on each forage trip.
 2. **Feed the colony** (WIF plus 3 leaves for the queen, and every ant eats 1 sugar) at least once every 72 hours or she starves. Each feeding grows the colony and adds score.
@@ -221,7 +221,7 @@ flowchart TB
 
 ## Contracts
 
-**Robinhood Chain mainnet (4663)**, deployed 2026-11-08, verified on [Sourcify](https://sourcify.dev). Season 1 ends 2026-11-16 07:30 UTC, and its pot was seeded with 10,000 WIF ([sponsor transaction](https://robinhoodchain.blockscout.com/tx/0xc3666a53145323679305726a6708bf06efcf353a40ba3f92456c37d294b1b1ea)). Play at [app.c0lony.xyz](https://app.c0lony.xyz).
+**Robinhood Chain mainnet (4663)**, deployed 2026-11-08, verified on [Sourcify](https://sourcify.dev). Season 1 ends 2026-11-16 13:30 UTC, and its pot was seeded with 10,000 WIF ([sponsor transaction](https://robinhoodchain.blockscout.com/tx/0xc3666a53145323679305726a6708bf06efcf353a40ba3f92456c37d294b1b1ea)). Play at [app.c0lony.xyz](https://app.c0lony.xyz).
 
 | Contract | Address |
 | --- | --- |

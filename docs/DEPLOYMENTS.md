@@ -194,7 +194,7 @@ Environment variable names (see `keeper/.env.example`): `FEED_API_BASE`, `FEED_I
 
 ### Robinhood Chain mainnet (4663), 2026-11-08
 
-Deployed once by `script/Deploy.s.sol` from `0x4B11611CF7C90aEc2003721d71107d7E1cBf37c2` (the owner), blocks 108,987,777–108,987,853, 8 transactions, 0.00031 ETH in gas. The Treasury was funded with 0.002 ETH in the same broadcast, and Season 1's end was set to **2026-11-16 07:30 UTC** (`1794814200`), 10 hours before the hackathon final closes. Later seasons default to 10 days. All four contracts are verified on [Sourcify](https://sourcify.dev) (exact match for DrandVerifier, Treasury and SeasonPot; match for ColonyGame); Blockscout's API sits behind a bot challenge for scripted requests.
+Deployed once by `script/Deploy.s.sol` from `0x4B11611CF7C90aEc2003721d71107d7E1cBf37c2` (the owner), blocks 108,987,777–108,987,853, 8 transactions, 0.00031 ETH in gas. The Treasury was funded with 0.002 ETH in the same broadcast, and Season 1's end was set to 2026-11-16 07:30 UTC (`1794814200`) at deploy, then moved on 2026-11-09 to **2026-11-16 13:30 UTC** (`1794835800`), 4 hours before the hackathon final closes ([`0x5d6ed46f…`](https://robinhoodchain.blockscout.com/tx/0x5d6ed46ffb9067be776c6cf2a41b6cc29df173260fbc24f7fcade695ca4a6c30)). Later seasons default to 10 days. All four contracts are verified on [Sourcify](https://sourcify.dev) (exact match for DrandVerifier, Treasury and SeasonPot; match for ColonyGame); Blockscout's API sits behind a bot challenge for scripted requests.
 
 | Contract | Address |
 | --- | --- |
@@ -213,6 +213,7 @@ Launch setup, each from the owner:
 | Fund the Treasury (0.002 ETH) | [`0x043e887a…`](https://robinhoodchain.blockscout.com/tx/0x043e887a1180a8e61d1d24022aff030f69aa064db899c1ced86be672385365e3) |
 | Keeper may post the Voter's Pass root | [`0x028d2e02…`](https://robinhoodchain.blockscout.com/tx/0x028d2e02baf1a0e1c7161fc6e3da0aa18c0d41295f2b4f1e5ad0df903fde2cc4) |
 | Sponsor the Season 1 pot with 10,000 WIF | [`0xc3666a53…`](https://robinhoodchain.blockscout.com/tx/0xc3666a53145323679305726a6708bf06efcf353a40ba3f92456c37d294b1b1ea) |
+| Move Season 1's end to 2026-11-16 13:30 UTC (2026-11-09) | [`0x5d6ed46f…`](https://robinhoodchain.blockscout.com/tx/0x5d6ed46ffb9067be776c6cf2a41b6cc29df173260fbc24f7fcade695ca4a6c30) |
 
 ### Robinhood Chain testnet (46630), current deployment (2026-11-05, sixth)
 

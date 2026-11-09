@@ -2,19 +2,23 @@
 // Things waiting on the player right now, newest-urgent first: an unguarded raid, a raid to close, a starving or
 // feedable queen, a pantry with trips to claim. The header bell counts them and lists them; each one links to
 // where it is done. Everything here is read from the chain, so it stays right across devices.
-import { RaidStatus, Resource, Status, useActiveRaids, useGameConfig, useNow, useProfile, type Raid } from "./game";
+import { RaidStatus, Resource, Status, useActiveRaids, useGameConfig, useNow, useProfile, useSeason, type Raid } from "./game";
 import { useColonyView, waitingNow } from "../screens/colony/data";
 
 export type Todo = {
   id: string;
-  kind: "guard" | "close" | "revive" | "feed" | "pantry";
+  kind: "guard" | "close" | "revive" | "feed" | "pantry" | "season";
   href: string;
   /** For "guard": the raid, so the row can name the raider. */
   raid?: Raid;
-  /** Seconds left, where it matters (guard window). */
+  /** Seconds left, where it matters (guard window, season end). */
   left?: number;
   trips?: number;
+  season?: number;
 };
+
+/** The season's last day: a to-do for everyone signed in, colony or not. */
+const SEASON_WARN = 24 * 3600;
 
 export function useIncomingUnguarded(address: string | null | undefined) {
   const profile = useProfile(address).data;
@@ -36,7 +40,12 @@ export function useTodos(address: string | null | undefined): Todo[] {
   const view = useColonyView(colonyId).data;
   const now = useNow(15_000);
   const incoming = useIncomingUnguarded(address);
-  if (!profile || !colonyId || !cfg) return [];
+  const season = useSeason().data;
+  const seasonLeft = season ? season.end - now : 0;
+  const seasonTodo: Todo[] = address && season && seasonLeft > 0 && seasonLeft <= SEASON_WARN
+    ? [{ id: `season:${season.season}`, kind: "season", href: "/?tab=season", left: seasonLeft, season: Number(season.season) }]
+    : [];
+  if (!profile || !colonyId || !cfg) return seasonTodo;
 
   const out: Todo[] = incoming.map(({ raid, left }) => ({ id: `guard:${raid.id}`, kind: "guard", href: "/?tab=raids", raid, left }));
 
@@ -55,5 +64,5 @@ export function useTodos(address: string | null | undefined): Todo[] {
     const trips = w.leafTrips + w.sugarTrips;
     if (trips > 0) out.push({ id: "pantry", kind: "pantry", href: "/?do=pantry", trips });
   }
-  return out;
+  return [...out, ...seasonTodo];
 }
