@@ -25,3 +25,5 @@
 .c0-tgdrop .c0-switch__hint { color: var(--c0-sub); }
 .c0-tgdrop__cap { margin: 0 0 var(--c0-s1); font-size: var(--c0-fs-body); color: var(--c0-sub); }
 .c0-tgdrop__foot { display: flex; justify-content: flex-end; padding-top: var(--c0-s3); }
+.c0-tgtitle { display: inline-flex; align-items: center; gap: var(--c0-s2); flex-wrap: wrap; }
+.c0-tgon { font-family: var(--c0-f-display); font-size: 16px; letter-spacing: 1px; line-height: 1; padding: 2px var(--c0-s1); background: var(--c0-paper-hi); color: var(--c0-ink); border: var(--c0-bw-thin) solid var(--c0-ink); }

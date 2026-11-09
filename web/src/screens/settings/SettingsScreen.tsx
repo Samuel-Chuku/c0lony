@@ -245,10 +245,10 @@ function TelegramAlerts() {
       <div className="c0-srow">
         <PixelIcon name="telegram" size={30} />
         <div className="c0-srow__text">
-          <span>Telegram alerts</span>
+          <span className="c0-tgtitle">Telegram alerts{linked ? <span className="c0-tgon">CONNECTED</span> : null}</span>
           <span className="c0-srow__hint">
             {!addr ? "Sign in to get alerts on Telegram."
-              : linked ? "Linked · alerts arrive in Telegram with a button to act"
+              : linked ? "Your alerts arrive in Telegram with a button to act."
               : waiting ? "Press Start in Telegram. This page updates once you do."
               : "Raids, results and a hungry queen on Telegram, with a picture and a button to act."}
           </span>
