@@ -6,6 +6,7 @@ import { NETWORK } from "../config";
 import { colonyGameAbi, erc20Abi, seasonPotAbi } from "./abi";
 import { publicClient } from "./chain";
 import { useQuery } from "./store";
+import { feedUrl, fetchFeed } from "./api";
 
 export const GAME = NETWORK.contracts.colonyGame as Address;
 export const POT = NETWORK.contracts.seasonPot as Address;
@@ -191,6 +192,20 @@ export function useRaid(raidId: bigint | null) {
   return useQuery(raidId !== null ? `raid:${raidId}` : null, () => readRaid(raidId!), 20_000);
 }
 
+/** True when the defender's latest avenge on `raider` came from a raid that was itself an avenge. */
+async function grantedByAvenge(defender: string, raider: string): Promise<boolean> {
+  try {
+    const ev = await fetchFeed(feedUrl("mine", { wallet: defender, limit: 100 }));
+    const r = raider.toLowerCase();
+    const grant = ev.find((e) => e.type === "avenge_granted" && String(e.data.raider) === r);
+    if (!grant) return false;
+    const launch = ev.find((e) => e.type === "raid_launched" && String(e.data.raidId) === String(grant.data.raidId));
+    return launch?.data.isAvenge === true;
+  } catch {
+    return false;
+  }
+}
+
 export function useAvenge(defender: string | null | undefined, raider: string | null | undefined) {
   return useQuery(
     defender && raider ? `avenge:${defender.toLowerCase()}:${raider.toLowerCase()}` : null,
@@ -200,7 +215,8 @@ export function useAvenge(defender: string | null | undefined, raider: string | 
         functionName: "avengeAvailable",
         args: [defender as Address, raider as Address],
       });
-      return { ok, expiresAt: Number(expiresAt) };
+      if (!ok) return { ok, expiresAt: Number(expiresAt) };
+      return { ok: !(await grantedByAvenge(defender!, raider!)), expiresAt: Number(expiresAt) };
     },
     60_000,
   );

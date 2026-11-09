@@ -34,6 +34,7 @@ export class PushPlanner {
   private readonly roster: JsonStore<Record<string, string[]>>; // season -> wallets with a living colony
   private rosterData: Record<string, string[]>;
   private leafCooldown?: number;
+  private readonly avengeRaids = new Set<string>(); // raids that were themselves an avenge: no reminder for the grant they earn
 
   constructor(opts: { sched: Scheduler; client: PushClient; chain: GameReader; rosterFile: string; now?: () => number; log?: (m: string) => void }) {
     this.o = { now: () => Math.floor(Date.now() / 1000), log: () => {}, ...opts };
@@ -85,6 +86,7 @@ export class PushPlanner {
         this.removeFromRoster(wallet);
         break;
       case "raid_launched": {
+        if (e.data.isAvenge === true) this.avengeRaids.add(String(e.data.raidId));
         if (this.stale(e.ts)) break;
         const defender = String(e.data.defender);
         if (!sched.claim(`raided:${e.data.raidId}`)) break;
@@ -112,6 +114,7 @@ export class PushPlanner {
         break;
       }
       case "avenge_granted": {
+        if (this.avengeRaids.has(String(e.data.raidId))) break;
         const at = Number(e.data.expiresAt) - 2 * HOUR;
         sched.schedule({
           key: `avenge:${e.data.raidId}`,

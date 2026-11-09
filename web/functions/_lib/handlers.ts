@@ -105,7 +105,11 @@ export async function summary(request: Request, env: Env): Res {
     .prepare(
       `SELECT e.id, e.block, e.tx, e.logIndex, e.ts, e.type, e.actors, e.data FROM events e
        JOIN event_actors a ON a.eventId = e.id
-       WHERE a.wallet = ? AND e.type = 'avenge_granted' AND e.block >= ? ORDER BY e.id DESC LIMIT 10`,
+       WHERE a.wallet = ? AND e.type = 'avenge_granted' AND e.block >= ?
+         AND NOT EXISTS (SELECT 1 FROM events l WHERE l.type = 'raid_launched'
+           AND CAST(json_extract(l.data, '$.raidId') AS TEXT) = CAST(json_extract(e.data, '$.raidId') AS TEXT)
+           AND json_extract(l.data, '$.isAvenge') = 1)
+       ORDER BY e.id DESC LIMIT 10`,
     )
     .bind(wallet, from)
     .all();

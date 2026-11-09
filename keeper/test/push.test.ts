@@ -114,6 +114,13 @@ test("avenge is skipped when already used", async () => {
   assert.equal(s.sched.pending.length, 0);
 });
 
+test("no avenge reminder for a grant earned by an avenge", async () => {
+  const s = setup();
+  await s.planner.onEvent(ev("raid_launched", [ALICE, BOB], { raidId: "9", raider: ALICE, defender: BOB, guardDeadline: 1_000_000 + 4 * H, isAvenge: true }));
+  await s.planner.onEvent(ev("avenge_granted", [BOB, ALICE], { raidId: "9", defender: BOB, raider: ALICE, expiresAt: 1_000_000 + 24 * H }));
+  assert.equal(s.sched.pending.filter((j) => j.pref === "avenge").length, 0);
+});
+
 test("avenge push names the raider by X handle", async () => {
   const s = setup();
   await s.planner.onEvent(ev("avenge_granted", [BOB, ALICE], { raidId: "5", defender: BOB, raider: ALICE, expiresAt: 1_000_000 + 24 * H }));

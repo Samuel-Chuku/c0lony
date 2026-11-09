@@ -175,6 +175,17 @@ test("summary counts and avenge", async () => {
   assert.equal((await summary(get("/api/feed/summary"), env)).status, 400);
 });
 
+test("summary skips an avenge earned by an avenge", async () => {
+  const { env } = makeEnv();
+  const t = now();
+  await ingest(await signedReq("/", { events: [
+    ev("raid_launched", [B, A], { raidId: "7", raider: B, defender: A, isAvenge: true }, t - 20),
+    ev("avenge_granted", [A, B], { raidId: "7", defender: A, raider: B, expiresAt: t + 3600 }, t - 10),
+  ] }), env);
+  const s = await (await summary(get(`/api/feed/summary?wallet=${A}&since=${t - 1000}`), env)).json() as { avenge: unknown };
+  assert.equal(s.avenge, null);
+});
+
 test("profiles batch read", async () => {
   const { env, kv } = makeEnv();
   await kv.put(`w:${A}`, JSON.stringify({ wallet: A, xHandle: "ant", xAvatar: "http://a/p.png", updatedAt: 1 }));
