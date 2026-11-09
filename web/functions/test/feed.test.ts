@@ -123,6 +123,8 @@ test("feed filters", async () => {
   assert.ok(all.events[0].id > all.events[1].id);
   const raids = await page(env, "?type=raids");
   assert.equal(raids.events.length, 5);
+  const burns = await page(env, "?type=burns");
+  assert.deepEqual(burns.events.map((e) => e.type), ["paid", "paid"]);
   const pot = await page(env, "?type=pot");
   assert.deepEqual(pot.events.map((e) => e.type), ["sponsored", "claimed"]);
   const mine = await page(env, `?type=mine&wallet=${A.toUpperCase().replace("0X", "0x")}`);

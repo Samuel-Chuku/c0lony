@@ -18,7 +18,7 @@ export type FeedEvent = {
   data: Record<string, string | number | boolean | null>;
 };
 
-export type FeedFilter = "all" | "raids" | "mine" | "pot";
+export type FeedFilter = "all" | "raids" | "mine" | "pot" | "burns";
 /**
  * How a player shows up. Players who linked X show their X handle and picture. Everyone else shows the name they
  * set onchain (`name`) and the picture they uploaded, which the loader below puts in `xAvatar` so every avatar

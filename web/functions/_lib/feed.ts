@@ -63,7 +63,7 @@ function placeholders(n: number): string {
 /** Build the SELECT for GET /api/feed. Returns an error string on bad input. */
 export function buildFeedQuery(params: URLSearchParams, fromBlock = 0): FeedQuery | { error: string } {
   const type = params.get("type") ?? "all";
-  if (!["all", "raids", "mine", "pot"].includes(type)) return { error: "Unknown feed type." };
+  if (!["all", "raids", "mine", "pot", "burns"].includes(type)) return { error: "Unknown feed type." };
   const walletRaw = params.get("wallet");
   const wallet = walletRaw ? normAddr(walletRaw) : null;
   if (walletRaw && !wallet) return { error: "That wallet address is not valid." };
@@ -77,7 +77,11 @@ export function buildFeedQuery(params: URLSearchParams, fromBlock = 0): FeedQuer
     where.push("a.wallet = ?");
     args.push(wallet);
   }
-  if (type === "raids" || type === "pot") {
+  if (type === "burns") {
+    // Every WIF payment burns 20%; the row carries the amount burned and its transaction.
+    where.push("e.type = ?");
+    args.push("paid");
+  } else if (type === "raids" || type === "pot") {
     const list = type === "raids" ? RAID_TYPES : POT_TYPES;
     where.push(`e.type IN (${placeholders(list.length)})`);
     args.push(...list);

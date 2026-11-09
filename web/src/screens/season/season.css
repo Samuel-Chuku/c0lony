@@ -4,7 +4,7 @@
 .c0-ss__meta { display: flex; gap: var(--c0-s3); }
 .c0-ss__meta > div { flex: 1; display: flex; flex-direction: column; }
 .c0-ss__meta b { font-family: var(--c0-f-display); font-weight: 400; font-size: 24px; line-height: var(--c0-lh-tight); }
-.c0-ss__meta span, .c0-ss__how { font-size: var(--c0-fs-caption); color: var(--c0-sub); }
+.c0-ss__meta > div > span, .c0-ss__how { font-size: var(--c0-fs-caption); color: var(--c0-sub); }
 .c0-ss__how { margin: 0; line-height: var(--c0-lh-body); }
 .c0-ss__rows { display: flex; flex-direction: column; }
 .c0-ss__row { display: flex; justify-content: space-between; align-items: center; gap: var(--c0-s2); padding: var(--c0-s1) 0; border-bottom: 2px dashed var(--c0-rule); min-height: 32px; }
@@ -14,3 +14,12 @@
 .c0-ss__link { display: flex; align-items: center; justify-content: space-between; min-height: 48px; padding: 0 var(--c0-s3); background: var(--c0-paper); color: var(--c0-ink); border: var(--c0-bw) solid var(--c0-ink); box-shadow: var(--c0-shadow-card); text-decoration: none; font-family: var(--c0-f-display); font-size: 22px; box-sizing: border-box; }
 .c0-ss__more { align-self: flex-end; color: var(--c0-fg); font-family: var(--c0-f-display); font-size: 20px; text-decoration: none; min-height: 44px; display: inline-flex; align-items: center; }
 .c0-ss__h { margin: 0; font-family: var(--c0-f-display); font-weight: 400; font-size: 22px; color: var(--c0-fg); letter-spacing: 2px; }
+.c0-ss__burnlink { font-size: var(--c0-fs-caption); color: var(--c0-sub); text-underline-offset: 2px; }
+.c0-burns { scroll-margin-top: 72px; }
+.c0-burns__list { list-style: none; margin: 0 0 var(--c0-s2); padding: 0; display: flex; flex-direction: column; }
+.c0-burns__row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px var(--c0-s3); padding: var(--c0-s2) 0; border-bottom: 2px dashed var(--c0-rule); font-size: 14px; }
+.c0-burns__row:last-child { border-bottom: 0; }
+.c0-burns__who { min-width: 0; }
+.c0-burns__amt { justify-self: end; font-family: var(--c0-f-display); font-weight: 400; font-size: 20px; }
+.c0-burns__when { color: var(--c0-sub); font-size: var(--c0-fs-caption); }
+.c0-burns__tx { justify-self: end; color: var(--c0-ink); font-family: var(--c0-f-display); font-size: 18px; min-height: 32px; display: inline-flex; align-items: center; }
