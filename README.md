@@ -71,6 +71,7 @@ flowchart LR
 - **Payout:** a colony qualifies if it was fed at least twice and its queen was fed within 72 h of the season end. Half of the pot is shared by score among all qualifying colonies. The other half is shared by score among the top 25% of them.
 - **Ranking is checked, not trusted:** anyone (the keeper in practice) submits the ranked list in batches and `SeasonPot` verifies the strict order, so only one correct ranking can be accepted.
 - **The owner can withdraw Treasury funds (ETH and WIF), but never pot funds.** Treasury withdrawals emit events. The pot has no owner and no withdraw function: WIF leaves it only through `claim` (to a qualifying player) and `rollUnclaimed` (into a later season's pot, 30 days after payout opens).
+- **The team plays too.** The deployer wallet (`0x4B11…37c2`, colony "genesis") is currently playing Season 1 to keep the game lively.
 - **Sponsors:** anyone can add WIF to the current or a future season's pot, with a name.
 
 ## Raids and randomness
