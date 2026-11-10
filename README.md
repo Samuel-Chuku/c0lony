@@ -147,7 +147,7 @@ The `signature` in that response is exactly what was submitted to `settle`. The 
   | WIF received | another player sends you WIF |
 
   On iPhone, push needs the app on the Home Screen (iOS 16.4 or later).
-- **Send WIF to a colony:** from the Menu or any player's profile, send WIF to a colony by its name, X handle or address. The sheet shows who it resolves to (with the address) before sending, and checks a name again right before the transfer. It is a plain WIF transfer: nothing is burned. The receiver gets an alert, and the gift shows in the Live feed.
+- **Send WIF to a colony:** from the Menu or any player's profile, send WIF to a colony by its name, X handle or address. The sheet shows who it resolves to (with the address) before sending, and checks a name again right before the transfer. It is a plain WIF transfer: nothing is burned. The receiver gets an alert, and the gift shows in the Live feed. Players with no ETH can pay the gas in WIF instead (a 5 WIF fee): they sign once, and the keeper submits the send through the `Courier` contract, which has no owner and moves WIF only with the sender's signature. Live on testnet; mainnet follows.
 - **Embedded wallets:** sign in with Privy and play from an embedded wallet with no transaction pop-ups. Regular wallets (browser, WalletConnect) also work.
 - **X profiles:** link an X account and your handle and avatar show on the leaderboard and feed. The handle is read server-side from your linked Privy account, never typed in.
 - **Gas sponsorship** (Treasury, only callable by ColonyGame):

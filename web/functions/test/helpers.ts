@@ -17,6 +17,7 @@ export function fakeD1() {
   for (const f of ["0001_feed.sql", "0002_gas.sql", "0003_wif_faucet.sql", "0004_telegram.sql"]) {
     db.exec(readFileSync(join(import.meta.dirname, "../../migrations", f), "utf8"));
   }
+  db.exec(readFileSync(join(import.meta.dirname, "../sql/courier.sql"), "utf8"));
   const mk = (sql: string, args: unknown[]) => ({
     bind: (...a: unknown[]) => mk(sql, a),
     all: async () => ({ results: db.prepare(sql).all(...(args as never[])) }),

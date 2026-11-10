@@ -121,6 +121,18 @@ Players can send WIF to another colony by name, X handle or address. It is a pla
 | Fake gift alerts or feed rows | Gifts reach the feed only from the keeper's signed feed, decoded from real $WIF `Transfer` logs where both sides have founded a colony. The mainnet token address is fixed in code, not read from the environment. | Closed |
 | Old transfers announced as new | The keeper starts reading gifts at the chain head the first time and keeps a cursor; alerts older than 30 minutes are dropped, and each gift alerts once. | Closed |
 
+## Courier: gas paid in WIF
+
+| Risk | How it's handled | Status |
+| --- | --- | --- |
+| Someone spends a player's approved WIF | Every send needs the player's EIP-712 signature over the receiver, amount, fee, fee recipient, nonce and deadline; the domain includes chain ID and the Courier address. | Closed (tested) |
+| Replay or double execution | Sequential per-player nonce, used up before any transfer; reentrancy guard; the relay also records each request before broadcasting. | Closed (tested) |
+| A bug in the Courier drains approvals | The Courier is tiny (one function), has no owner or upgrade path, and never holds WIF. Approvals are capped at 10,000 WIF by the app, and Settings has a Revoke button. | Mitigated; not audited |
+| Fee changed or redirected | The fee and its recipient are signed by the player; the keeper only rejects fees below its minimum, it can't take more. | Closed (tested) |
+| The relay spams or drains the keeper's ETH | Rate limits per player and per day, a 10-minute deadline, checks and a simulation before every send, and the keeper stops relaying under its ETH floor (the app then hides the option). | Closed |
+| The keeper is down | Requests expire unsent and nothing leaves the player's wallet; the normal send (gas in ETH) still works. | Accepted |
+| The swap of fee WIF back to ETH loses value | Only when the keeper's ETH is low and it holds at least 100 WIF, at most once an hour. KyberSwap's recorded router only (allowlisted and matched to the route); 1% slippage in the swap itself; the built route must return at least 97% of the quote; approval for the exact amount; simulated first. The calldata isn't decoded, so the 1% limit is KyberSwap's. | Mitigated |
+
 ## Settle gas
 
 `settle` itself measures 314,958 gas in Foundry (`test_gas_settle` logs the call alone; the whole test, setup included, is 511,644 in `.gas-snapshot`). The earlier 512k figure was that whole-test number, so the two are not a like-for-like drop. The refund cap of 0.00005 ETH is unchanged and the refund is still computed from measured gas, so it can't exceed the real cost. If the cap is below the real cost of a settle, the settler covers the difference.

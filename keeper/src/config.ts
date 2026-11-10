@@ -85,6 +85,19 @@ export function loadConfig() {
     faucetWifAmount: env("FAUCET_WIF_AMOUNT", "10000"),
     starterGasEth: env("STARTER_GAS_ETH", network === "mainnet" ? "0.00003" : "0.001"),
     starterGasBelowEth: env("STARTER_GAS_BELOW_ETH", network === "mainnet" ? "0.00002" : "0.0002"),
+    // WIF gas courier: relays players' signed WIF sends and pays the gas (the app queues them). Mainnet stays off until
+    // its Courier is deployed and COURIER_ADDRESS is set. The token is read from the Courier itself, never from env.
+    courierAddress: env("COURIER_ADDRESS", network === "mainnet" ? "" : "0xec86Fe12db326eBf69CFD3edE3EFa1F6b8405bFD"),
+    courierEnabled:
+      env("COURIER_ENABLED", "true") === "true" &&
+      !!env("COURIER_ADDRESS", network === "mainnet" ? "" : "0xec86Fe12db326eBf69CFD3edE3EFa1F6b8405bFD") &&
+      !!env("KEEPER_PRIVATE_KEY", "") && !!env("FEED_API_BASE", "") && !!env("FEED_INGEST_SECRET", ""),
+    courierMinFeeWif: env("COURIER_MIN_FEE_WIF", "5"),
+    // Fee WIF -> ETH (mainnet only): when keeper ETH is under SWAP_BELOW_ETH and it holds at least SWAP_MIN_WIF.
+    courierSwapEnabled: network === "mainnet" && env("COURIER_SWAP_ENABLED", "true") === "true",
+    courierSwapBelowEth: env("COURIER_SWAP_BELOW_ETH", "0.0005"),
+    courierSwapMinWif: env("COURIER_SWAP_MIN_WIF", "100"),
+    kyberApiUrl: env("KYBER_API_URL", "https://aggregator-api.kyberswap.com/robinhood/api/v1").replace(/\/+$/, ""),
     colonyGameAddress: env("COLONY_GAME_ADDRESS", ""),
     seasonPotAddress: env("SEASON_POT_ADDRESS", ""),
     stateDir,

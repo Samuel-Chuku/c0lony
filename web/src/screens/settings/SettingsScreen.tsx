@@ -15,6 +15,7 @@ import {
 import { TELEGRAM_ON, tgLinkUrl, tgSavePrefs, tgStatus, tgUnlink } from "../../lib/telegram";
 import { WithdrawSheet } from "../wallet/WithdrawSheet";
 import { VoterPass } from "./VoterPass";
+import { WifGasRow } from "./WifGasRow";
 import { IdentityRows } from "./IdentityRows";
 import "./settings.css";
 
@@ -334,6 +335,7 @@ export function SettingsScreen() {
             <Button variant="paper" size="compact" onClick={() => setWithdraw(true)}>Withdraw</Button>
           </div>
         ) : null}
+        <WifGasRow />
         <div className="c0-srow">
           <div className="c0-srow__text">
             <span>Voter's Pass</span>

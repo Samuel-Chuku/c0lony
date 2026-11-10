@@ -215,6 +215,15 @@ Launch setup, each from the owner:
 | Sponsor the Season 1 pot with 10,000 WIF | [`0xc3666a53…`](https://robinhoodchain.blockscout.com/tx/0xc3666a53145323679305726a6708bf06efcf353a40ba3f92456c37d294b1b1ea) |
 | Move Season 1's end to 2026-11-16 13:30 UTC (2026-11-09) | [`0x5d6ed46f…`](https://robinhoodchain.blockscout.com/tx/0x5d6ed46ffb9067be776c6cf2a41b6cc29df173260fbc24f7fcade695ca4a6c30) |
 
+### Courier (WIF sends with gas paid in WIF)
+
+No owner and nothing to wire, deployed separately by `script/DeployCourier.s.sol`. Design: `docs/design/2026-11-10-wif-gas-courier.md`.
+
+| Network | Courier | Token | Deploy tx |
+| --- | --- | --- | --- |
+| Testnet (46630), 2026-11-10 | [`0xec86Fe12db326eBf69CFD3edE3EFa1F6b8405bFD`](https://explorer.testnet.chain.robinhood.com/address/0xec86Fe12db326eBf69CFD3edE3EFa1F6b8405bFD) (verified) | MockWIF `0xC7524F3D…9B68` | [`0x600979cf…`](https://explorer.testnet.chain.robinhood.com/tx/0x600979cfe2934cedd8b9c11ca8df5eb98609c647b1dfbe15625091d350bfb073), 657,500 gas |
+| Mainnet (4663) | not deployed yet | $WIF | about 0.000013 ETH at 0.02 gwei |
+
 ### Robinhood Chain testnet (46630), current deployment (2026-11-05, sixth)
 
 Redeployed so raids reveal themselves. `launchRaid` and `avenge` take a third argument, the target and salt timelocked to a drand quicknet round after the guard window, published in a new `RaidSealed` event (max 1,024 bytes). `reveal` is open to anyone whose target and salt match the commitment, so the keeper reveals once the timelock opens. Blocks 149,189,109–149,189,177, 10,398,402 gas in total. ColonyGame, SeasonPot and Treasury are verified on Blockscout; the DrandVerifier library and MockWIF are reused.

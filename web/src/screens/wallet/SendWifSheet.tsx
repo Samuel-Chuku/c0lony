@@ -10,6 +10,7 @@ import { publicClient } from "../../lib/chain";
 import { Status, WIF, useBalances, useColonies, useProfile } from "../../lib/game";
 import { displayName, fmtInt, fmtWif, shortAddress } from "../../lib/format";
 import { cleanQuery, findRecipient, type Recipient } from "../../lib/recipient";
+import { approveCourier, COURIER, courierReason, sendViaCourier, useCourierAllowance, useCourierConfig } from "../../lib/courier";
 import { showResult } from "../../lib/result";
 import { useSession } from "../../lib/session";
 import { invalidate } from "../../lib/store";
@@ -46,6 +47,10 @@ export function SendWifSheet({ open, onClose, to: preset }: { open: boolean; onC
   const [lookup, setLookup] = useState<Lookup>({ state: "idle" });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const courierCfg = useCourierConfig();
+  const allowance = useCourierAllowance(me);
+  const [gas, setGas] = useState<"eth" | "wif">("eth");
+  const [enabling, setEnabling] = useState(false);
 
   useEffect(() => {
     if (open) { setTo(preset ?? ""); setAmount(""); setError(null); setBusy(false); }
@@ -69,14 +74,24 @@ export function SendWifSheet({ open, onClose, to: preset }: { open: boolean; onC
   const wif = balances.data?.wif ?? null;
   const eth = balances.data?.eth ?? null;
   const value = parseWif(amount);
+  // Pay gas in WIF: offered when the Courier is deployed and the keeper says it's on. Default to it when ETH is low.
+  const cfg = courierCfg.data;
+  const wifGasOn = !!COURIER && !!cfg?.enabled;
+  const fee = wifGasOn && cfg ? BigInt(cfg.fee) : 0n;
+  const lowEth = eth !== null && eth < 20_000_000_000_000n; // under 0.00002 ETH
+  useEffect(() => { if (wifGasOn && lowEth) setGas("wif"); }, [wifGasOn, lowEth]);
+  const useWifGas = wifGasOn && gas === "wif";
+  const needEnable = useWifGas && value !== null && value > 0n && allowance.data !== undefined && allowance.data < value + fee;
 
   let problem: string | null = null;
   if (lookup.state === "none") problem = "No colony goes by that name. Check the spelling, or paste their wallet address.";
   else if (lookup.state === "error") problem = "Couldn't look that up right now. Try again in a moment.";
   else if (recipient && me && recipient.address === me.toLowerCase()) problem = "That's you. Pick another colony.";
   else if (amount.trim() && (value === null || value <= 0n)) problem = "Enter an amount above zero.";
-  else if (value !== null && wif !== null && value > wif) problem = `You have ${fmtWif(wif)} WIF. Lower the amount or buy more.`;
-  else if (eth !== null && eth === 0n) problem = "You need a little ETH for gas. Add funds from the menu.";
+  else if (value !== null && wif !== null && value + (useWifGas ? fee : 0n) > wif)
+    problem = useWifGas ? `You have ${fmtWif(wif)} WIF, and the gas fee is ${fmtWif(fee)} WIF. Lower the amount.` : `You have ${fmtWif(wif)} WIF. Lower the amount or buy more.`;
+  else if (!useWifGas && eth !== null && eth === 0n) problem = wifGasOn ? "You have no ETH for gas. Pay gas in WIF instead." : "You need a little ETH for gas. Add funds from the menu.";
+  else if (needEnable && eth !== null && eth === 0n) problem = "Turning on WIF gas is a one-time transaction that needs a tiny bit of ETH. Add funds from the menu.";
 
   const ready = !!me && !!recipient && value !== null && value > 0n && !problem;
 
@@ -94,23 +109,54 @@ export function SendWifSheet({ open, onClose, to: preset }: { open: boolean; onC
           return;
         }
       }
-      const client = await walletClientFor(session.wallet);
-      const hash = await client.writeContract({ address: WIF, abi: erc20Abi, functionName: "transfer", args: [recipient.address as Address, value] });
-      const receipt = await publicClient.waitForTransactionReceipt({ hash });
-      if (receipt.status !== "success") throw new Error("The transaction reverted.");
+      let hash: `0x${string}`;
+      if (useWifGas && cfg) {
+        const r = await sendViaCourier(session.wallet, cfg, recipient.address, value);
+        if (r.status !== "sent" || !r.tx) {
+          if (r.status === "pending" || r.status === "sending") {
+            setError("Still sending. It can take a minute; check the Live tab shortly before trying again.");
+            return;
+          }
+          setError(`Not sent · ${courierReason(r.status === "expired" ? "expired" : r.reason)}`);
+          return;
+        }
+        hash = r.tx as `0x${string}`;
+      } else {
+        const client = await walletClientFor(session.wallet);
+        hash = await client.writeContract({ address: WIF, abi: erc20Abi, functionName: "transfer", args: [recipient.address as Address, value] });
+        const receipt = await publicClient.waitForTransactionReceipt({ hash });
+        if (receipt.status !== "success") throw new Error("The transaction reverted.");
+      }
       void invalidate();
       onClose();
       showResult({
         title: "WIF sent",
         tone: "wif",
         art: "gift",
-        lines: [<>Sent <Wif>{fmtWif(value)}</Wif> to <Handle addr={recipient.address} /></>, "It's in their wallet now. They'll get an alert."],
+        lines: [
+          <>Sent <Wif>{fmtWif(value)}</Wif> to <Handle addr={recipient.address} /></>,
+          useWifGas ? `Gas paid in WIF · ${fmtWif(fee)} WIF fee. They'll get an alert.` : "It's in their wallet now. They'll get an alert.",
+        ],
         hash,
       });
     } catch (e) {
       setError(`Not sent · ${reasonOf(e)}`);
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function enable() {
+    if (!session.wallet || !cfg) return;
+    setEnabling(true);
+    setError(null);
+    try {
+      await approveCourier(session.wallet, BigInt(cfg.approveAmount));
+      void invalidate();
+    } catch (e) {
+      setError(`Not turned on · ${reasonOf(e)}`);
+    } finally {
+      setEnabling(false);
     }
   }
 
@@ -144,11 +190,29 @@ export function SendWifSheet({ open, onClose, to: preset }: { open: boolean; onC
           {PRESETS.map((n) => <Chip key={n} selected={amount === String(n)} onClick={() => setAmount(String(n))}>{fmtInt(n)}</Chip>)}
           <Chip selected={wif !== null && amount === plain(wif) && wif > 0n} onClick={() => wif !== null && setAmount(plain(wif))}>Max</Chip>
         </ChipRow>
+        {wifGasOn ? (
+          <>
+            <div className="c0-wd__label"><span>Gas</span><span>{useWifGas ? `${fmtWif(fee)} WIF fee, no ETH needed` : "a tiny bit of ETH"}</span></div>
+            <ChipRow>
+              <Chip selected={gas === "eth"} onClick={() => setGas("eth")}>Pay in ETH</Chip>
+              <Chip selected={gas === "wif"} onClick={() => setGas("wif")}>Pay in WIF · {fmtWif(fee)}</Chip>
+            </ChipRow>
+          </>
+        ) : null}
         {problem ? <div className="c0-blocked" role="alert">{problem}</div> : null}
-        <p className="c0-wsheet__note">Straight from your game wallet on {NETWORK.name}. Nothing is burned. Sends can&apos;t be undone.</p>
-        <Button variant="wif" fullWidth busy={busy ? "Sending…" : undefined} disabled={!ready} onClick={() => void send()}>
-          {value !== null && value > 0n ? `Send · ${fmtWif(value)} WIF` : "Send WIF"}
-        </Button>
+        <p className="c0-wsheet__note">
+          Straight from your game wallet on {NETWORK.name}. Nothing is burned. Sends can&apos;t be undone.
+          {needEnable ? " Paying gas in WIF needs a one-time approval first." : ""}
+        </p>
+        {needEnable ? (
+          <Button variant="paper" fullWidth busy={enabling ? "Turning on…" : undefined} disabled={!!problem || !session.wallet} onClick={() => void enable()}>
+            Turn on WIF gas · one time
+          </Button>
+        ) : (
+          <Button variant="wif" fullWidth busy={busy ? "Sending…" : undefined} disabled={!ready} onClick={() => void send()}>
+            {value !== null && value > 0n ? `Send · ${fmtWif(value)} WIF` : "Send WIF"}
+          </Button>
+        )}
         {error ? <div className="c0-blocked" role="alert">{error}</div> : null}
         <button type="button" className="c0-wd__cancel" onClick={onClose}>Cancel</button>
       </div>

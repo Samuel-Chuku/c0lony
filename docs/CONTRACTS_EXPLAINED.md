@@ -200,3 +200,46 @@ Both pause automatically if paying would leave less than **0.0003 ETH** in the t
 It's built on kevincharm's open-source [`bls-bn254`](https://github.com/kevincharm/bls-bn254) library, vendored unmodified at a pinned commit. It holds no money and keeps no state.
 
 **Tested against** five real evmnet rounds. It rejects: a real signature for a different round; tampered, negated and out-of-range signatures; wrong-length input; and random data (fuzzed).
+
+## Courier
+
+**What it does.** It lets a player send WIF to another player without holding any ETH. The player signs a message: "send this amount to this wallet, pay this fee to this wallet, before this time". The C0LONY keeper submits that message and pays the ETH gas. In the same transaction, the Courier moves the WIF straight from the player to the receiver, and the fee straight from the player to the fee recipient they signed for. It is only used by "Send WIF to a colony" when the player picks "Pay in WIF". The fee is 5 WIF at launch, set by the keeper; the player always sees it and signs it.
+
+**Who can call what.**
+
+| Function | Who | What it does |
+| --- | --- | --- |
+| `send(Send, signature)` | anyone (in practice the keeper) | Runs one signed send. Fails unless the signature is from the sender and matches every detail. |
+| `nonces(wallet)`, `hashSend(Send)`, `DOMAIN_SEPARATOR()`, `token()` | anyone (read only) | What the app needs to build and check a signature. |
+
+There is **no owner, no admin, no pause and no upgrade**. Nobody can change anything after deployment.
+
+**Money in and out.** The Courier never holds WIF. Each send moves WIF directly out of the sender's wallet, and only within the amount that wallet approved for the Courier (the app approves 10,000 WIF once; Settings has a Revoke button). In each send exactly two transfers happen:
+- `amount` to the receiver;
+- `fee` to the fee recipient.
+
+Both are fixed by the sender's signature.
+
+**What an attacker would try, and why it fails.**
+
+| Attempt | Why it fails |
+| --- | --- |
+| Spend someone's approved WIF without their signature | Every send needs an EIP-712 signature recovered to exactly the sender's address. |
+| Change the receiver, amount, fee or fee recipient of a signed send | They're all inside the signature; any change makes it invalid. |
+| Run the same signed send twice | Each send carries the sender's next nonce, which goes up by one after it runs. |
+| Replay it on another chain or another Courier | The signature covers the chain ID and the Courier's address. |
+| Use an old signature days later | Each send has a deadline (the app uses 10 minutes). |
+| Front-run the keeper to steal the fee | The fee goes to the fee recipient in the signature, never to whoever submits the transaction. |
+| Reenter during the token transfer | The nonce is used up before any transfer, and the function has a reentrancy guard. |
+| Malleable signature (flip `s`) | OpenZeppelin's `ECDSA.recover` rejects high-`s` signatures. |
+
+**Tested:** 18 Foundry tests:
+- exact funds flow, fuzzed over amounts and fees, with nothing left in the contract;
+- every signed field tampered with;
+- signatures from the wrong signer, garbage signatures and high-`s` signatures;
+- replays, skipped nonces, another chain and another Courier;
+- the deadline edge;
+- zero amounts, self-sends and zero addresses;
+- not enough balance or allowance, and overflow;
+- a reentrant token;
+- anyone can submit, with the fee still going to the signed recipient.

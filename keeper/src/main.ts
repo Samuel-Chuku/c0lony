@@ -22,6 +22,9 @@ import { replayHistory } from "./settle/history.ts";
 import { Settler } from "./settle/settler.ts";
 import { makeSettleWallet } from "./settle/wallet.ts";
 import { httpGasApi, StarterGas } from "./gas/starter.ts";
+import { CourierRelay, COURIER_ABI, httpCourierApi } from "./courier/relay.ts";
+import { CourierSwapper, httpKyber } from "./courier/swap.ts";
+import { viemCourierChain, viemSwapChain } from "./courier/chain.ts";
 import { makeVoterRefresher, whenQuiet } from "./voters/refresh.ts";
 import { createWalletClient, type Address, type Hash } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
@@ -129,6 +132,46 @@ if (cfg.starterGasEnabled && cfg.keeperPrivateKey && cfg.feedApiBase && cfg.feed
   log(`gas: starter gas on, ${cfg.starterGasEth} ETH to wallets under ${cfg.starterGasBelowEth} ETH`);
 } else {
   log("gas: starter gas off (needs KEEPER_PRIVATE_KEY, FEED_API_BASE and FEED_INGEST_SECRET)");
+}
+
+// WIF gas courier: submits players' signed WIF sends and pays the gas; the player's WIF fee comes to this wallet.
+let courier: CourierRelay | undefined;
+if (cfg.courierEnabled) {
+  const client = makePublicClient(cfg);
+  const account = privateKeyToAccount(cfg.keeperPrivateKey as Hash);
+  const wallet = createWalletClient({ account, chain: makeChain(cfg), transport: rpcTransport(cfg.rpcUrls) });
+  try {
+    // The token comes from the Courier itself, so a wrong env value can't point fees or swaps at another token.
+    const token = await client.readContract({ address: cfg.courierAddress as Address, abi: COURIER_ABI, functionName: "token" });
+    const swapper = new CourierSwapper({
+      kyber: httpKyber(fetch, cfg.kyberApiUrl, "c0lony"),
+      chain: viemSwapChain(client, wallet, token),
+      store: new JsonStore(join(cfg.stateDir, "courier-swap.json"), { lastAttempt: 0 }),
+      keeper: account.address,
+      wif: token,
+      enabled: cfg.courierSwapEnabled,
+      below: parseEther(cfg.courierSwapBelowEth),
+      minWif: parseEther(cfg.courierSwapMinWif),
+      log,
+    });
+    courier = new CourierRelay({
+      api: httpCourierApi(fetch, cfg.feedApiBase, cfg.feedIngestSecret, cfg.network === "mainnet" ? "mainnet" : "testnet"),
+      chain: viemCourierChain(client, wallet, cfg.courierAddress as Address, token),
+      store: new JsonStore(join(cfg.stateDir, "courier-sent.json"), {}),
+      keeper: account.address,
+      courier: cfg.courierAddress,
+      chainId: cfg.chainId,
+      minFee: parseEther(cfg.courierMinFeeWif),
+      minBalance: parseEther(cfg.minBalanceEth),
+      swapper,
+      log,
+    });
+    log(`courier: on at ${cfg.courierAddress}, fee at least ${cfg.courierMinFeeWif} WIF, swap ${cfg.courierSwapEnabled ? "on" : "off"}`);
+  } catch (err) {
+    log(`courier: off, could not read the Courier (${err instanceof Error ? err.message : err})`);
+  }
+} else {
+  log("courier: off (needs COURIER_ADDRESS, KEEPER_PRIVATE_KEY, FEED_API_BASE and FEED_INGEST_SECRET)");
 }
 
 const blockTimes = new BlockTimes(new Rpc(cfg.rpcUrls));
@@ -300,12 +343,14 @@ outbox?.start();
 scheduler?.start();
 settler?.start();
 starterGas?.start();
+courier?.start();
 
 const shutdown = async () => {
   outbox?.stop();
   scheduler?.stop();
   settler?.stop();
   starterGas?.stop();
+  courier?.stop();
   for (const [source] of sources) await source.stop();
   await server.close();
   process.exit(0);

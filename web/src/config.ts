@@ -18,6 +18,7 @@ export const NETWORKS = {
       seasonPot: "0xdD9a1c89455e74106E534AD207CB2e306f271F6f",
       treasury: "0x98Aa85b93555459Ce4Cc4c1372Be33cD46453411", // also receives the 0.5% swap fee
       wif: "0xC7524F3D78E5f6150aff0Eac811e9Bd0D0Fd9B68", // MockWIF
+      courier: "0xec86Fe12db326eBf69CFD3edE3EFa1F6b8405bFD", // WIF sends with gas paid in WIF (2026-11-10)
     },
   },
   mainnet: {
@@ -33,6 +34,7 @@ export const NETWORKS = {
       seasonPot: "0x74f955C7b01Ad3649d50a93149b9ad9C5594c8b9",
       treasury: "0x653a93f2018DfcCf6bE8b70d7cA227b27ADE6037", // also receives the 0.5% swap fee
       wif: "0x5173b8eA6923c2d40267890D45C46a3480954773",
+      courier: "", // not deployed yet: "pay gas in WIF" stays hidden
     },
   },
 } as const;
