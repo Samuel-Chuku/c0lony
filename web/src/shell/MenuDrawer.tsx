@@ -91,13 +91,16 @@ export function MenuDrawer({ open, onClose }: { open: boolean; onClose: () => vo
             <Avatar size={56} alt="Not signed in" />
             <div>
               {session.configured ? (
-                <Button variant="paper" onClick={() => { onClose(); session.login(); }}>Sign in</Button>
+                <Button variant="paper" onClick={() => { onClose(); session.login(); }}>{session.walletChanged ? "Sign in again" : "Sign in"}</Button>
               ) : (
                 <span className="c0-menu__profile" style={{ textDecoration: "none" }}>Sign-in opens soon</span>
               )}
             </div>
           </div>
         )}
+        {session.walletChanged ? (
+          <div className="c0-blocked" role="status">Your wallet switched accounts. Sign in again to keep playing.</div>
+        ) : null}
         <nav className="c0-menu__links" aria-label="Menu">
           {link("/leaderboard", "trophy", "Leaderboard", rank ? `#${rank}` : undefined)}
           {link("/invite", "invite", "Invite friends")}

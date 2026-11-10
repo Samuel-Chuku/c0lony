@@ -15,6 +15,8 @@ export type Session = {
   address: string | null; // lowercase
   wallet: ConnectedWallet | null;
   embedded: boolean; // true when playing from the Privy embedded wallet
+  /** Signed in with an external wallet that is no longer on the page (e.g. another account picked in Rabby). */
+  walletChanged: boolean;
   login: () => void;
   logout: () => Promise<void>;
   getToken: () => Promise<string | null>;
@@ -27,6 +29,7 @@ const off: Session = {
   address: null,
   wallet: null,
   embedded: false,
+  walletChanged: false,
   login: () => {},
   logout: async () => {},
   getToken: async () => null,
@@ -64,14 +67,31 @@ function PrivySession({ children }: { children: ReactNode }) {
       });
   }, [authenticated, user, getAccessToken]);
 
+  // Signed in through an external wallet, but that wallet is gone from the page: the player switched accounts
+  // in their wallet app (or disconnected it). Privy still counts them as signed in and ignores login(), so the
+  // Sign in button did nothing until the cache was cleared. Treat it as signed out, and make Sign in end the old
+  // session first, then start a fresh one with whatever account the wallet has now.
+  // Only for players who signed in with their own wallet: X and email players get an embedded wallet, which can
+  // take a moment to appear after sign-in and must never trip this.
+  const linkedWallets = (user?.linkedAccounts ?? []).filter((a) => a.type === "wallet");
+  const hasEmbedded = linkedWallets.some((a) => a.type === "wallet" && a.walletClientType === "privy");
+  const hasExternal = linkedWallets.some((a) => a.type === "wallet" && a.walletClientType !== "privy");
+  const walletChanged = authenticated && walletsReady && !wallet && hasExternal && !hasEmbedded;
+  const relogin = () => {
+    void logout()
+      .catch(() => {})
+      .then(() => setTimeout(() => login(), 50));
+  };
+
   const value: Session = {
     configured: true,
     ready: ready && (!authenticated || walletsReady),
-    signedIn: authenticated,
+    signedIn: authenticated && !walletChanged,
     address: wallet ? wallet.address.toLowerCase() : null,
     wallet,
     embedded: wallet?.walletClientType === "privy",
-    login,
+    walletChanged,
+    login: walletChanged ? relogin : login,
     logout,
     getToken: getAccessToken,
   };
