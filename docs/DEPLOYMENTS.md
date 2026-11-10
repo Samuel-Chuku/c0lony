@@ -171,12 +171,13 @@ The Live tab, X profiles and push alerts need a small backend: serverless functi
 
 | Piece | Name | Notes |
 | --- | --- | --- |
-| D1 database | `c0lony-feed`, bound to the app project as `FEED_DB` | Schema in `web/migrations/0001_feed.sql` (`events`, `event_actors`, `push_subs`) `web/migrations/0002_gas.sql` (`gas_requests`, starter gas) and `web/migrations/0003_wif_faucet.sql` (adds `kind` for the testnet WIF faucet) |
+| D1 database | `c0lony-feed` (mainnet app) and `c0lony-feed-testnet` (testnet app at test.c0lony.xyz), each bound to its app project as `FEED_DB` | Schema in `web/migrations/0001_feed.sql` (`events`, `event_actors`, `push_subs`) `web/migrations/0002_gas.sql` (`gas_requests`, starter gas) `web/migrations/0003_wif_faucet.sql` (adds `kind` for the testnet WIF faucet), `web/migrations/0004_telegram.sql` and `web/functions/sql/courier.sql` (`courier_requests`, `courier_keeper`; applied to `c0lony-feed-testnet` on 2026-11-10, mainnet when the Courier goes live). Apply each to both databases |
 | KV namespace | `c0lony-profiles`, bound as `PROFILES` | Wallet to X handle and avatar |
 | Pages variables | `PRIVY_APP_ID`, `PRIVY_VERIFICATION_KEY` | Verify Privy access tokens |
 | Pages secrets | `PRIVY_APP_SECRET`, `FEED_INGEST_SECRET` | Read linked accounts; verify keeper requests |
 
-- **App project only.** The landing project has none of these bindings, so its `/api` functions return 404.
+- **Two app projects.** The mainnet app (app.c0lony.xyz) and the testnet app (test.c0lony.xyz) are separate projects built from the same code, with `NEXT_PUBLIC_NETWORK` set to `mainnet` and `testnet`, each bound to its own D1 database.
+- **App projects only.** The landing project has none of these bindings, so its `/api` functions return 404.
 - **Public values in the repo** (`web/src/config.ts`): the Privy app ID (`privyAppId`) and the Web Push VAPID public key (`vapidPublicKey`). The VAPID private key stays in the keeper env.
 - **Functions** (`web/functions/api`): `feed` (list, `ingest`, `stats`, `summary`), `profile`, `profiles`, `push` (`subscribe`, `unsubscribe`, `prefs`, `targets`, `prune`), and `gas` (`starter`, `pending`, `done`). Starter gas reads `NEXT_PUBLIC_NETWORK` to pick its limits.
 
