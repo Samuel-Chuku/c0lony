@@ -77,6 +77,7 @@ function Guide({ c }: { c?: GameConfig }) {
           items={[
             <>Sign in with X or email. A wallet is made for you inside the game; you can also connect your own.</>,
             <>New wallets get a little ETH for gas, once.{NETWORK_NAME === "testnet" ? " On testnet, Get test WIF in the Menu gives you free WIF once a day." : " Buy WIF in the Menu swaps ETH for WIF in one step."}</>,
+            <>Send WIF to a colony from the Menu, or from any player&apos;s profile. Type their colony name, @handle or address; nothing is burned and they get an alert.</>,
             <>Found your colony for {w(c?.foundPrice)}. You start with 10 ants, 2 chambers, and 20 <ResIcon name="leaf" size={16} label="leaves" /> and 20 <ResIcon name="sugar" size={16} label="sugar" />, and your queen is fed for {STARVE_HOURS} hours.</>,
             <>A good day: tend, feed the colony, build, then raid a neighbour or guard against one. The three stamps on the Colony tab track today&apos;s orders.</>,
           ]}

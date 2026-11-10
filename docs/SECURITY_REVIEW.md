@@ -109,6 +109,18 @@ An honest self-audit of the C0LONY contracts written during the build. It is not
 | Fake names in the app | Names reach the app only from the keeper's signed feed of onchain `NameSet` events, and are checked against the same rules again. | Closed |
 | Spam to a player | The bot only messages chats that linked themselves, honours each chat's switches, `/stop` unlinks every wallet, and chats that block the bot are removed. | Closed |
 
+## Send WIF to a colony (off chain)
+
+Players can send WIF to another colony by name, X handle or address. It is a plain WIF transfer from the player's own wallet: no contract is involved, nothing is burned and nothing goes to the pot.
+
+| Risk | How it's handled | Status |
+| --- | --- | --- |
+| Sending to the wrong player | The sheet shows the resolved player's picture, name, full address and colony before the button works. Names are read onchain (`nameHolder`); X handles are matched only against this season's colony owners. | Closed |
+| A name changes hands between the lookup and the send | Names can change every 21 days and freed names can be claimed. The name is resolved again right before sending; if it now points elsewhere the send stops and the card updates. | Closed |
+| Sending to yourself or to an empty address | Blocked for your own wallet; an address with no colony this season gets a warning, since the WIF can't be taken back. | Closed |
+| Fake gift alerts or feed rows | Gifts reach the feed only from the keeper's signed feed, decoded from real $WIF `Transfer` logs where both sides have founded a colony. The mainnet token address is fixed in code, not read from the environment. | Closed |
+| Old transfers announced as new | The keeper starts reading gifts at the chain head the first time and keeps a cursor; alerts older than 30 minutes are dropped, and each gift alerts once. | Closed |
+
 ## Settle gas
 
 `settle` itself measures 314,958 gas in Foundry (`test_gas_settle` logs the call alone; the whole test, setup included, is 511,644 in `.gas-snapshot`). The earlier 512k figure was that whole-test number, so the two are not a like-for-like drop. The refund cap of 0.00005 ETH is unchanged and the refund is still computed from measured gas, so it can't exceed the real cost. If the cap is below the real cost of a settle, the settler covers the difference.

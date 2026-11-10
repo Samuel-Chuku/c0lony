@@ -2,7 +2,7 @@
 // to /api/push/subscribe. On iPhone this only works once the app is installed to the home screen (iOS 16.4+).
 import { CONFIG } from "../config";
 
-export type PushPrefs = Record<"raided" | "result" | "hungry12" | "hungry2" | "forage" | "avenge" | "season", boolean>;
+export type PushPrefs = Record<"raided" | "result" | "hungry12" | "hungry2" | "forage" | "avenge" | "season" | "gift", boolean>;
 export const DEFAULT_PREFS: PushPrefs = {
   raided: true,
   result: true,
@@ -11,6 +11,7 @@ export const DEFAULT_PREFS: PushPrefs = {
   forage: true,
   avenge: true,
   season: true,
+  gift: true,
 };
 
 export type PushSupport = "ok" | "needs-install" | "unsupported" | "not-configured";

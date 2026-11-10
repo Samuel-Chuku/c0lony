@@ -13,6 +13,7 @@ import { useShell, type Look } from "./Providers";
 import { useXProfile } from "../lib/useXProfile";
 import { GetWifSheet } from "../screens/wallet/GetWifSheet";
 import { AddFundsSheet } from "../screens/wallet/AddFundsSheet";
+import { SendWifSheet } from "../screens/wallet/SendWifSheet";
 import "./menu.css";
 import { openGuide } from "./GuideHost";
 
@@ -29,6 +30,7 @@ export function MenuDrawer({ open, onClose }: { open: boolean; onClose: () => vo
   const [copied, setCopied] = useState(false);
   const [buy, setBuy] = useState(false);
   const [fund, setFund] = useState(false);
+  const [send, setSend] = useState(false);
 
   useEffect(() => { if (open) onClose(); }, [path]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
@@ -81,6 +83,7 @@ export function MenuDrawer({ open, onClose }: { open: boolean; onClose: () => vo
                 <Button variant="wif" size="compact" icon="swap" fullWidth onClick={() => setBuy(true)}>Buy WIF</Button>
                 <Button variant="paper" size="compact" fullWidth onClick={() => setFund(true)}>Add funds</Button>
               </div>
+              <Button variant="wif" size="compact" fullWidth onClick={() => setSend(true)}>Send WIF to a colony</Button>
             </Card>
           </>
         ) : (
@@ -141,6 +144,7 @@ export function MenuDrawer({ open, onClose }: { open: boolean; onClose: () => vo
         ) : null}
       </Drawer>
       <GetWifSheet open={buy} onClose={() => setBuy(false)} />
+      <SendWifSheet open={send} onClose={() => setSend(false)} />
       <AddFundsSheet open={fund} onClose={() => setFund(false)} address={me} />
     </>
   );

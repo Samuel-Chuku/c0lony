@@ -1,0 +1,26 @@
+/* GiftToss: two ants on a strip of soil, a WIF coin arcing between them in 8 pixel steps. Square, no blur. */
+.c0-gift { position: relative; height: 112px; margin: 0 auto; width: 100%; max-width: 288px; overflow: hidden; border: var(--c0-bw) solid var(--c0-ink); background: var(--c0-paper-hi); }
+.c0-gift__ground { position: absolute; left: 0; right: 0; bottom: 0; height: 12px; background: var(--c0-loam); border-top: 2px solid var(--c0-ink); }
+.c0-gift__ant { position: absolute; bottom: 8px; line-height: 0; }
+/* The drawn ant faces left: the thrower on the left is mirrored to face the catcher. */
+.c0-gift__ant--from { left: 16px; transform: scaleX(-1); animation: c0-gift-throw 1.6s steps(1) infinite; }
+.c0-gift__ant--to { right: 16px; animation: c0-gift-catch 1.6s steps(1) infinite; }
+.c0-gift__coin { position: absolute; left: 60px; top: 56px; line-height: 0; animation: c0-gift-coin 1.6s steps(1) infinite; }
+@keyframes c0-gift-throw { 0% { bottom: 8px; } 8% { bottom: 16px; } 20% { bottom: 8px; } }
+@keyframes c0-gift-catch { 0%, 64% { bottom: 8px; } 68% { bottom: 16px; } 80% { bottom: 8px; } }
+/* x from 60 to 200, y on an arc that peaks at 8. The coin sits in the catcher's hands for the last third. */
+@keyframes c0-gift-coin {
+  0% { left: 60px; top: 56px; }
+  8% { left: 76px; top: 32px; }
+  16% { left: 96px; top: 16px; }
+  24% { left: 116px; top: 8px; }
+  32% { left: 136px; top: 8px; }
+  40% { left: 156px; top: 16px; }
+  48% { left: 172px; top: 32px; }
+  56% { left: 188px; top: 52px; }
+  64%, 100% { left: 196px; top: 60px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .c0-gift__ant--from, .c0-gift__ant--to, .c0-gift__coin { animation: none; }
+  .c0-gift__coin { left: 128px; top: 16px; }
+}

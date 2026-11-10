@@ -142,9 +142,11 @@ The `signature` in that response is exactly what was submitted to `settle`. The 
   | Queen hungry | 12 h and 2 h before she starves |
   | Foragers home | your leaf forage cooldown is over |
   | Avenge ending | your free avenge expires in 2 h |
-  | Season ending | 24 h before the season ends |
+  | Season ending | 24 h, 12 h, 4 h and 1 h before the season ends |
+  | WIF received | another player sends you WIF |
 
   On iPhone, push needs the app on the Home Screen (iOS 16.4 or later).
+- **Send WIF to a colony:** from the Menu or any player's profile, send WIF to a colony by its name, X handle or address. The sheet shows who it resolves to (with the address) before sending, and checks a name again right before the transfer. It is a plain WIF transfer: nothing is burned. The receiver gets an alert, and the gift shows in the Live feed.
 - **Embedded wallets:** sign in with Privy and play from an embedded wallet with no transaction pop-ups. Regular wallets (browser, WalletConnect) also work.
 - **X profiles:** link an X account and your handle and avatar show on the leaderboard and feed. The handle is read server-side from your linked Privy account, never typed in.
 - **Gas sponsorship** (Treasury, only callable by ColonyGame):

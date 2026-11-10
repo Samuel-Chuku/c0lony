@@ -135,6 +135,12 @@ export function describeEvent(ev: FeedEvent, me?: string | null): FeedLine | nul
     case "sponsored":
       return { ...base, kind: "SPONSOR", tone: "sub",
         sentence: <>{S(a0, "added", "added")} <Wif>{fmtWif(big(d.amount))}</Wif> to the pot</> };
+    case "gift": {
+      const from = str(d.from) || a0;
+      const to = str(d.to) || ev.actors[1];
+      return { ...base, actor: from, kind: "GIFT", tone: "sub",
+        sentence: <>{S(from, "sent", "sent")} {H(to)} <Wif>{fmtWif(big(d.amount))}</Wif></> };
+    }
     case "season_ended":
       return { kind: "SEASON", tone: "sub", sentence: <>Season {num(d.season)} is over. The pot is <Wif>{fmtWif(big(d.pot))}</Wif>.</> };
     case "season_finalized":

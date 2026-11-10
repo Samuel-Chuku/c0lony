@@ -9,6 +9,8 @@ export type ResultContent = {
   /** raid tints the first line red. Plain by default. */
   tone?: "wif" | "raid" | "plain";
   failed?: boolean;
+  /** A small picture above the lines: "gift" is an ant tossing a WIF coin to another. */
+  art?: "gift";
   hash?: Hash | null;
   /** An in-app follow-up, e.g. "Read the report" or "Avenge · raid them back". */
   link?: { href: string; label: string };

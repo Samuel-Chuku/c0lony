@@ -2,6 +2,7 @@
 // The result of the last action: what happened, the key numbers, and a link to the transaction.
 import Link from "next/link";
 import { Button, Modal } from "../ui";
+import { GiftToss } from "../ui/GiftToss";
 import { txUrl } from "../lib/chain";
 import { closeResult, useResult } from "../lib/result";
 
@@ -11,6 +12,7 @@ export function ResultModal() {
   return (
     <Modal open onClose={closeResult} title={r.title} kicker={r.failed ? "it didn't go through" : undefined}>
       <div className="c0-result">
+        {r.art === "gift" ? <GiftToss /> : null}
         {r.lines && r.lines.length > 0 ? (
           <ul className="c0-result__lines">
             {r.lines.map((l, i) => (

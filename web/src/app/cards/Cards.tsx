@@ -13,6 +13,7 @@ const CARDS: Card[] = [
   { id: "hungry", tone: "wif", kicker: "THE QUEEN", title: "She's getting hungry", icons: ["queen"], note: "feed her before she starves" },
   { id: "forage", tone: "calm", kicker: "FORAGERS HOME", title: "Leaves and sugar are in", icons: ["leaf", "ant", "sugar"], note: "tend to bring them in" },
   { id: "avenge", tone: "raid", kicker: "AVENGE", title: "Your free raid back ends soon", icons: ["ant", "ant"], note: "use it before it expires" },
+  { id: "gift", tone: "wif", kicker: "WIF RECEIVED", title: "A neighbour sent you WIF", icons: ["ant", "wif", "ant"], note: "it's already in your wallet" },
   { id: "season", tone: "wif", kicker: "SEASON POT", title: "The season ends in 24h", icons: ["wif", "queen", "wif"], note: "top colonies share the pot" },
 ];
 

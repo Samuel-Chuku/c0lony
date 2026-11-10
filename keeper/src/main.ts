@@ -1,6 +1,6 @@
 // C0LONY keeper entry point: event intake (Quicknode Streams webhook, or eth_getLogs polling as fallback)
 // plus the Voter's Pass proof endpoint. Settlement and notifications build on this intake.
-import { appendFileSync, mkdirSync } from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { loadConfig } from "./config.ts";
 import { Rpc, rpcHost } from "./intake/rpc.ts";
@@ -9,6 +9,7 @@ import { StreamsWebhookServer } from "./intake/streamsWebhook.ts";
 import { logKey, sortLogs, type EventSource, type LogFilter, type LogHandler } from "./intake/types.ts";
 import { makePublicClient, ViemGameReader } from "./chain.ts";
 import { BlockTimes, decodeLog, decodeRaw, RaidDirectory, type FeedEvent } from "./feed/decode.ts";
+import { decodeGift, Players, TRANSFER_TOPIC } from "./feed/gifts.ts";
 import { Outbox } from "./feed/outbox.ts";
 import { PushClient } from "./push/client.ts";
 import { PushPlanner } from "./push/planner.ts";
@@ -140,6 +141,21 @@ const decodeDeps = {
   directory,
 };
 
+// Wallets that founded a colony, for gifts. Rebuilt from the activity log on start, then kept up from live events.
+const players = new Players(join(cfg.stateDir, "players.json"));
+const eventsFile = join(cfg.stateDir, "events.jsonl");
+if (existsSync(eventsFile)) {
+  for (const line of readFileSync(eventsFile, "utf8").split("\n")) {
+    if (!line.trim()) continue;
+    try {
+      const raw = decodeRaw(JSON.parse(line), cfg.colonyGameAddress, cfg.seasonPotAddress);
+      if (raw?.name === "ColonyFounded") players.add(String(raw.args.owner));
+    } catch {
+      // a bad line: skip it
+    }
+  }
+}
+
 const seen = new Set<string>();
 const onGameLogs: LogHandler = async (logs, info) => {
   let failed: unknown;
@@ -150,6 +166,7 @@ const onGameLogs: LogHandler = async (logs, info) => {
       const raw = decodeRaw(l, cfg.colonyGameAddress, cfg.seasonPotAddress);
       const feed: FeedEvent | null = raw ? await decodeLog(l, decodeDeps) : null;
       if (raw) settler?.onEvent(raw);
+      if (raw?.name === "ColonyFounded") players.add(String(raw.args.owner));
       if (feed) {
         outbox?.add([feed]);
         await planner?.onEvent(feed);
@@ -191,6 +208,24 @@ const onVoteLogs: LogHandler = async (logs, info) => {
   if (added > 0) runVoterRefresh();
 };
 
+// Gifts: WIF sent from one player to another. Polled from the token in both intake modes (the Streams filters only
+// cover the game). The poller starts at the chain head the first time, so old transfers are never announced.
+const giftSeen = new Set<string>();
+const onGiftLogs: LogHandler = async (logs) => {
+  let n = 0;
+  for (const l of sortLogs(logs)) {
+    const key = logKey(l);
+    if (giftSeen.has(key)) continue;
+    const gift = await decodeGift(l, { wifAddress: cfg.giftTokenAddress, players, blockTime: blockTimes.get });
+    giftSeen.add(key);
+    if (!gift) continue;
+    n++;
+    outbox?.add([gift]);
+    await planner?.onEvent(gift);
+  }
+  if (n > 0) log(`gifts: ${n} new`);
+};
+
 // Voter's Pass proofs are static files (scripts/build-voters.ts) that Caddy serves at /voters/, not routes here.
 const server = new StreamsWebhookServer({ maxAgeSec: cfg.streamsMaxAgeSec, log });
 
@@ -227,6 +262,33 @@ if (cfg.eventSource === "streams") {
     }),
     onVoteLogs,
   ]);
+}
+
+if (cfg.giftsEnabled && cfg.giftTokenAddress && gameReady) {
+  const giftRpc = new Rpc(cfg.rpcUrls);
+  const cursorFile = join(cfg.stateDir, "gifts-cursor.json");
+  const fresh = !existsSync(cursorFile);
+  // First run: start at the head so old transfers are not announced. If the chain can't be read, skip gifts this run.
+  const head = fresh ? await giftRpc.blockNumber().catch(() => null) : null;
+  if (fresh && head === null) log("gifts: off this run (could not read the chain head)");
+  else {
+    sources.push([
+    new PollerSource({
+      rpc: giftRpc,
+      filter: { addresses: [cfg.giftTokenAddress], topics: [[TRANSFER_TOPIC]] },
+      startBlock: head !== null ? head - cfg.confirmations : cfg.startBlock,
+      intervalMs: cfg.pollIntervalMs,
+      chunkBlocks: cfg.chunkBlocks,
+      confirmations: cfg.confirmations,
+      cursorFile,
+      log,
+    }),
+    onGiftLogs,
+    ]);
+    log(`gifts: on, ${players.size} players known`);
+  }
+} else {
+  log("gifts: off (needs GIFTS_ENABLED, a WIF address and game addresses)");
 }
 
 const port = await server.listen(cfg.webhookPort, cfg.webhookHost);

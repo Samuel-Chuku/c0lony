@@ -19,6 +19,15 @@ export function fmtRes(raw: string): string {
   return `${whole}${s}`;
 }
 
+/** WIF (18 decimals) as "1,250" or "12.5". */
+export function fmtWif(raw: string): string {
+  const v = BigInt(raw);
+  const whole = v / 10n ** 18n;
+  const cents = Number((v % 10n ** 18n) / 10n ** 16n);
+  const frac = cents === 0 ? "" : `.${String(cents).padStart(2, "0").replace(/0$/, "")}`;
+  return `${whole.toLocaleString("en-US")}${frac}`;
+}
+
 const pos = (e: FeedEvent) => e.block * 1_000_000 + e.logIndex;
 const payload = (body: string, url: string, tag: string, image?: string): PushPayload => ({ title: "C0LONY", body, url, tag, ...(image ? { image } : {}) });
 
@@ -113,6 +122,15 @@ export class PushPlanner {
           if (!sched.claim(`result:${id}:${w}`)) continue;
           await this.o.client.notify(w, pref, payload(body, url, `result-${id}`, image));
         }
+        break;
+      }
+      case "gift": {
+        if (this.stale(e.ts)) break;
+        const from = String(e.data.from);
+        const to = String(e.data.to);
+        if (!sched.claim(`gift:${e.tx}:${e.logIndex}`)) break;
+        const who = await this.o.client.label(from);
+        await this.o.client.notify(to, "gift", payload(`${who} sent you ${fmtWif(String(e.data.amount))} WIF.`, `/colony?addr=${from}`, `gift-${e.tx}-${e.logIndex}`, "gift"));
         break;
       }
       case "avenge_granted": {

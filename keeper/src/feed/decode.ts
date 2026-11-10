@@ -9,7 +9,7 @@ import { JsonStore } from "../state.ts";
 export type FeedType =
   | "founded" | "named" | "fed" | "tended" | "built" | "assigned" | "sped_up" | "shielded" | "revived" | "collapsed"
   | "raid_launched" | "guarded" | "revealed" | "settled" | "collected" | "avenge_granted" | "paid"
-  | "sponsored" | "season_ended" | "season_finalized" | "claimed" | "unclaimed_rolled";
+  | "sponsored" | "season_ended" | "season_finalized" | "claimed" | "unclaimed_rolled" | "gift";
 
 export type FeedData = Record<string, string | number | boolean | null>;
 

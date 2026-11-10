@@ -193,3 +193,13 @@ test("profiles batch read", async () => {
   assert.deepEqual(await res.json(), { profiles: { [A]: { xHandle: "ant", xAvatar: "http://a/p.png" } } });
   assert.equal(res.headers.get("cache-control"), "public, max-age=60");
 });
+
+test("a gift is public and shows in both players' own feeds", async () => {
+  const { env } = makeEnv();
+  const g = ev("gift", [A, B], { from: A, to: B, amount: "200000000000000000000" }, now() - 3);
+  await ingest(await signedReq("/", { events: [g] }), env);
+  assert.deepEqual((await page(env, "?type=all")).events.map((e) => e.type), ["gift"]);
+  assert.deepEqual((await page(env, `?type=mine&wallet=${A}`)).events.map((e) => e.type), ["gift"]);
+  assert.deepEqual((await page(env, `?type=mine&wallet=${B}`)).events.map((e) => e.type), ["gift"]);
+  assert.equal((await page(env, `?type=mine&wallet=${C}`)).events.length, 0);
+});

@@ -5,7 +5,8 @@
 import { useEffect, useRef } from "react";
 import { useFeed, type FeedEvent } from "../lib/api";
 import { RaidStatus, Resource, readColony, useActiveRaids, useGameConfig, useProfile } from "../lib/game";
-import { fmtDuration } from "../lib/format";
+import { fmtDuration, fmtWif } from "../lib/format";
+import { Wif } from "../ui";
 import { Handle } from "../screens/live/feedText";
 import { invalidate } from "../lib/store";
 import { collectedResult, raidResult, raidShown } from "../lib/outcomes";
@@ -35,6 +36,14 @@ function resultOf(ev: FeedEvent, me: string) {
   }
   const asRaider = lc(ev.actors[0]) === me;
   return { content: { ...collectedResult(id, Number(d.soldiersLost ?? 0), asRaider), hash: ev.tx as `0x${string}` }, cue: "reveal" as const };
+}
+
+const giftKey = (ev: FeedEvent) => `c0lony:gift:${ev.tx}:${ev.logIndex}`;
+function giftShown(ev: FeedEvent) {
+  try { return localStorage.getItem(giftKey(ev)) === "1"; } catch { return true; }
+}
+function markGiftShown(ev: FeedEvent) {
+  try { localStorage.setItem(giftKey(ev), "1"); } catch { /* storage blocked */ }
 }
 
 const shownKey = (id: bigint) => `c0lony:incoming:${id}`;
@@ -123,6 +132,25 @@ export function RaidWatcher() {
     const { content, cue } = resultOf(ev, me);
     play(cue);
     showResult(content);
+  }, [feed, me, open]);
+
+  // WIF another player sent me while the app is open: the same window the sender saw, from my side.
+  useEffect(() => {
+    if (!me || !feed || open) return;
+    const ev = [...feed].reverse().find((e) => e.type === "gift" && lc(e.data.to) === me && e.ts >= since.current && !giftShown(e));
+    if (!ev) return;
+    markGiftShown(ev);
+    let amount = 0n;
+    try { amount = BigInt(String(ev.data.amount ?? "0")); } catch { /* malformed row */ }
+    play("coins");
+    showResult({
+      title: "WIF received",
+      tone: "wif",
+      art: "gift",
+      lines: [<><Handle addr={lc(ev.data.from)} /> sent you <Wif>{fmtWif(amount)}</Wif></>, "It's already in your wallet."],
+      hash: ev.tx as `0x${string}`,
+      link: { href: `/colony?addr=${lc(ev.data.from)}`, label: "See their colony" },
+    });
   }, [feed, me, open]);
 
   return null;

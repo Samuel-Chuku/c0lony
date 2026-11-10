@@ -14,6 +14,7 @@ const ACTION: Record<string, string> = {
   forage: "Tend",
   avenge: "Avenge",
   season: "See the pot",
+  gift: "See who sent it",
 };
 
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");

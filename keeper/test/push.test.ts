@@ -187,3 +187,13 @@ test("subscriptions made with an older VAPID key (403) are pruned, not retried",
   assert.equal(delivered, 0);
   assert.deepEqual(s.pruned.at(-1), ["https://push/" + ALICE]);
 });
+
+test("a gift alerts the receiver once, naming the sender, with the gift card", async () => {
+  const s = setup();
+  const gift = ev("gift", [ALICE, BOB], { from: ALICE, to: BOB, amount: String(200n * 10n ** 18n) }, 40, s.now.t);
+  await s.planner.onEvent(gift);
+  await s.planner.onEvent(gift); // redelivered
+  assert.equal(s.sent.length, 1);
+  assert.equal(s.sent[0].wallet, BOB);
+  assert.equal(s.sent[0].body, "@alice sent you 200 WIF.");
+});

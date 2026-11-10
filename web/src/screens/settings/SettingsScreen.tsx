@@ -27,6 +27,7 @@ const PREF_ROWS: { key: keyof PushPrefs; label: string; hint?: string }[] = [
   { key: "forage", label: "Foragers home" },
   { key: "avenge", label: "Free avenge about to expire" },
   { key: "season", label: "Season ending soon" },
+  { key: "gift", label: "WIF sent to you", hint: "by another player" },
 ];
 
 type InstallEvent = Event & { prompt: () => Promise<void> };

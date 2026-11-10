@@ -12,7 +12,7 @@ export function clampInt(v: unknown, def: number, min: number, max: number): num
   return Math.min(max, Math.max(min, n));
 }
 
-export const PREF_KEYS = ["raided", "result", "hungry12", "hungry2", "forage", "avenge", "season"] as const;
+export const PREF_KEYS = ["raided", "result", "hungry12", "hungry2", "forage", "avenge", "season", "gift"] as const;
 
 export function sanitizePrefs(v: unknown): Record<string, boolean> {
   const out: Record<string, boolean> = {};

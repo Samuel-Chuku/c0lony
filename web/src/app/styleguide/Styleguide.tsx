@@ -7,6 +7,8 @@ import {
 } from "../../ui";
 import { ResIcon } from "../../ui/ResIcon";
 import { ColonyWorld } from "../../world/ColonyWorld";
+import { showResult } from "../../lib/result";
+import { SendWifSheet } from "../../screens/wallet/SendWifSheet";
 
 const NOW = 1_800_000_000;
 const HOUR = 3600;
@@ -36,9 +38,18 @@ export function Styleguide() {
   const [sheet, setSheet] = useState(false);
   const [drawer, setDrawer] = useState(false);
   const [modal, setModal] = useState(false);
+  const [send, setSend] = useState(false);
 
   return (
     <div className="c0-app">
+      <Section title="Result window · gift">
+        <Button variant="wif" onClick={() => showResult({ title: "WIF sent", tone: "wif", art: "gift", lines: ["Sent 200 WIF to @pixy", "It's in their wallet now. They'll get an alert."], hash: `0x${"ab".repeat(32)}` })}>
+          Show the gift window
+        </Button>
+        <Button variant="wif" onClick={() => setSend(true)}>Open the send sheet</Button>
+        <SendWifSheet open={send} onClose={() => setSend(false)} to="0x4B11611CF7C90aEc2003721d71107d7E1cBf37c2" />
+      </Section>
+
       <Section title="Game icons">
         <div style={{ display: "flex", gap: 16, flexWrap: "wrap", padding: 12, background: "var(--c0-paper)" }}>
           {(["leaf", "sugar", "ant", "chamber", "trail", "farm", "queen"] as const).map((n) => (

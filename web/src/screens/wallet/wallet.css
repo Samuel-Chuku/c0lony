@@ -29,3 +29,11 @@
 .c0-buychoice { display: flex; align-items: center; gap: var(--c0-s3); padding-bottom: var(--c0-s3); margin-bottom: var(--c0-s3); border-bottom: 2px dashed var(--c0-rule); }
 .c0-buychoice__cap { flex: 1; font-size: var(--c0-fs-body); color: var(--c0-sub); }
 .c0-buychoice__pons { text-decoration: none; flex: none; }
+
+/* Send WIF to a colony: who it goes to */
+.c0-sendto { display: flex; flex-direction: column; gap: var(--c0-s2); padding: var(--c0-s3); border: var(--c0-bw) solid var(--c0-ink); background: var(--c0-paper-hi); }
+.c0-sendto__who { display: flex; align-items: center; gap: var(--c0-s3); }
+.c0-sendto__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.c0-sendto__name { font-family: var(--c0-f-display); font-size: var(--c0-fs-button); color: var(--c0-ink); line-height: 1; }
+.c0-sendto__addr { font-size: var(--c0-fs-caption); color: var(--c0-sub); overflow-wrap: anywhere; }
+.c0-sendto__meta { font-size: var(--c0-fs-caption); color: var(--c0-ink); }

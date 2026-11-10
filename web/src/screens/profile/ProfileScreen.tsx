@@ -1,7 +1,8 @@
 "use client";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Avatar, Card, StatRow, StatTile, Underway } from "../../ui";
+import { useState } from "react";
+import { Avatar, Button, Card, StatRow, StatTile, Underway } from "../../ui";
 import { Screen } from "../../shell/Screen";
 import { displayName, fmtDuration, fmtInt, fmtRes } from "../../lib/format";
 import { useColonies, useNow, useProfile, useSeason } from "../../lib/game";
@@ -12,6 +13,7 @@ import { ActivityCard } from "./ActivityCard";
 import { ClaimButton } from "./ClaimButton";
 import { RankCard } from "./RankCard";
 import { RaidRecord } from "./RaidRecord";
+import { SendWifSheet } from "../wallet/SendWifSheet";
 
 export function ProfileScreen() {
   const params = useSearchParams();
@@ -45,6 +47,7 @@ export function ProfileScreen() {
     return (
       <Screen back>
         <Header addr={addr} x={x} />
+        {!isMe && session.signedIn ? <SendWif addr={addr} /> : null}
         <Card>
           <p className="c0-pf__empty">
             {isMe
@@ -62,6 +65,7 @@ export function ProfileScreen() {
   return (
     <Screen back>
       <Header addr={addr} x={x} founded={`founded on day ${p.foundedDay} · ${ago < 86400 ? `${fmtDuration(ago)} ago` : `${Math.floor(ago / 86400)} days ago`}`} />
+      {!isMe && session.signedIn ? <SendWif addr={addr} /> : null}
       <RankCard addr={addr} profile={p} rows={colonies.data} loading={colonies.loading} pot={season.data?.pot} isMe={isMe} />
       <StatRow>
         <StatTile res="ant" value={`${fmtInt(p.ants)}/${fmtInt(p.capacity)}`} caption="ants" />
@@ -78,6 +82,17 @@ export function ProfileScreen() {
       <RaidRecord addr={addr} profile={p} me={session.address} isMe={isMe} />
       <ActivityCard addr={addr} isMe={isMe} />
     </Screen>
+  );
+}
+
+/** Send WIF to the colony on this profile: opens the send sheet with them filled in. */
+function SendWif({ addr }: { addr: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <Button variant="wif" icon="wif" fullWidth onClick={() => setOpen(true)}>Send WIF</Button>
+      <SendWifSheet open={open} onClose={() => setOpen(false)} to={addr} />
+    </>
   );
 }
 

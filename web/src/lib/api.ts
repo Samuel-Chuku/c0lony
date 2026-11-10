@@ -5,7 +5,7 @@ import { useQuery } from "./store";
 export type FeedType =
   | "founded" | "named" | "fed" | "tended" | "built" | "assigned" | "sped_up" | "shielded" | "revived" | "collapsed"
   | "raid_launched" | "guarded" | "revealed" | "settled" | "collected" | "avenge_granted" | "paid"
-  | "sponsored" | "season_ended" | "season_finalized" | "claimed" | "unclaimed_rolled";
+  | "sponsored" | "season_ended" | "season_finalized" | "claimed" | "unclaimed_rolled" | "gift";
 
 export type FeedEvent = {
   id: number;
@@ -102,6 +102,25 @@ export function requestProfile(wallet: string): XProfile | null | undefined {
     if (!timer) timer = setTimeout(flush, 50);
   }
   return undefined;
+}
+
+/** Profiles for many wallets at once (100 per request), filling the shared cache. Missing = no profile. */
+export async function loadProfiles(wallets: string[]): Promise<Map<string, XProfile | null>> {
+  const out = new Map<string, XProfile | null>();
+  const need = [...new Set(wallets.map((w) => w.toLowerCase()))];
+  for (const w of need) if (profileCache.has(w)) out.set(w, profileCache.get(w)!);
+  const todo = need.filter((w) => !out.has(w));
+  for (let i = 0; i < todo.length; i += 100) {
+    const part = todo.slice(i, i + 100);
+    const r = await getJson<{ profiles: Record<string, XProfile> }>(`/api/profiles?wallets=${part.join(",")}`);
+    for (const w of part) {
+      const p = resolveProfile(r.profiles[w]);
+      profileCache.set(w, p);
+      out.set(w, p);
+    }
+  }
+  if (todo.length) subscribers.forEach((s) => s());
+  return out;
 }
 
 /** Forgets a wallet's cached profile and loads it again (after a rename or a new picture). */
