@@ -223,7 +223,7 @@ No owner and nothing to wire, deployed separately by `script/DeployCourier.s.sol
 | Network | Courier | Token | Deploy tx |
 | --- | --- | --- | --- |
 | Testnet (46630), 2026-11-10 | [`0xec86Fe12db326eBf69CFD3edE3EFa1F6b8405bFD`](https://explorer.testnet.chain.robinhood.com/address/0xec86Fe12db326eBf69CFD3edE3EFa1F6b8405bFD) (verified) | MockWIF `0xC7524F3D…9B68` | [`0x600979cf…`](https://explorer.testnet.chain.robinhood.com/tx/0x600979cfe2934cedd8b9c11ca8df5eb98609c647b1dfbe15625091d350bfb073), 657,500 gas |
-| Mainnet (4663) | not deployed yet | $WIF | about 0.000013 ETH at 0.02 gwei |
+| Mainnet (4663), 2026-11-10 | [`0xABD01eb9A641A25aB69dBaDe0C25F8386153bE31`](https://robinhoodchain.blockscout.com/address/0xABD01eb9A641A25aB69dBaDe0C25F8386153bE31) (verified on Sourcify, exact match) | $WIF `0x5173b8eA…4773` | [`0x358f45fe…`](https://robinhoodchain.blockscout.com/tx/0x358f45fe9f5ea689f8ad85c797da454056d844e234c0f504a7df0e512ea270b0), block 110,859,675, 659,394 gas, 0.0000132 ETH |
 
 ### Robinhood Chain testnet (46630), current deployment (2026-11-05, sixth)
 

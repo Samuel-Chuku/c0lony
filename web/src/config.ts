@@ -34,7 +34,7 @@ export const NETWORKS = {
       seasonPot: "0x74f955C7b01Ad3649d50a93149b9ad9C5594c8b9",
       treasury: "0x653a93f2018DfcCf6bE8b70d7cA227b27ADE6037", // also receives the 0.5% swap fee
       wif: "0x5173b8eA6923c2d40267890D45C46a3480954773",
-      courier: "", // not deployed yet: "pay gas in WIF" stays hidden
+      courier: "0xABD01eb9A641A25aB69dBaDe0C25F8386153bE31", // WIF sends with gas paid in WIF (2026-11-10)
     },
   },
 } as const;

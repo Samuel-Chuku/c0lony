@@ -147,7 +147,7 @@ The `signature` in that response is exactly what was submitted to `settle`. The 
   | WIF received | another player sends you WIF |
 
   On iPhone, push needs the app on the Home Screen (iOS 16.4 or later).
-- **Send WIF to a colony:** from the Menu or any player's profile, send WIF to a colony by its name, X handle or address. The sheet shows who it resolves to (with the address) before sending, and checks a name again right before the transfer. It is a plain WIF transfer: nothing is burned. The receiver gets an alert, and the gift shows in the Live feed. Players with no ETH can pay the gas in WIF instead (a 5 WIF fee): they sign once, and the keeper submits the send through the `Courier` contract, which has no owner and moves WIF only with the sender's signature. Live on testnet; mainnet follows.
+- **Send WIF to a colony:** from the Menu or any player's profile, send WIF to a colony by its name, X handle or address. The sheet shows who it resolves to (with the address) before sending, and checks a name again right before the transfer. It is a plain WIF transfer: nothing is burned. The receiver gets an alert, and the gift shows in the Live feed. Players with no ETH can pay the gas in WIF instead (a 5 WIF fee): they sign once, and the keeper submits the send through the `Courier` contract, which has no owner and moves WIF only with the sender's signature. Live on mainnet and testnet.
 - **Embedded wallets:** sign in with Privy and play from an embedded wallet with no transaction pop-ups. Regular wallets (browser, WalletConnect) also work.
 - **X profiles:** link an X account and your handle and avatar show on the leaderboard and feed. The handle is read server-side from your linked Privy account, never typed in.
 - **Gas sponsorship** (Treasury, only callable by ColonyGame):
@@ -232,6 +232,7 @@ flowchart TB
 | SeasonPot | [`0x74f955C7b01Ad3649d50a93149b9ad9C5594c8b9`](https://robinhoodchain.blockscout.com/address/0x74f955C7b01Ad3649d50a93149b9ad9C5594c8b9) |
 | Treasury | [`0x653a93f2018DfcCf6bE8b70d7cA227b27ADE6037`](https://robinhoodchain.blockscout.com/address/0x653a93f2018DfcCf6bE8b70d7cA227b27ADE6037) |
 | DrandVerifier (library) | [`0x2513832059bac29e5a5115634694F22B6B302Ae1`](https://robinhoodchain.blockscout.com/address/0x2513832059bac29e5a5115634694F22B6B302Ae1) |
+| Courier (WIF sends with gas paid in WIF, added 2026-11-10) | [`0xABD01eb9A641A25aB69dBaDe0C25F8386153bE31`](https://robinhoodchain.blockscout.com/address/0xABD01eb9A641A25aB69dBaDe0C25F8386153bE31) |
 | WIF | [`0x5173b8eA6923c2d40267890D45C46a3480954773`](https://robinhoodchain.blockscout.com/address/0x5173b8eA6923c2d40267890D45C46a3480954773) |
 
 **Robinhood Chain testnet (46630)**, kept running as a free practice game at [test.c0lony.xyz](https://test.c0lony.xyz) (sixth deployment, 2026-11-05, verified on Blockscout):
@@ -242,6 +243,7 @@ flowchart TB
 | SeasonPot | [`0xdD9a1c89455e74106E534AD207CB2e306f271F6f`](https://explorer.testnet.chain.robinhood.com/address/0xdD9a1c89455e74106E534AD207CB2e306f271F6f) |
 | Treasury | [`0x98Aa85b93555459Ce4Cc4c1372Be33cD46453411`](https://explorer.testnet.chain.robinhood.com/address/0x98Aa85b93555459Ce4Cc4c1372Be33cD46453411) |
 | DrandVerifier (library) | [`0x2513832059bac29e5a5115634694F22B6B302Ae1`](https://explorer.testnet.chain.robinhood.com/address/0x2513832059bac29e5a5115634694F22B6B302Ae1) |
+| Courier | [`0xec86Fe12db326eBf69CFD3edE3EFa1F6b8405bFD`](https://explorer.testnet.chain.robinhood.com/address/0xec86Fe12db326eBf69CFD3edE3EFa1F6b8405bFD) |
 | MockWIF (testnet only) | [`0xC7524F3D78E5f6150aff0Eac811e9Bd0D0Fd9B68`](https://explorer.testnet.chain.robinhood.com/address/0xC7524F3D78E5f6150aff0Eac811e9Bd0D0Fd9B68) |
 
 Sources and checks for every address are in [docs/DEPLOYMENTS.md](docs/DEPLOYMENTS.md). Plain-English contract guide: [docs/CONTRACTS_EXPLAINED.md](docs/CONTRACTS_EXPLAINED.md). Self-audit: [docs/SECURITY_REVIEW.md](docs/SECURITY_REVIEW.md).
