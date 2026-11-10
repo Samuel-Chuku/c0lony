@@ -275,6 +275,7 @@ Details in [docs/ROADMAP.md](docs/ROADMAP.md):
 
 - **Season NFTs:** colonies alive at season end unlock as tradable Season NFTs; burn one for a perk next season.
 - **In-app WIF marketplace** where sale royalties top up the next pot.
+- **Community seasons:** any community or project can host its own league, with members only, raids only between them, and a WIF pot and leaderboard of its own.
 - **Fungus garden** building, weekly neighbourhood standings, more seasons and sponsor tools.
 
 ## Repo layout

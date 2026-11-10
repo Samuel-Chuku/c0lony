@@ -20,13 +20,23 @@ C0LONY is a daily ant-colony game on Robinhood Chain, paid in $WIF. Season 1 is 
 - **Burn for a perk**: burning a Season NFT gives its owner a perk in the next season. Perks are cosmetic or a small head start (for example a queen's crown, a rare chamber skin, or a discount on founding), never anything that buys rank or pot share.
 - **Marketplace**: list and buy Season NFTs in WIF inside the app. A royalty on each sale goes to the treasury, which tops up the next season's pot. Trading old seasons feeds the new one.
 
-### 2. Deeper colonies
+### 2. Community seasons
+
+Any community, project or group chat can host its own C0LONY season for its members.
+
+- **A league of their own.** The host creates a league with a name, a start date and a length. Its members found colonies inside it, and raids happen only between colonies in the same league. That turns every raid into a duel between people who know each other.
+- **Who can join.** Open to anyone, by invite link, or limited to holders of a token or NFT the host picks.
+- **Its own pot and leaderboard.** The host seeds the league's pot in WIF, and every member's payments add to it with the same 70% pot, 20% burned, 10% treasury split. A league has its own standings and its own payout at the end.
+- **Same rules as the main game.** The host can't withdraw the pot or change the odds. The pot pays out only to qualifying members, exactly like a main season's pot.
+- **Why it matters for WIF.** Every community that hosts a league brings its members to WIF, and every league burns WIF while it runs.
+
+### 3. Deeper colonies
 
 - **Fungus garden**: a new building that turns leaves into sugar, giving leaf-heavy colonies a way to grow.
 - **Journal finds**: the cosmetic items you dig up become things you can display on your profile, and later wear in the colony art.
 - **Weekly neighbourhood standings**: small groups of nearby colonies compete each week for bragging rights and a share of sponsor drops.
 
-### 3. More seasons and more ways in
+### 4. More seasons and more ways in
 
 - Seasons on a regular schedule, each with a theme and a sponsor slot.
 - Sponsor tools: a page for projects to fund a season pot and get their name on the season.
