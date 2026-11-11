@@ -286,6 +286,8 @@ a { color: var(--c0-fg); }
 .c0-pf__list .c0-jrow { align-items: baseline; }
 .c0-pf__list .c0-jrow:last-child { border-bottom: 0; }
 .c0-pf__raidtext { color: var(--c0-red-text); }
+.c0-pf__pager { display: flex; align-items: center; justify-content: space-between; gap: var(--c0-s2); margin-top: var(--c0-s3); }
+.c0-pf__page { font-family: var(--c0-f-display); font-size: 20px; }
 .c0-pf__empty { margin: 0; font-size: var(--c0-fs-body-lg); line-height: var(--c0-lh-body); }
 .c0-pf__link { color: var(--c0-ink); }
 .c0-pf__claim { display: flex; flex-direction: column; gap: var(--c0-s2); }
