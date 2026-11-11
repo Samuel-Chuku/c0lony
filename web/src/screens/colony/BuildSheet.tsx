@@ -1,15 +1,21 @@
 "use client";
 // The Build sheet: three buildings (each with a confirm step that shows exactly what it costs and gives), and
 // "Put ants to work": pick a trail or farm, then set how many ants work there. Saving is one transaction and
-// can be redone at any time.
-import { useEffect, useState } from "react";
+// can be redone at any time. A building can be bought several at once: the contract builds one per call, so the
+// app sends them one after another (no pop-ups in the built-in wallet; a browser wallet asks once per build).
+import { useEffect, useRef, useState } from "react";
+import type { Hash } from "viem";
 import { BottomSheet, Button, ResIcon, Slider, Stepper, type ResIconName } from "../../ui";
 import { RES, fmtRes } from "../../lib/format";
 import { FORAGE_FREE_CAP, PER_ANT_PER_DAY, PER_ANT_PER_HOUR, WORKERS_PER_BUILDING, buildCosts, useGameConfig, type Profile } from "../../lib/game";
 import { forageTrip } from "./data";
 import { txUrl } from "../../lib/chain";
-import { assignResult, builtResult } from "../../lib/outcomes";
-import { useAction } from "../../lib/tx";
+import { assignResult, builtResult, type BuildTally } from "../../lib/outcomes";
+import { eventsOf, useAction } from "../../lib/tx";
+import { colonyGameAbi } from "../../lib/abi";
+import { publicClient } from "../../lib/chain";
+import { GAME } from "../../lib/game";
+import { invalidate } from "../../lib/store";
 import "./colony.css";
 
 const units = (n: number) => BigInt(n) * RES;
@@ -20,24 +26,42 @@ const perHour = (ants: number) => {
 
 type Cost = { leaves?: number; sugar?: number };
 type Action = ReturnType<typeof useAction>;
+type Kind = "chamber" | "trail" | "farm";
+/** Most of one building bought in one go. */
+const MAX_BATCH = 10;
+/** Where a run of several builds has got to. `stopped` = it failed part way, after `done` landed. */
+type Progress = { kind: Kind; done: number; total: number; stopped?: boolean };
 
 type RowProps = {
   icon: ResIconName;
   count: number;
   name: string;
   effect: string;
-  /** What one more of this building gives, for the confirm step: "room for 100 more ants". */
-  gives: string;
+  /** What `n` more of this building give, for the confirm step: "room for 5 more ants". */
+  gives: (n: number) => string;
   /** Ants working in buildings of this kind, for trails and farms. */
   working?: { ants: number; room: number };
   /** The output line at the foot of the card, for trails and farms. */
   makes?: "leaf" | "sugar";
-  cost: Cost;
+  /** What the i-th extra building costs (0 = the next one). Chambers and farms get dearer as they add up. */
+  costAt: (i: number) => Cost;
   verb: string;
   busyVerb: string;
   have: { leaves: bigint; sugar: bigint };
   action: Action;
-  onConfirm: () => void;
+  progress: Progress | null;
+  onConfirm: (n: number) => void;
+};
+
+const sumCosts = (costAt: (i: number) => Cost, n: number): Cost => {
+  let leaves = 0;
+  let sugar = 0;
+  for (let i = 0; i < n; i++) {
+    const c = costAt(i);
+    leaves += c.leaves ?? 0;
+    sugar += c.sugar ?? 0;
+  }
+  return { leaves: leaves || undefined, sugar: sugar || undefined };
 };
 
 function CostChip({ kind, n, minus }: { kind: "leaf" | "sugar"; n: number; minus?: boolean }) {
@@ -49,8 +73,20 @@ function CostChip({ kind, n, minus }: { kind: "leaf" | "sugar"; n: number; minus
   );
 }
 
-function UpgradeRow({ icon, count, name, effect, gives, working, makes, cost, verb, busyVerb, have, action, onConfirm }: RowProps) {
+function UpgradeRow({ icon, count, name, effect, gives, working, makes, costAt, verb, busyVerb, have, action, progress, onConfirm }: RowProps) {
   const [confirming, setConfirming] = useState(false);
+  const [n, setN] = useState(1);
+  const cost = costAt(0);
+  // How many the colony can pay for right now, each one priced as it would be at that point.
+  let affordable = 0;
+  for (let i = 1; i <= MAX_BATCH; i++) {
+    const t = sumCosts(costAt, i);
+    if (units(t.leaves ?? 0) > have.leaves || units(t.sugar ?? 0) > have.sugar) break;
+    affordable = i;
+  }
+  const count_ = Math.max(1, Math.min(n, affordable));
+  const total = sumCosts(costAt, count_);
+  const busyLabel = progress && progress.total > 1 && !progress.stopped ? `${busyVerb.replace("…", "")} ${progress.done + 1} of ${progress.total}…` : busyVerb;
   const missL = cost.leaves ? Math.max(0, Math.ceil(Number(units(cost.leaves) - have.leaves) / Number(RES))) : 0;
   const missS = cost.sugar ? Math.max(0, Math.ceil(Number(units(cost.sugar) - have.sugar) / Number(RES))) : 0;
   const short = missL > 0 || missS > 0;
@@ -59,6 +95,9 @@ function UpgradeRow({ icon, count, name, effect, gives, working, makes, cost, ve
   useEffect(() => {
     if (action.hash) setConfirming(false);
   }, [action.hash]);
+  useEffect(() => {
+    if (!confirming) setN(1);
+  }, [confirming]);
 
   const missing = (
     <>
@@ -100,17 +139,25 @@ function UpgradeRow({ icon, count, name, effect, gives, working, makes, cost, ve
       </div>
       {confirming && !short ? (
         <div className="c0-confirm" role="group" aria-label={`Confirm ${name.toLowerCase()}`}>
+          {affordable > 1 ? (
+            <div className="c0-confirm__line">
+              <span className="c0-confirm__cap">How many</span>
+              <Stepper value={count_} min={1} max={affordable} onChange={setN} label={`How many ${name.toLowerCase()}s`} decLabel="One fewer" incLabel="One more" />
+              <span className="c0-confirm__cap">you can pay for {affordable}{affordable === MAX_BATCH ? " (most at once)" : ""}</span>
+            </div>
+          ) : null}
           <div className="c0-confirm__line">
             <span className="c0-confirm__cap">Spend</span>
-            {cost.leaves ? <CostChip kind="leaf" n={cost.leaves} minus /> : null}
-            {cost.sugar ? <CostChip kind="sugar" n={cost.sugar} minus /> : null}
+            {total.leaves ? <CostChip kind="leaf" n={total.leaves} minus /> : null}
+            {total.sugar ? <CostChip kind="sugar" n={total.sugar} minus /> : null}
             <span className="c0-confirm__cap">Get</span>
-            <b className="c0-confirm__get">+1 {name.toLowerCase()}</b>
+            <b className="c0-confirm__get">+{count_} {count_ === 1 ? name.toLowerCase() : `${name.toLowerCase()}s`}</b>
           </div>
-          <div className="c0-confirm__gives">{gives}</div>
+          <div className="c0-confirm__gives">{gives(count_)}</div>
+          {count_ > 1 ? <div className="c0-confirm__gives">Sent as {count_} transactions, one after another. A browser wallet asks to confirm each one.</div> : null}
           <div className="c0-confirm__btns">
-            <Button variant="paper" size="compact" busy={action.busy ? busyVerb : undefined} onClick={onConfirm}>
-              Confirm {name.toLowerCase()}
+            <Button variant="paper" size="compact" busy={action.busy ? busyLabel : undefined} onClick={() => onConfirm(count_)}>
+              {count_ === 1 ? `Confirm ${name.toLowerCase()}` : `Confirm ${count_} ${name.toLowerCase()}s`}
             </Button>
             <button type="button" className="c0-linkbtn c0-confirm__cancel" onClick={() => setConfirming(false)} disabled={action.busy}>Cancel</button>
           </div>
@@ -123,7 +170,12 @@ function UpgradeRow({ icon, count, name, effect, gives, working, makes, cost, ve
           a day per assigned ant · {perHour(1)}/h
         </div>
       ) : null}
-      {action.error ? <div className="c0-blocked" role="alert">{action.error}</div> : null}
+      {action.error ? (
+        <div className="c0-blocked" role="alert">
+          {action.error}
+          {progress?.stopped ? ` · ${progress.done} of ${progress.total} were built before it stopped` : null}
+        </div>
+      ) : null}
     </li>
   );
 }
@@ -146,9 +198,45 @@ const JOBS: Record<Job, { icon: ResIconName; name: string; plural: string; makes
 
 export function BuildSheet({ open, onClose, profile }: { open: boolean; onClose: () => void; profile: Profile }) {
   const cfg = useGameConfig().data;
-  const dig = useAction("Digging", { success: builtResult("nest chamber", "nest chambers") });
-  const trail = useAction("Building", { success: builtResult("leafcutter trail", "leafcutter trails") });
-  const farm = useAction("Building", { success: builtResult("aphid farm", "aphid farms") });
+  const tally = useRef<BuildTally | null>(null);
+  const [progress, setProgress] = useState<Progress | null>(null);
+  const dig = useAction("Digging", { success: builtResult("nest chamber", "nest chambers", () => tally.current) });
+  const trail = useAction("Building", { success: builtResult("leafcutter trail", "leafcutter trails", () => tally.current) });
+  const farm = useAction("Building", { success: builtResult("aphid farm", "aphid farms", () => tally.current) });
+
+  /** Build `n` of one kind: one transaction each, sent one after another, stopping at the first that fails. */
+  const buildMany = async (kind: Kind, action: Action, functionName: "digChamber" | "buildTrail" | "buildFarm", n: number) => {
+    tally.current = { built: 0, leaves: 0n, sugar: 0n };
+    setProgress({ kind, done: 0, total: n });
+    const hash = await action.run(async (client) => {
+      let last: Hash | null = null;
+      for (let i = 0; i < n; i++) {
+        setProgress({ kind, done: i, total: n });
+        try {
+          const { request } = await publicClient.simulateContract({ account: client.account.address, address: GAME, abi: colonyGameAbi, functionName });
+          last = await client.writeContract(request as never);
+          const receipt = await publicClient.waitForTransactionReceipt({ hash: last });
+          if (receipt.status !== "success") throw new Error("reverted");
+          const e = eventsOf(receipt, "Built")[0];
+          const t = tally.current!;
+          t.built += 1;
+          if (e) {
+            t.leaves += BigInt(String(e.leavesCost ?? 0));
+            t.sugar += BigInt(String(e.sugarCost ?? 0));
+          }
+        } catch (err) {
+          if (i > 0) {
+            setProgress({ kind, done: i, total: n, stopped: true });
+            void invalidate(); // the ones that landed changed the colony
+          }
+          throw err;
+        }
+      }
+      return last!;
+    });
+    if (hash) setProgress(null);
+  };
+  const progressOf = (k: Kind) => (progress?.kind === k ? progress : null);
   const assign = useAction("Saving", { success: assignResult });
   const [trailW, setTrailW] = useState(profile.trailWorkers);
   const [farmW, setFarmW] = useState(profile.farmWorkers);
@@ -162,7 +250,10 @@ export function BuildSheet({ open, onClose, profile }: { open: boolean; onClose:
     }
   }, [open, profile.trailWorkers, profile.farmWorkers]);
   useEffect(() => {
-    if (!open) setJob(null);
+    if (!open) {
+      setJob(null);
+      setProgress(null);
+    }
   }, [open]);
 
   const costs = cfg ? buildCosts(cfg, profile.chambers, profile.ants, profile.farms) : null;
@@ -226,43 +317,49 @@ export function BuildSheet({ open, onClose, profile }: { open: boolean; onClose:
               count={profile.chambers}
               name="Nest chamber"
               effect={`Houses 5 ants · ${profile.ants}/${profile.chambers * 5} used`}
-              gives="room for 5 more ants · new ants hatch into empty room when you feed"
-              cost={{ leaves: costs.chamber }}
+              gives={(n) => `room for ${5 * n} more ants · new ants hatch into empty room when you feed`}
+              costAt={(i) => ({ leaves: buildCosts(cfg!, profile.chambers + i, profile.ants, profile.farms).chamber })}
               verb="Dig"
               busyVerb="Digging…"
               have={profile}
               action={dig}
-              onConfirm={() => void dig.run({ functionName: "digChamber" })}
+              progress={progressOf("chamber")}
+              onConfirm={(n) => void buildMany("chamber", dig, "digChamber", n)}
             />
             <UpgradeRow
               icon="trail"
               count={profile.trails}
               name="Leafcutter trail"
               effect="Ants cut leaves all day"
-              gives={`room for ${WORKERS_PER_BUILDING} more ants to cut leaves`}
+              gives={(n) => `room for ${WORKERS_PER_BUILDING * n} more ants to cut leaves`}
               working={{ ants: profile.trailWorkers, room: profile.trails * WORKERS_PER_BUILDING }}
               makes="leaf"
-              cost={{ leaves: costs.trail }}
+              costAt={() => ({ leaves: costs.trail })}
               verb="Build"
               busyVerb="Building…"
               have={profile}
               action={trail}
-              onConfirm={() => void trail.run({ functionName: "buildTrail" })}
+              progress={progressOf("trail")}
+              onConfirm={(n) => void buildMany("trail", trail, "buildTrail", n)}
             />
             <UpgradeRow
               icon="farm"
               count={profile.farms}
               name="Aphid farm"
               effect="Ants herd aphids for sugar"
-              gives={`room for ${WORKERS_PER_BUILDING} more ants to make sugar`}
+              gives={(n) => `room for ${WORKERS_PER_BUILDING * n} more ants to make sugar`}
               working={{ ants: profile.farmWorkers, room: profile.farms * WORKERS_PER_BUILDING }}
               makes="sugar"
-              cost={{ leaves: costs.farm, sugar: costs.farmSugar || undefined }}
+              costAt={(i) => {
+                const c = buildCosts(cfg!, profile.chambers, profile.ants, profile.farms + i);
+                return { leaves: c.farm, sugar: c.farmSugar || undefined };
+              }}
               verb="Build"
               busyVerb="Building…"
               have={profile}
               action={farm}
-              onConfirm={() => void farm.run({ functionName: "buildFarm" })}
+              progress={progressOf("farm")}
+              onConfirm={(n) => void buildMany("farm", farm, "buildFarm", n)}
             />
           </ul>
         )}

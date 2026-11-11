@@ -127,16 +127,21 @@ export const speedUpResult = (forage: number, snap?: TendSnapshot | null) => (r:
   return { title: `${leaf ? "Leaf" : "Sugar"} foragers are home`, lines };
 };
 
-export const builtResult = (noun: string, plural: string) => (r: Rec): SuccessContent => {
+/** Totals across a run of several builds of one kind (each its own transaction), in whole units. */
+export type BuildTally = { built: number; leaves: bigint; sugar: bigint };
+
+export const builtResult = (noun: string, plural: string, tally?: () => BuildTally | null) => (r: Rec): SuccessContent => {
   const e = eventsOf(r, "Built")[0];
   const n = e ? Number(e.newCount) : null;
+  const t = tally?.() ?? null;
+  const many = t !== null && t.built > 1;
   const lines: ReactNode[] = [n !== null ? `You now have ${n} ${n === 1 ? noun : plural}.` : `Built.`];
-  if (e) {
-    const l = whole(e.leavesCost);
-    const s = whole(e.sugarCost);
-    if (l > 0n || s > 0n) lines.unshift(deltas(l > 0n ? delta(-l, "leaf") : null, s > 0n ? delta(-s, "sugar") : null));
-  }
-  return { title: noun === "nest chamber" ? "Chamber dug" : noun === "leafcutter trail" ? "Trail built" : "Farm built", lines };
+  const l = many ? t.leaves * RES : e ? whole(e.leavesCost) : 0n;
+  const s = many ? t.sugar * RES : e ? whole(e.sugarCost) : 0n;
+  if (l > 0n || s > 0n) lines.unshift(deltas(l > 0n ? delta(-l, "leaf") : null, s > 0n ? delta(-s, "sugar") : null));
+  const what = noun === "nest chamber" ? "Chamber" : noun === "leafcutter trail" ? "Trail" : "Farm";
+  if (many) return { title: `${t.built} ${noun === "nest chamber" ? "chambers dug" : noun === "leafcutter trail" ? "trails built" : "farms built"}`, lines };
+  return { title: `${what} ${noun === "nest chamber" ? "dug" : "built"}`, lines };
 };
 
 export const assignResult = (r: Rec): SuccessContent => {
