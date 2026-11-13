@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { SignJWT, exportSPKI, generateKeyPair } from "jose";
-import { gasDone, gasPending, gasStarter, wifFaucet } from "../_lib/handlers.ts";
+import { gasApproval, gasDone, gasPending, gasStarter, wifFaucet } from "../_lib/handlers.ts";
 import { A, B, makeEnv, signedReq } from "./helpers.ts";
 
 const APP = "app123";
@@ -138,4 +138,25 @@ test("the keeper's queue only holds this site's network, so a mainnet keeper nev
   d1.raw.prepare("INSERT INTO gas_requests (did, wallet, network, status, createdAt, updatedAt, kind) VALUES ('e', ?, 'mainnet', 'pending', 2, 2, 'gas')").run(B);
   const list = (await (await gasPending(await signedReq("/api/gas/pending", {}), env)).json()) as { requests: { wallet: string }[] };
   assert.deepEqual(list.requests.map((r) => r.wallet), [B]);
+});
+
+// ---- approval top-up for gas packs
+
+const askApproval = async (env: ReturnType<typeof mkEnv>["env"], wallet: string) =>
+  (await gasApproval(req(await tok(), { wallet }), env, mockFetch)).json() as Promise<{ status: string }>;
+const packsOn = (d1: ReturnType<typeof mkEnv>["d1"], network: string) =>
+  d1.raw
+    .prepare("INSERT INTO courier_keeper (network, enabled, min_fee, fee_to, courier, seen_at, pack_wei, pack_wif) VALUES (?, 1, '5', ?, ?, ?, '100000000000000', '207000000000000000000')")
+    .run(network, B, B, Math.floor(Date.now() / 1000));
+
+test("approval top-up: only while packs are on, embedded wallets only on mainnet, once per wallet ever", async () => {
+  const { env, d1 } = mkEnv("mainnet");
+  assert.equal((await askApproval(env, A)).status, "limit", "packs not advertised");
+  packsOn(d1, "mainnet");
+  assert.equal((await askApproval(env, B)).status, "not-eligible");
+  assert.equal((await askApproval(env, A)).status, "queued");
+  d1.raw.prepare("UPDATE gas_requests SET createdAt = createdAt - 9999999").run();
+  assert.equal((await askApproval(env, A)).status, "already");
+  const p = await gasPending(await signedReq("/api/gas/pending", {}), env);
+  assert.deepEqual(((await p.json()) as { requests: { kind: string }[] }).requests.map((r) => r.kind), ["approval"]);
 });

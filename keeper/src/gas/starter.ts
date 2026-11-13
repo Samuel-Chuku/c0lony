@@ -1,5 +1,7 @@
 // Starter gas: tops up a new player's wallet with a little ETH from the keeper wallet before their first transaction.
-// The same queue carries testnet WIF faucet requests (kind "wif"), which the keeper pays by minting test WIF.
+// The same queue carries testnet WIF faucet requests (kind "wif"), which the keeper pays by minting test WIF, and
+// approval top-ups (kind "approval"): a tiny one-time amount so an out-of-gas player can approve the Courier and buy a
+// gas pack with WIF (docs/design/2026-11-13-wif-for-gas.md). The app limits approvals to once per wallet ever.
 // The app queues requests (it applies the limits); this loop only pays them.
 //
 // Safety, in order: a request id is written to the state file as "sending" before any ETH leaves; a restart never
@@ -11,11 +13,12 @@ import { signedPost, type FetchFn } from "../feed/signed.ts";
 const ALERT_EVERY_SEC = 3600;
 
 export type GasStatus = "sent" | "skipped" | "failed";
+export type Kind = "gas" | "wif" | "approval";
 type Entry = { status: "sending" | GasStatus; tx?: string };
 type GasState = Record<string, Entry>;
 
 export interface GasApi {
-  pending(): Promise<{ id: number; wallet: string; kind?: "gas" | "wif" }[]>;
+  pending(): Promise<{ id: number; wallet: string; kind?: Kind }[]>;
   done(id: number, status: GasStatus, tx?: string): Promise<void>;
 }
 
@@ -37,6 +40,7 @@ export class StarterGas {
     amount: bigint;
     below: bigint;
     minBalance: bigint;
+    approvalAmount?: bigint;
     now: () => number;
     log: (m: string) => void;
   };
@@ -51,6 +55,8 @@ export class StarterGas {
     amount: bigint;
     below: bigint;
     minBalance: bigint;
+    /** ETH for one Courier approval; 0 or absent skips approval requests. */
+    approvalAmount?: bigint;
     now?: () => number;
     log?: (m: string) => void;
   }) {
@@ -102,7 +108,7 @@ export class StarterGas {
   }
 
   /** Returns false to stop the batch (balance floor). */
-  private async handle(id: number, wallet: string, kind: "gas" | "wif"): Promise<boolean> {
+  private async handle(id: number, wallet: string, kind: Kind): Promise<boolean> {
     const prior = this.o.store.read()[String(id)];
     if (prior && prior.status !== "sending") {
       await this.o.api.done(id, prior.status, prior.tx); // reported before the restart, the app just missed it
@@ -122,8 +128,14 @@ export class StarterGas {
       await this.report(id, "skipped");
       return true;
     }
+    const approval = this.o.approvalAmount ?? 0n;
+    if (kind === "approval" && (approval === 0n || (await this.o.chain.balanceOf(wallet)) >= approval)) {
+      await this.report(id, "skipped"); // off, or the wallet can already pay for its own approval
+      return true;
+    }
+    const value = kind === "gas" ? this.o.amount : kind === "approval" ? approval : 0n;
     const keeper = await this.o.chain.keeperBalance();
-    if (keeper < this.o.minBalance + (kind === "gas" ? this.o.amount : 0n)) {
+    if (keeper < this.o.minBalance + value) {
       const now = this.o.now();
       if (now - this.lastAlert >= ALERT_EVERY_SEC) {
         this.lastAlert = now;
@@ -132,11 +144,11 @@ export class StarterGas {
       return false;
     }
     this.record(id, { status: "sending" });
-    const hash = kind === "wif" ? await this.o.chain.mintWif!(wallet) : await this.o.chain.send(wallet, this.o.amount);
+    const hash = kind === "wif" ? await this.o.chain.mintWif!(wallet) : await this.o.chain.send(wallet, value);
     this.record(id, { status: "sending", tx: hash });
     const ok = await this.o.chain.wait(hash);
     await this.report(id, ok ? "sent" : "failed", hash);
-    this.o.log(`${kind === "wif" ? "faucet" : "gas"}: ${ok ? "sent" : "reverted"} request ${id} to ${wallet} (${hash})`);
+    this.o.log(`${kind === "wif" ? "faucet" : kind === "approval" ? "approval gas" : "gas"}: ${ok ? "sent" : "reverted"} request ${id} to ${wallet} (${hash})`);
     return true;
   }
 }
@@ -149,7 +161,7 @@ export function httpGasApi(fetchFn: FetchFn, base: string, secret: string): GasA
   };
   return {
     async pending() {
-      const j = (await (await post("/api/gas/pending", {})).json()) as { requests?: { id: number; wallet: string; kind?: "gas" | "wif" }[] };
+      const j = (await (await post("/api/gas/pending", {})).json()) as { requests?: { id: number; wallet: string; kind?: Kind }[] };
       return j.requests ?? [];
     },
     async done(id, status, tx) {

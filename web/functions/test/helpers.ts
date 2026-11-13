@@ -18,6 +18,7 @@ export function fakeD1() {
     db.exec(readFileSync(join(import.meta.dirname, "../../migrations", f), "utf8"));
   }
   db.exec(readFileSync(join(import.meta.dirname, "../sql/courier.sql"), "utf8"));
+  db.exec(readFileSync(join(import.meta.dirname, "../sql/gaspack.sql"), "utf8"));
   const mk = (sql: string, args: unknown[]) => ({
     bind: (...a: unknown[]) => mk(sql, a),
     all: async () => ({ results: db.prepare(sql).all(...(args as never[])) }),

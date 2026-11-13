@@ -319,6 +319,51 @@ export async function gasStarter(request: Request, env: Env, fetchImpl: typeof f
 }
 
 /**
+ * Approval top-up for gas packs (docs/design/2026-11-13-wif-for-gas.md): a tiny one-time amount of ETH so a player whose
+ * gas has run out can approve the Courier and then buy a pack with WIF. Only while the keeper advertises packs, only
+ * for the wallet C0LONY made for the player (on mainnet), once per wallet ever, 25 a day per network. The keeper
+ * skips it if the wallet can already pay for its approval.
+ */
+export async function gasApproval(request: Request, env: Env, fetchImpl: typeof fetch = fetch): Res {
+  const did = await verifyPrivyToken(bearer(request), env);
+  if (!did) return fail(401, "Sign in again to continue.");
+  const b = await jsonBody(request);
+  if (b instanceof Response) return b;
+  const wallet = normAddr(b.wallet);
+  if (!wallet) return fail(400, "A valid wallet is needed.");
+  const network = env.NEXT_PUBLIC_NETWORK === "mainnet" ? "mainnet" : "testnet";
+  const db = env.FEED_DB!;
+  const now = Math.floor(Date.now() / 1000);
+  const keeper = await db
+    .prepare("SELECT pack_wif, seen_at FROM courier_keeper WHERE network = ?")
+    .bind(network)
+    .first<{ pack_wif: string; seen_at: number }>()
+    .catch(() => null);
+  if (!keeper || keeper.pack_wif === "0" || keeper.seen_at < now - 120) {
+    return gasReply("limit", "Swapping WIF for gas isn't available right now.");
+  }
+  const profileNow = await profileFor(did, wallet, env, fetchImpl);
+  if (!profileNow) return fail(502, "Could not load your profile right now.");
+  if (!profileNow.wallets.includes(wallet)) return fail(403, "That wallet is not linked to your account.");
+  if (network === "mainnet" && !(profileNow.embedded ?? []).includes(wallet)) {
+    return gasReply("not-eligible", "This is for the wallet C0LONY made for you. Your own wallet pays its own gas.");
+  }
+  const prior = await gasCount(db, `SELECT COUNT(*) AS n FROM gas_requests WHERE kind = 'approval' AND wallet = ? AND status IN ${GAS_LIVE}`, wallet);
+  if (prior > 0) return gasReply("already", "This wallet already got its one-time approval gas.");
+  const today = await gasCount(
+    db,
+    `SELECT COUNT(*) AS n FROM gas_requests WHERE kind = 'approval' AND network = ? AND status IN ${GAS_LIVE} AND createdAt > ?`,
+    network, now - DAY,
+  );
+  if (today >= 25) return gasReply("limit", "This is busy today. Try again tomorrow.");
+  await db
+    .prepare("INSERT INTO gas_requests (did, wallet, network, status, tx, createdAt, updatedAt, kind) VALUES (?, ?, ?, 'pending', NULL, ?, ?, 'approval')")
+    .bind(did, wallet, network, now, now)
+    .run();
+  return gasReply("queued", "A little gas for the approval is on its way.");
+}
+
+/**
  * Testnet WIF faucet: 10,000 test WIF to a signed-in player's wallet, at most once per wallet every 24 hours and
  * 300 times a day overall. The keeper does the minting, so the app never calls the token's open mint directly.
  */
@@ -360,7 +405,9 @@ export async function gasPending(request: Request, env: Env): Res {
     .prepare("SELECT id, wallet, kind FROM gas_requests WHERE status = 'pending' AND network = ? ORDER BY createdAt ASC, id ASC LIMIT 50")
     .bind(network)
     .all<{ id: number; wallet: string; kind: string }>();
-  return json({ requests: results.map((r) => ({ id: r.id, wallet: r.wallet, kind: r.kind === "wif" ? "wif" : "gas" })) });
+  return json({
+    requests: results.map((r) => ({ id: r.id, wallet: r.wallet, kind: r.kind === "wif" ? "wif" : r.kind === "approval" ? "approval" : "gas" })),
+  });
 }
 
 export async function gasDone(request: Request, env: Env): Res {

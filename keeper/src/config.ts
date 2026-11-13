@@ -97,6 +97,19 @@ export function loadConfig() {
     courierSwapEnabled: network === "mainnet" && env("COURIER_SWAP_ENABLED", "true") === "true",
     courierSwapBelowEth: env("COURIER_SWAP_BELOW_ETH", "0.0005"),
     courierSwapMinWif: env("COURIER_SWAP_MIN_WIF", "100"),
+    // Gas packs (docs/design/2026-11-13-wif-for-gas.md): a player out of ETH pays WIF through the Courier and gets a
+    // fixed pack of ETH back. Needs the courier. Off on mainnet until GAS_PACK_ENABLED=true is set there.
+    gasPackEnabled: env("GAS_PACK_ENABLED", network === "mainnet" ? "false" : "true") === "true",
+    gasPackEth: env("GAS_PACK_ETH", "0.0001"),
+    gasPackMarkupBps: Number(env("GAS_PACK_MARKUP_BPS", "1000")),
+    gasPackMinWif: env("GAS_PACK_MIN_WIF", "50"),
+    gasPackMaxWif: env("GAS_PACK_MAX_WIF", "1000"),
+    // Testnet has no KyberSwap: a fixed quote (before the markup) stands in for it.
+    gasPackTestnetWif: env("GAS_PACK_TESTNET_WIF", "188"),
+    gasPackDailyCap: Number(env("GAS_PACK_DAILY_CAP", "15")),
+    gasPackFloorEth: env("GAS_PACK_FLOOR_ETH", "0.0005"),
+    // One-time ETH for an out-of-gas player to approve the Courier, so they can buy a pack (embedded wallets only).
+    approvalDripEth: env("APPROVAL_DRIP_ETH", "0.000005"),
     kyberApiUrl: env("KYBER_API_URL", "https://aggregator-api.kyberswap.com/robinhood/api/v1").replace(/\/+$/, ""),
     colonyGameAddress: env("COLONY_GAME_ADDRESS", ""),
     seasonPotAddress: env("SEASON_POT_ADDRESS", ""),

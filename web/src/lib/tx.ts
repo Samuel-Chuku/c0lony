@@ -214,7 +214,7 @@ export function useAction(failVerb: string, opts?: ActionOptions) {
         const reason = await reasonFor(err, (session.wallet?.address as Address | undefined) ?? null);
         setState({ busy: false, error: `${failVerb} failed · ${reason}`, hash: null });
         play("fail");
-        showResult({ title: `${failVerb} failed`, failed: true, lines: advice(reason) });
+        showResult({ title: `${failVerb} failed`, failed: true, lines: advice(reason), gasOffer: reason === OUT_OF_GAS });
         return null;
       }
     },

@@ -24,7 +24,8 @@ import { makeSettleWallet } from "./settle/wallet.ts";
 import { httpGasApi, StarterGas } from "./gas/starter.ts";
 import { CourierRelay, COURIER_ABI, httpCourierApi } from "./courier/relay.ts";
 import { CourierSwapper, httpKyber } from "./courier/swap.ts";
-import { viemCourierChain, viemSwapChain } from "./courier/chain.ts";
+import { viemCourierChain, viemPackChain, viemSwapChain } from "./courier/chain.ts";
+import { QuotedPackPricer, kyberWifForEth } from "./courier/gaspack.ts";
 import { makeVoterRefresher, whenQuiet } from "./voters/refresh.ts";
 import { createWalletClient, type Address, type Hash } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
@@ -127,6 +128,7 @@ if (cfg.starterGasEnabled && cfg.keeperPrivateKey && cfg.feedApiBase && cfg.feed
     amount: parseEther(cfg.starterGasEth),
     below: parseEther(cfg.starterGasBelowEth),
     minBalance: parseEther(cfg.minBalanceEth),
+    approvalAmount: cfg.gasPackEnabled && cfg.courierEnabled ? parseEther(cfg.approvalDripEth) : 0n,
     log,
   });
   log(`gas: starter gas on, ${cfg.starterGasEth} ETH to wallets under ${cfg.starterGasBelowEth} ETH`);
@@ -164,9 +166,28 @@ if (cfg.courierEnabled) {
       minFee: parseEther(cfg.courierMinFeeWif),
       minBalance: parseEther(cfg.minBalanceEth),
       swapper,
+      pack: cfg.gasPackEnabled
+        ? {
+            pricer: new QuotedPackPricer({
+              quoteWif:
+                cfg.network === "mainnet"
+                  ? kyberWifForEth(fetch, cfg.kyberApiUrl, "c0lony", token)
+                  : async () => parseEther(cfg.gasPackTestnetWif),
+              wei: parseEther(cfg.gasPackEth),
+              markupBps: cfg.gasPackMarkupBps,
+              minWif: parseEther(cfg.gasPackMinWif),
+              maxWif: parseEther(cfg.gasPackMaxWif),
+              log,
+            }),
+            chain: viemPackChain(client, wallet),
+            dailyCap: cfg.gasPackDailyCap,
+            floor: parseEther(cfg.gasPackFloorEth),
+          }
+        : undefined,
       log,
     });
     log(`courier: on at ${cfg.courierAddress}, fee at least ${cfg.courierMinFeeWif} WIF, swap ${cfg.courierSwapEnabled ? "on" : "off"}`);
+    log(cfg.gasPackEnabled ? `gas pack: on, ${cfg.gasPackEth} ETH per pack, at most ${cfg.gasPackDailyCap} a day` : "gas pack: off");
   } catch (err) {
     log(`courier: off, could not read the Courier (${err instanceof Error ? err.message : err})`);
   }

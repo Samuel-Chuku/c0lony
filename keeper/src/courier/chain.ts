@@ -1,6 +1,7 @@
 // viem adapters for the courier relay and the fee swap (the logic lives in relay.ts and swap.ts behind small interfaces).
-import { BaseError, ContractFunctionRevertedError, type Address, type Hash, type Hex, type PublicClient, type WalletClient } from "viem";
+import { BaseError, ContractFunctionRevertedError, keccak256, type Address, type Hash, type Hex, type PublicClient, type WalletClient } from "viem";
 import { COURIER_ABI, type CourierChain } from "./relay.ts";
+import type { PackChain } from "./gaspack.ts";
 import type { SwapChain } from "./swap.ts";
 
 const ERC20 = [
@@ -71,5 +72,26 @@ export function viemSwapChain(client: PublicClient, wallet: WalletClient, wif: A
       const hash = await wallet.sendTransaction({ to: to as Address, data: data as Hex, value, account, chain });
       return wait(hash);
     },
+  };
+}
+
+/** Gas packs: plain ETH transfers from the keeper, signed first so the relay can save the hash before broadcasting. */
+export function viemPackChain(client: PublicClient, wallet: WalletClient): PackChain {
+  const account = wallet.account!;
+  const chain = wallet.chain;
+  return {
+    ethBalance: (a) => client.getBalance({ address: a as Address }),
+    gasPrice: () => client.getGasPrice(),
+    async signEth(to, value) {
+      const req = await wallet.prepareTransactionRequest({ account, chain, to: to as Address, value });
+      // Headroom over the estimate: the chain can charge an L1 data component inside the gas limit. Unused gas isn't paid.
+      const gas = req.gas !== undefined && req.gas * 2n > 30_000n ? req.gas * 2n : 30_000n;
+      const raw = await wallet.signTransaction({ ...req, gas, account, chain } as never);
+      return { hash: keccak256(raw), raw, nonce: Number(req.nonce) };
+    },
+    async broadcast(raw) {
+      await client.sendRawTransaction({ serializedTransaction: raw as Hex });
+    },
+    keeperNonce: () => client.getTransactionCount({ address: account.address, blockTag: "latest" }),
   };
 }

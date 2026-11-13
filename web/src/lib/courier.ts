@@ -13,7 +13,11 @@ import type { ConnectedWallet } from "@privy-io/react-auth";
 
 export const COURIER = (NETWORK.contracts as { courier?: string }).courier as Address | "" | undefined;
 
-export type CourierConfig = { enabled: boolean; courier: string | null; feeTo: string | null; fee: string; deadlineSec: number; approveAmount: string };
+export type CourierConfig = {
+  enabled: boolean; courier: string | null; feeTo: string | null; fee: string; deadlineSec: number; approveAmount: string;
+  /** Present only while the keeper sells gas packs: the pack (wei of ETH) and its WIF price, as strings. */
+  gasPack?: { wei: string; wif: string } | null;
+};
 
 const courierAbi = [
   { type: "function", name: "nonces", stateMutability: "view", inputs: [{ name: "", type: "address" }], outputs: [{ name: "", type: "uint256" }] },
@@ -69,13 +73,25 @@ const REASONS: Record<string, string> = {
   bad_digest: "the signature didn't check out. Send again",
   wrong_fee_to: "the WIF gas settings changed. Send again",
   interrupted: "the relay was interrupted, and nothing left your wallet. Send again",
+  gas_off: "swapping WIF for gas isn't available right now, and nothing left your wallet",
+  price_changed: "the WIF price just moved, and nothing left your wallet. Check the new price and try again",
+  gas_daily_limit: "you can swap WIF for gas once a day, and you already have today",
+  gas_busy: "swapping WIF for gas is busy right now, and nothing left your wallet. Try again later",
+  has_gas: "your wallet already has enough ETH for gas, so nothing was swapped",
+  wrong_receiver: "the gas settings changed, and nothing left your wallet. Try again",
 };
 export const courierReason = (r: string | null | undefined) => (r && REASONS[r]) || r || "the relay couldn't send it";
 
-export type CourierResult = { status: "sent" | "failed" | "expired" | "pending" | "sending"; tx: string | null; reason: string | null };
+export type CourierResult = {
+  status: "sent" | "failed" | "expired" | "pending" | "sending"; tx: string | null; reason: string | null;
+  /** Gas packs only: the keeper's ETH transfer to the buyer, once it is out. */
+  gasTx?: string | null;
+};
 
-/** Signs a Send, queues it, and waits up to 2 minutes for the keeper to land it. */
-export async function sendViaCourier(wallet: ConnectedWallet, cfg: CourierConfig, to: string, amount: bigint): Promise<CourierResult> {
+/** Signs a Send, queues it, and waits up to 2 minutes for the keeper to land it (a gas pack also waits for its ETH). */
+export async function sendViaCourier(
+  wallet: ConnectedWallet, cfg: CourierConfig, to: string, amount: bigint, purpose: "send" | "gas" = "send",
+): Promise<CourierResult> {
   if (!COURIER || !cfg.enabled || !cfg.feeTo) throw new Error("Paying gas in WIF is off right now. Pay gas in ETH instead.");
   const from = wallet.address.toLowerCase() as Address;
   const nonce = await publicClient.readContract({ address: COURIER as Address, abi: courierAbi, functionName: "nonces", args: [from] });
@@ -96,15 +112,17 @@ export async function sendViaCourier(wallet: ConnectedWallet, cfg: CourierConfig
       network: NETWORK_NAME,
       send: { ...message, amount: String(amount), fee: String(message.fee), nonce: String(nonce), deadline: String(deadline) },
       sig,
+      ...(purpose === "gas" ? { purpose } : {}),
     }),
   }).catch((e: Error) => {
     if (e.message === "fee_too_low") void invalidate();
     throw new Error(courierReason(e.message));
   });
-  const until = Date.now() + 120_000;
+  const until = Date.now() + (purpose === "gas" ? 240_000 : 120_000);
   for (;;) {
     const s = await getJson<CourierResult & { id: string }>(`/api/courier/status?id=${queued.id}`).catch(() => null);
-    if (s && (s.status === "sent" || s.status === "failed" || s.status === "expired")) return s;
+    const landed = s?.status === "sent" && (purpose !== "gas" || !!s.gasTx);
+    if (s && (landed || s.status === "failed" || s.status === "expired")) return s;
     if (Date.now() > until) return s ?? { status: "pending", tx: null, reason: null };
     await new Promise((r) => setTimeout(r, 2000));
   }

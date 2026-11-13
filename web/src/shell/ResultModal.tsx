@@ -5,6 +5,7 @@ import { Button, Modal } from "../ui";
 import { GiftToss } from "../ui/GiftToss";
 import { txUrl } from "../lib/chain";
 import { closeResult, useResult } from "../lib/result";
+import { GasOffer } from "../screens/wallet/GasOffer";
 
 export function ResultModal() {
   const r = useResult();
@@ -23,6 +24,7 @@ export function ResultModal() {
         {r.link ? (
           <Link className="c0-result__tx" href={r.link.href} onClick={closeResult}>{r.link.label} ›</Link>
         ) : null}
+        {r.gasOffer ? <GasOffer /> : null}
         {r.hash ? (
           <a className="c0-result__tx" href={txUrl(r.hash)} target="_blank" rel="noreferrer">View transaction</a>
         ) : null}

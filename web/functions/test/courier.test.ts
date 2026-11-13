@@ -145,7 +145,7 @@ test("rate limits: 6th pending is 429, then the daily caps", async () => {
   d1.raw.prepare("UPDATE courier_requests SET status = 'sent'").run();
   assert.equal((await submit(env, await mkSend({ nonce: 5n }))).status, 200);
   const ins = d1.raw.prepare(
-    "INSERT INTO courier_requests VALUES (?, 'testnet', ?, ?, '1', '1', ?, '0', 1, '0x', 'sent', NULL, NULL, ?, ?)",
+    "INSERT INTO courier_requests VALUES (?, 'testnet', ?, ?, '1', '1', ?, '0', 1, '0x', 'sent', NULL, NULL, ?, ?, 'send', NULL)",
   );
   for (let n = 0; n < 24; n++) ins.run("0xdead" + n, acct.address.toLowerCase(), B, FEE_TO, t(), t());
   assert.equal((await submit(env, await mkSend({ nonce: 99n }))).status, 429);
@@ -163,7 +163,7 @@ test("status: unknown id is 404, a pending row past its deadline becomes expired
   assert.equal((await status("nope")).status, 400);
   const { body } = await submit(env, await mkSend());
   const id = body.id as string;
-  assert.deepEqual(await (await status(id)).json(), { id, status: "pending", reason: null, tx: null });
+  assert.deepEqual(await (await status(id)).json(), { id, status: "pending", reason: null, tx: null, purpose: "send", gasTx: null });
   d1.raw.prepare("UPDATE courier_requests SET deadline = ?").run(t() - 1);
   assert.equal(((await (await status(id)).json()) as { status: string }).status, "expired");
 });
@@ -214,7 +214,7 @@ test("done moves forward only", async () => {
     (await (await courierStatus(new Request(`https://x.test/s?id=${id}`), env)).json()) as { status: string; tx: string | null; reason: string | null };
   assert.equal((await courierDone(await signedReq("/api/courier/done", { id, status: "bogus" }), env)).status, 400);
   assert.equal(await done({ status: "sending", tx }), 1);
-  assert.deepEqual(await status(), { id, status: "sending", reason: null, tx });
+  assert.deepEqual(await status(), { id, status: "sending", reason: null, tx, purpose: "send", gasTx: null });
   assert.equal(await done({ status: "sent", tx }), 1);
   assert.equal(await done({ status: "sending", tx }), 0);
   assert.equal(await done({ status: "failed", reason: "late" }), 0);
@@ -224,6 +224,79 @@ test("done moves forward only", async () => {
   const r = await courierDone(await signedReq("/api/courier/done", { id: two.body.id, status: "failed", reason: "BadNonce" }), env);
   assert.equal(((await r.json()) as { updated: number }).updated, 1);
   const s2 = await (await courierStatus(new Request(`https://x.test/s?id=${two.body.id}`), env)).json();
-  assert.deepEqual(s2, { id: two.body.id, status: "failed", reason: "BadNonce", tx: null });
+  assert.deepEqual(s2, { id: two.body.id, status: "failed", reason: "BadNonce", tx: null, purpose: "send", gasTx: null });
 });
 
+
+// ---- gas packs (docs/design/2026-11-13-wif-for-gas.md)
+
+const PACK = { wei: String(10n ** 14n), wif: String(207n * 10n ** 18n) };
+const gasBody = async (o: Over = {}) => ({ ...(await mkSend({ to: FEE_TO, amount: 207n * 10n ** 18n, ...o })), purpose: "gas" });
+const advertise = (d1: ReturnType<typeof mkEnv>["d1"]) =>
+  d1.raw.prepare("UPDATE courier_keeper SET pack_wei = ?, pack_wif = ?").run(PACK.wei, PACK.wif);
+
+test("gas packs: config shows the pack only while the keeper advertises it, and the heartbeat sets it", async () => {
+  const { env, d1 } = mkEnv({ beat: false });
+  const cfg = async () =>
+    (await courierConfig(new Request("https://x.test/c?network=testnet"), env)).json() as Promise<{ gasPack: unknown }>;
+  await courierPending(await signedReq("/api/courier/pending", { network: "testnet", keeper: beat }), env);
+  assert.equal((await cfg()).gasPack, null);
+  await courierPending(await signedReq("/api/courier/pending", { network: "testnet", keeper: { ...beat, pack: PACK } }), env);
+  assert.deepEqual((await cfg()).gasPack, PACK);
+  await courierPending(await signedReq("/api/courier/pending", { network: "testnet", keeper: beat }), env);
+  assert.equal((await cfg()).gasPack, null, "a heartbeat without a pack turns packs off");
+  const bad = await courierPending(await signedReq("/api/courier/pending", { network: "testnet", keeper: { ...beat, pack: { wei: "x", wif: "1" } } }), env);
+  assert.equal(bad.status, 400);
+  void d1;
+});
+
+test("gas packs: a purchase is queued with its purpose, paid to the keeper, at the advertised price", async () => {
+  const { env, d1 } = mkEnv();
+  advertise(d1);
+  const r = await submit(env, await gasBody());
+  assert.equal(r.status, 200);
+  const row = d1.raw.prepare("SELECT purpose, receiver FROM courier_requests").get() as { purpose: string; receiver: string };
+  assert.deepEqual({ ...row }, { purpose: "gas", receiver: FEE_TO });
+  const p = await courierPending(await signedReq("/api/courier/pending", { network: "testnet", keeper: { ...beat, pack: PACK } }), env);
+  assert.equal(((await p.json()) as { requests: { purpose: string }[] }).requests[0].purpose, "gas");
+  // 5% under the price is still honoured
+  const ok = await submit(env, await gasBody({ amount: 197n * 10n ** 18n, nonce: 1n, signer: other }));
+  assert.notEqual(ok.body.error, "price_changed");
+});
+
+test("gas packs: refused when off, paid elsewhere, under price, twice a day, or over the daily cap", async () => {
+  const off = mkEnv();
+  assert.equal((await submit(off.env, await gasBody())).body.error, "gas_off");
+  const { env, d1 } = mkEnv();
+  advertise(d1);
+  assert.equal((await submit(env, await gasBody({ to: B }))).status, 400);
+  assert.equal((await submit(env, await gasBody({ amount: 196n * 10n ** 18n }))).body.error, "price_changed");
+  assert.equal((await submit(env, { ...(await gasBody()), purpose: "bogus" })).status, 400);
+  assert.equal((await submit(env, await gasBody())).status, 200);
+  assert.equal((await submit(env, await gasBody({ nonce: 1n }))).body.error, "gas_daily_limit");
+  // a failed purchase doesn't count
+  d1.raw.prepare("UPDATE courier_requests SET status = 'failed'").run();
+  assert.equal((await submit(env, await gasBody({ nonce: 2n }))).status, 200);
+  // network cap: 15 live purchases today from other wallets
+  for (let i = 0; i < 15; i++) {
+    d1.raw
+      .prepare("INSERT INTO courier_requests VALUES (?, 'testnet', ?, ?, '1', '1', ?, '0', 1, '0x', 'sent', NULL, NULL, ?, ?, 'gas', NULL)")
+      .run("0x" + String(i).padStart(64, "f"), "0x" + String(i).padStart(40, "e"), FEE_TO, FEE_TO, t(), t());
+  }
+  d1.raw.prepare("DELETE FROM courier_requests WHERE sender = ?").run(acct.address.toLowerCase());
+  assert.equal((await submit(env, await gasBody({ nonce: 3n }))).body.error, "gas_busy");
+});
+
+test("gas packs: done records the pack transfer once, and status returns it", async () => {
+  const { env, d1 } = mkEnv();
+  advertise(d1);
+  const { body } = await submit(env, await gasBody());
+  const id = body.id as string;
+  const tx = "0x" + "a".repeat(64);
+  const gasTx = "0x" + "b".repeat(64);
+  await courierDone(await signedReq("/api/courier/done", { id, status: "sent", tx }), env);
+  await courierDone(await signedReq("/api/courier/done", { id, status: "sent", tx, gasTx }), env);
+  await courierDone(await signedReq("/api/courier/done", { id, status: "sent", tx, gasTx: "0x" + "c".repeat(64) }), env);
+  const s = (await (await courierStatus(new Request(`https://x.test/s?id=${id}`), env)).json()) as Record<string, unknown>;
+  assert.deepEqual(s, { id, status: "sent", reason: null, tx, purpose: "gas", gasTx });
+});
