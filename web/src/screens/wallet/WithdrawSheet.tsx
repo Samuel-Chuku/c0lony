@@ -10,7 +10,7 @@ import { fmtEth, fmtWif } from "../../lib/format";
 import { showResult } from "../../lib/result";
 import { useSession } from "../../lib/session";
 import { invalidate } from "../../lib/store";
-import { reasonOf, walletClientFor } from "../../lib/tx";
+import { reasonFor, walletClientFor } from "../../lib/tx";
 import "./wallet.css";
 
 type Asset = "ETH" | "WIF";
@@ -87,7 +87,7 @@ export function WithdrawSheet({ open, onClose }: { open: boolean; onClose: () =>
         hash,
       });
     } catch (e) {
-      setError(`Not sent · ${reasonOf(e)}`);
+      setError(`Not sent · ${await reasonFor(e, (session.wallet?.address as `0x${string}` | undefined) ?? null)}`);
     } finally {
       setBusy(false);
     }

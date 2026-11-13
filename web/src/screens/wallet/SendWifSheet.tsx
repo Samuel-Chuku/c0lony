@@ -14,7 +14,7 @@ import { approveCourier, COURIER, courierReason, sendViaCourier, useCourierAllow
 import { showResult } from "../../lib/result";
 import { useSession } from "../../lib/session";
 import { invalidate } from "../../lib/store";
-import { reasonOf, walletClientFor } from "../../lib/tx";
+import { reasonFor, reasonOf, walletClientFor } from "../../lib/tx";
 import { useXProfile } from "../../lib/useXProfile";
 import { Handle } from "../live/feedText";
 import "./wallet.css";
@@ -140,7 +140,7 @@ export function SendWifSheet({ open, onClose, to: preset }: { open: boolean; onC
         hash,
       });
     } catch (e) {
-      setError(`Not sent · ${reasonOf(e)}`);
+      setError(`Not sent · ${useWifGas ? reasonOf(e) : await reasonFor(e, (me as Address | null) ?? null)}`);
     } finally {
       setBusy(false);
     }
@@ -154,7 +154,7 @@ export function SendWifSheet({ open, onClose, to: preset }: { open: boolean; onC
       await approveCourier(session.wallet, BigInt(cfg.approveAmount));
       void invalidate();
     } catch (e) {
-      setError(`Not turned on · ${reasonOf(e)}`);
+      setError(`Not turned on · ${await reasonFor(e, (me as Address | null) ?? null)}`);
     } finally {
       setEnabling(false);
     }

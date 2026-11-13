@@ -6,7 +6,7 @@ import { approveCourier, COURIER, useCourierAllowance } from "../../lib/courier"
 import { fmtWif } from "../../lib/format";
 import { useSession } from "../../lib/session";
 import { invalidate } from "../../lib/store";
-import { reasonOf } from "../../lib/tx";
+import { reasonFor } from "../../lib/tx";
 
 export function WifGasRow() {
   const session = useSession();
@@ -37,7 +37,7 @@ export function WifGasRow() {
               await approveCourier(session.wallet!, 0n);
               void invalidate();
             } catch (e) {
-              setError(`Not revoked · ${reasonOf(e)}`);
+              setError(`Not revoked · ${await reasonFor(e, session.wallet!.address as `0x${string}`)}`);
             } finally {
               setBusy(false);
             }

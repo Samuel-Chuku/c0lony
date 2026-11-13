@@ -5,6 +5,7 @@ import { useCallback, useRef, useState } from "react";
 import {
   BaseError,
   ContractFunctionRevertedError,
+  InsufficientFundsError,
   createWalletClient,
   custom,
   keccak256,
@@ -65,9 +66,30 @@ const ERRORS: Record<string, string> = {
   AlreadyHasPass: "you already have a Voter's Pass",
 };
 
+/** Shown when a wallet can't pay the ETH gas. Players start on free gas we send them; this says it has run out. */
+export const OUT_OF_GAS =
+  "your free starter gas has run out, so your wallet has no ETH left to pay for this. Add a little ETH to keep playing";
+const GENERIC = "something on the chain refused it. Try again";
+const NO_FUNDS = ["insufficient funds", "insufficient balance", "exceeds balance", "exceeds the balance", "gas required exceeds", "not enough funds", "funds for gas"];
+const saysNoFunds = (text: string) => NO_FUNDS.some((m) => text.includes(m));
+
+/** Gas a heavy player action (a raid launch) uses, with headroom: below this much ETH the wallet counts as out of gas. */
+const HEAVY_GAS = 400_000n;
+
+/** True when the wallet holds less ETH than one heavy action costs at today's gas price. */
+export async function isShortOnGas(account: Address): Promise<boolean> {
+  try {
+    const [balance, price] = await Promise.all([publicClient.getBalance({ address: account }), publicClient.getGasPrice()]);
+    return balance < price * HEAVY_GAS;
+  } catch {
+    return false;
+  }
+}
+
 /** Turns any wallet, RPC or contract error into a short reason for the Blocked line. */
 export function reasonOf(err: unknown): string {
   if (err instanceof BaseError) {
+    if (err.walk((e) => e instanceof InsufficientFundsError) instanceof InsufficientFundsError) return OUT_OF_GAS;
     const reverted = err.walk((e) => e instanceof ContractFunctionRevertedError);
     if (reverted instanceof ContractFunctionRevertedError) {
       const name = reverted.data?.errorName;
@@ -76,12 +98,21 @@ export function reasonOf(err: unknown): string {
     }
     const msg = `${err.shortMessage} ${err.details ?? ""}`.toLowerCase();
     if (msg.includes("rejected") || msg.includes("denied")) return "you cancelled it in your wallet";
-    if (msg.includes("insufficient funds")) return "not enough ETH for gas. Add funds";
+    if (saysNoFunds(msg)) return OUT_OF_GAS;
   }
   const text = String((err as { message?: string })?.message ?? err).toLowerCase();
   if (text.includes("rejected") || text.includes("denied")) return "you cancelled it in your wallet";
+  if (saysNoFunds(text)) return OUT_OF_GAS;
   if (text.includes("fetch") || text.includes("network") || text.includes("timeout")) return "the network didn't answer. Try again";
-  return "something on the chain refused it. Try again";
+  return GENERIC;
+}
+
+/** reasonOf, plus a balance check: wallets word "no gas" in many ways, so an unexplained failure from a wallet
+ *  that can't afford a heavy action is reported as out of gas. */
+export async function reasonFor(err: unknown, account: Address | null): Promise<string> {
+  const reason = reasonOf(err);
+  if (reason === GENERIC && account && (await isShortOnGas(account))) return OUT_OF_GAS;
+  return reason;
 }
 
 export async function walletClientFor(wallet: ConnectedWallet) {
@@ -180,7 +211,7 @@ export function useAction(failVerb: string, opts?: ActionOptions) {
         } catch { /* a result line must never turn a landed transaction into an error */ }
         return hash;
       } catch (err) {
-        const reason = reasonOf(err);
+        const reason = await reasonFor(err, (session.wallet?.address as Address | undefined) ?? null);
         setState({ busy: false, error: `${failVerb} failed · ${reason}`, hash: null });
         play("fail");
         showResult({ title: `${failVerb} failed`, failed: true, lines: advice(reason) });
