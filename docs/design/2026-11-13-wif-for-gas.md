@@ -4,7 +4,7 @@
 - **Tier:** 3. The keeper sends real ETH to players in exchange for WIF.
 - **Goal:** a player whose wallet has run out of ETH can keep playing by paying WIF. They sign one message; the keeper takes the WIF through the existing Courier and sends a small pack of ETH back. The offer only appears when the wallet is short on gas.
 - **Contracts:** none changed, nothing redeployed. It reuses the deployed Courier (`0xABD0…bE31` mainnet) and the keeper's existing starter-gas sender and fee swap.
-- **Status:** approved by Samuel on 2026-11-13, with one addition: the player can decline the offer ("No thanks" hides it for a day on that device). Built; on for testnet, off on mainnet until `GAS_PACK_ENABLED=true` is set there.
+- **Status:** approved by Samuel on 2026-11-13, with one addition: the player can decline the offer ("No thanks" hides it for a day on that device). Built; on for testnet, and on for mainnet since 2026-11-16 (`GAS_PACK_ENABLED=true`, `COURIER_SWAP_BELOW_ETH=0.001`).
 
 ## 0. Why this shape
 
