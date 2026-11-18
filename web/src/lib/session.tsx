@@ -3,7 +3,8 @@
 // players who connect their own wallet keep it and approve in it, by their choice.
 import { PrivyProvider, usePrivy, useWallets, type ConnectedWallet } from "@privy-io/react-auth";
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { CONFIG } from "../config";
+import { CONFIG, CROSS_CHAIN } from "../config";
+import { arbitrum, arc, base, bsc, hyperEvm, mainnet, monad, optimism, unichain } from "viem/chains";
 import { BRAND } from "../brand";
 import { chain } from "./chain";
 import { postProfile } from "./api";
@@ -128,7 +129,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         appearance: { theme: typeof document !== "undefined" && document.documentElement.dataset.theme === "day" ? "light" : "dark", accentColor: "#E7B13C", logo: BRAND.logo, walletChainType: "ethereum-only" },
         embeddedWallets: { ethereum: { createOnLogin: "users-without-wallets" }, showWalletUIs: false },
         defaultChain: chain,
-        supportedChains: [chain],
+        // Robinhood Chain, plus the chains Get WIF can bring WIF in from (the wallet switches there to sign)
+        supportedChains: CROSS_CHAIN.enabled ? [chain, base, arbitrum, mainnet, optimism, unichain, bsc, monad, hyperEvm, arc] : [chain],
         walletConnectCloudProjectId: CONFIG.walletConnectProjectId,
       }}
     >

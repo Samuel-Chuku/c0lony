@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { formatEther, parseEther } from "viem";
 import { BottomSheet, BrandName, Button, Chip, ChipRow, Wif } from "../../ui";
-import { CONFIG, NETWORK, NETWORK_NAME } from "../../config";
+import { CONFIG, CROSS_CHAIN, NETWORK, NETWORK_NAME } from "../../config";
 import { fmtDuration, fmtEth, fmtWif } from "../../lib/format";
 import { useBalances, usePrices, useGameConfig, useNow } from "../../lib/game";
 import { useSession } from "../../lib/session";
@@ -13,6 +13,7 @@ import { invalidate } from "../../lib/store";
 import { showResult } from "../../lib/result";
 import { useAction } from "../../lib/tx";
 import { buildSwap, FEE_BPS, getQuote, type Quote } from "./kyber";
+import { CrossChainSwap } from "./CrossChain";
 import "./wallet.css";
 
 const FAUCET = "https://faucet.testnet.chain.robinhood.com"; // recorded in docs/DEPLOYMENTS.md
@@ -28,6 +29,20 @@ export function GetWifSheet({ open, onClose }: { open: boolean; onClose: () => v
 
 // Players on their own wallet can also buy on Pons, which opens in a new tab. The in-game wallet only swaps here.
 function BuyChoice() {
+  const [from, setFrom] = useState<"robinhood" | "other">("robinhood");
+  if (!CROSS_CHAIN.enabled) return <HomeSwap />;
+  return (
+    <>
+      <ChipRow>
+        <Chip selected={from === "robinhood"} onClick={() => setFrom("robinhood")}>With ETH on Robinhood</Chip>
+        <Chip selected={from === "other"} onClick={() => setFrom("other")}>From another chain</Chip>
+      </ChipRow>
+      {from === "robinhood" ? <HomeSwap /> : <CrossChainSwap />}
+    </>
+  );
+}
+
+function HomeSwap() {
   const session = useSession();
   const external = !!session.address && !session.embedded && !!CONFIG.ponsWifUrl;
   if (!external) return <Swap />;
@@ -268,7 +283,6 @@ function Swap() {
         {armed ? "Swap anyway" : "Get WIF"}
       </Button>
       {swap.hash ? <a className="c0-wsheet__note" href={txUrl(swap.hash)} target="_blank" rel="noreferrer">Swapped · view transaction</a> : null}
-      <p className="c0-wsheet__note">Prefer another route? <a href="https://jumper.exchange/" target="_blank" rel="noreferrer">Bridge ETH in with LI.FI</a></p>
     </div>
   );
 }
