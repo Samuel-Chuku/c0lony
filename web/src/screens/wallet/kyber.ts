@@ -24,7 +24,7 @@ async function unwrap<T>(res: Response): Promise<T> {
   return body.data;
 }
 
-export async function getQuote(amountInWei: bigint, signal?: AbortSignal): Promise<Quote> {
+export async function getQuote(amountInWei: bigint, signal?: AbortSignal, excludedSources: string[] = []): Promise<Quote> {
   const params = new URLSearchParams({
     tokenIn: NATIVE,
     tokenOut: WIF,
@@ -35,6 +35,7 @@ export async function getQuote(amountInWei: bigint, signal?: AbortSignal): Promi
     feeReceiver: NETWORK.contracts.treasury,
     source: CONFIG.kyber.clientId,
   });
+  if (excludedSources.length) params.set("excludedSources", excludedSources.join(","));
   const res = await fetch(`${CONFIG.kyber.apiUrl}/routes?${params}`, { headers, signal });
   const data = await unwrap<{ routerAddress: string; routeSummary: RouteSummary }>(res);
   const s = data.routeSummary;
@@ -58,4 +59,10 @@ export async function buildSwap(quote: Quote, wallet: string): Promise<Built> {
   });
   const d = await unwrap<{ routerAddress: string; data: string; transactionValue: string }>(res);
   return { to: d.routerAddress as `0x${string}`, data: d.data as `0x${string}`, value: BigInt(d.transactionValue) };
+}
+
+/** The pool types a quote routes through (e.g. "uniswap-v4-fee"), to skip them on a retry. */
+export function sourcesOf(quote: Quote): string[] {
+  const route = (quote.routeSummary.route ?? []) as { exchange?: string }[][];
+  return [...new Set(route.flat().map((h) => h.exchange).filter((e): e is string => !!e))];
 }

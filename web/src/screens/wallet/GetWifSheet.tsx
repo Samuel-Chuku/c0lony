@@ -11,8 +11,10 @@ import { txUrl } from "../../lib/chain";
 import { gasProgressLabel, useStarterGas } from "../../lib/starterGas";
 import { invalidate } from "../../lib/store";
 import { showResult } from "../../lib/result";
-import { useAction } from "../../lib/tx";
-import { buildSwap, FEE_BPS, getQuote, type Quote } from "./kyber";
+import { OUT_OF_GAS, reasonOf, useAction } from "../../lib/tx";
+import { publicClient } from "../../lib/chain";
+import type { Address } from "viem";
+import { buildSwap, FEE_BPS, getQuote, sourcesOf, type Built, type Quote } from "./kyber";
 import { CrossChainSwap } from "./CrossChain";
 import "./wallet.css";
 
@@ -237,8 +239,28 @@ function Swap() {
     setBuilding(true);
     setSError(null);
     try {
-      const tx = await buildSwap(quote, session.address);
+      // Test the built swap before the wallet is asked to sign. KyberSwap sometimes quotes a pool that can't fill
+      // (seen 2026-11-18 on a Uniswap v4 pool: quoted ~20% high, reverted "Return amount is not enough"). If the test
+      // fails, re-quote once without that route's pool types; if that fails too, nothing is sent.
+      const me = session.address as Address;
+      const works = async (t: Built): Promise<true | "gas" | false> => {
+        try { await publicClient.call({ account: me, to: t.to, data: t.data, value: t.value }); return true; }
+        catch (e) { return reasonOf(e) === OUT_OF_GAS ? "gas" : false; }
+      };
+      let tx = await buildSwap(quote, me);
+      let ok = await works(tx);
+      if (ok === false) {
+        const retry = await getQuote(wei, undefined, sourcesOf(quote));
+        setQuote(retry);
+        tx = await buildSwap(retry, me);
+        ok = await works(tx);
+      }
       setBuilding(false);
+      if (ok === false) {
+        setSError("Not swapped · The swap route went stale. Nothing was sent, try again in a moment");
+        return;
+      }
+      // ok === "gas": let the send run so the player gets the out-of-gas message and the WIF-for-gas offer
       await swap.run((client) => client.sendTransaction({ to: tx.to, data: tx.data, value: tx.value }));
     } catch (e) {
       setBuilding(false);
