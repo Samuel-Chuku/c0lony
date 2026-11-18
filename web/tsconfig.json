@@ -33,11 +33,14 @@
     ".next-landing/types/**/*.ts",
     ".next-landing/dev/types/**/*.ts",
     ".next-app/types/**/*.ts",
-    ".next-app/dev/types/**/*.ts"
+    ".next-app/dev/types/**/*.ts",
+    ".next-dev-s1/types/**/*.ts",
+    ".next-dev-s1/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",
     "functions",
-    "migrations"
+    "migrations",
+    "scripts"
   ]
 }

@@ -5,6 +5,7 @@ import { Screen } from "../../shell/Screen";
 import { useColonies } from "../../lib/game";
 import { useSession } from "../../lib/session";
 import { LeaderRow } from "./LeaderRow";
+import { PastSeasons } from "../history/SeasonResults";
 
 export function LeaderboardScreen() {
   const session = useSession();
@@ -51,6 +52,7 @@ export function LeaderboardScreen() {
           ) : null}
         </>
       )}
+      <PastSeasons />
     </Screen>
   );
 }

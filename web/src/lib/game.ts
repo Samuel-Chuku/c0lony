@@ -95,7 +95,9 @@ export function useSeason() {
         publicClient.readContract({ ...game, functionName: "seasonEnd", args: [season] }),
         publicClient.readContract({ ...pot, functionName: "seasons", args: [season] }),
       ]);
-      return { season, start: Number(start), end: Number(end), pot: s[0] };
+      // a season nobody has played yet has no stored start: it starts when the one before it ended
+      const begun = start === 0n && season > 1 ? await publicClient.readContract({ ...game, functionName: "seasonEnd", args: [season - 1] }) : start;
+      return { season, start: Number(begun), end: Number(end), pot: s[0] };
     },
     60_000,
   );

@@ -1,0 +1,54 @@
+.c0-hs { display: flex; flex-direction: column; gap: var(--c0-s4); }
+.c0-hs__sec { display: flex; flex-direction: column; gap: var(--c0-s2); }
+.c0-hs__hero, .c0-hs__champ { display: flex; flex-direction: column; align-items: flex-start; gap: var(--c0-s2); }
+.c0-hs__title { margin: 0; font-family: var(--c0-f-display); font-weight: 400; font-size: 48px; line-height: var(--c0-lh-tight); letter-spacing: 2px; }
+.c0-hs__dates, .c0-hs__sub, .c0-hs__proof, .c0-hs__note { margin: 0; font-size: var(--c0-fs-caption); color: var(--c0-sub); line-height: var(--c0-lh-body); }
+.c0-hs__sub { color: var(--c0-ink); font-size: var(--c0-fs-body); }
+.c0-hs__pot, .c0-hs__champamt { background: var(--c0-gold); color: var(--c0-ink); border: var(--c0-bw-thin) solid var(--c0-ink); padding: var(--c0-s1) var(--c0-s3); font-family: var(--c0-f-display); font-size: 40px; line-height: var(--c0-lh-tight); }
+.c0-hs__tx { color: var(--c0-ink); font-family: var(--c0-f-display); font-size: 18px; white-space: nowrap; text-underline-offset: 2px; min-height: 32px; display: inline-flex; align-items: center; }
+.c0-hs__muted { color: var(--c0-sub); font-size: var(--c0-fs-caption); }
+.c0-hs__who { display: inline-flex; align-items: center; gap: var(--c0-s2); min-width: 0; }
+.c0-hs__whoname { display: flex; flex-direction: column; min-width: 0; text-align: left; }
+.c0-hs__whoname b { font-family: var(--c0-f-display); font-weight: 400; font-size: 20px; line-height: var(--c0-lh-tight); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.c0-hs__whoname span { font-size: var(--c0-fs-caption); color: var(--c0-sub); }
+.c0-hs__btns { display: flex; align-items: center; gap: var(--c0-s4); flex-wrap: wrap; }
+.c0-hs__pay { list-style: none; margin: var(--c0-s2) 0 0; padding: 0; display: flex; flex-direction: column; }
+.c0-hs__payrow { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; grid-template-areas: "rank who score" "rank amt amt"; gap: var(--c0-s1) var(--c0-s2); align-items: center; padding: var(--c0-s2) 0; border-bottom: 2px dashed var(--c0-rule); }
+.c0-hs__payrow:last-child { border-bottom: 0; }
+.c0-hs__rank { grid-area: rank; font-family: var(--c0-f-display); font-size: 28px; text-align: center; }
+.c0-hs__paywho { grid-area: who; min-width: 0; min-height: 44px; }
+.c0-hs__payscore { grid-area: score; display: flex; flex-direction: column; align-items: flex-end; }
+.c0-hs__payscore b { font-family: var(--c0-f-display); font-weight: 400; font-size: 22px; line-height: var(--c0-lh-tight); }
+.c0-hs__payscore span { font-size: var(--c0-fs-caption); color: var(--c0-sub); }
+.c0-hs__payamt { grid-area: amt; display: flex; align-items: center; justify-content: space-between; gap: var(--c0-s2); font-family: var(--c0-f-display); font-size: 20px; }
+.c0-hs__awards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: var(--c0-s3); }
+.c0-hs__award { display: flex; flex-direction: column; align-items: flex-start; gap: var(--c0-s1); padding: var(--c0-s3); background: var(--c0-paper); color: var(--c0-ink); border: var(--c0-bw) solid var(--c0-ink); box-shadow: var(--c0-shadow-card); text-align: left; text-decoration: none; font: inherit; cursor: pointer; }
+.c0-hs__awardval { font-family: var(--c0-f-display); font-weight: 400; font-size: 22px; line-height: var(--c0-lh-tight); }
+.c0-hs__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: var(--c0-s2); }
+.c0-hs__num { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: var(--c0-s2) var(--c0-s3); background: var(--c0-loam); color: var(--c0-paper); border: var(--c0-bw) solid var(--c0-ink); box-shadow: var(--c0-shadow-card); }
+.c0-hs__num b { font-family: var(--c0-f-display); font-weight: 400; font-size: 32px; line-height: var(--c0-lh-tight); }
+.c0-hs__num span { font-size: var(--c0-fs-caption); color: var(--c0-paper); opacity: 0.85; }
+.c0-hs__flow { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: var(--c0-s3); margin-bottom: var(--c0-s3); }
+.c0-hs__flow > div { display: flex; flex-direction: column; align-items: flex-start; gap: var(--c0-s1); font-family: var(--c0-f-display); font-size: 22px; }
+.c0-hs__list { list-style: none; margin: 0 0 var(--c0-s2); padding: 0; display: flex; flex-direction: column; }
+.c0-hs__list li { display: flex; justify-content: space-between; align-items: center; gap: var(--c0-s2); padding: var(--c0-s1) 0; border-bottom: 2px dashed var(--c0-rule); min-height: 36px; font-size: 14px; }
+.c0-hs__list li:last-child { border-bottom: 0; }
+.c0-hs__raids, .c0-hs__time { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.c0-hs__raid { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--c0-s2); align-items: center; padding: var(--c0-s2) 0; border-bottom: 2px dashed var(--c0-rule); }
+.c0-hs__raid:last-child, .c0-hs__time li:last-child { border-bottom: 0; }
+.c0-hs__out { font-family: var(--c0-f-display); font-size: 16px; padding: 0 var(--c0-s2); border: var(--c0-bw-thin) solid var(--c0-ink); color: var(--c0-red-text); background: var(--c0-paper); min-width: 72px; text-align: center; }
+.c0-hs__out--won { background: var(--c0-red); color: var(--c0-paper-hi); }
+.c0-hs__raidtext { display: flex; flex-direction: column; min-width: 0; font-size: 14px; }
+.c0-hs__raidtext b { font-weight: 400; font-family: var(--c0-f-display); font-size: 18px; }
+.c0-hs__time li { display: grid; grid-template-columns: 132px minmax(0, 1fr) auto; gap: var(--c0-s2); align-items: center; padding: var(--c0-s1) 0; border-bottom: 2px dashed var(--c0-rule); font-size: 14px; }
+.c0-hs__colhead { display: flex; justify-content: space-between; align-items: center; gap: var(--c0-s2); margin-bottom: var(--c0-s2); }
+.c0-hs__h3 { margin: var(--c0-s3) 0 0; font-family: var(--c0-f-display); font-weight: 400; font-size: 20px; }
+.c0-hs__seasonlink > span:first-child { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--c0-s1); }
+.c0-hs__house { font-size: var(--c0-fs-caption); }
+/* The banner on every tab after a season ends */
+.c0-seasonbar { display: flex; align-items: center; justify-content: space-between; gap: var(--c0-s3); background: var(--c0-paper); color: var(--c0-ink); border-bottom: var(--c0-bw) solid var(--c0-ink); padding: var(--c0-s2) var(--c0-s4); box-sizing: border-box; }
+.c0-seasonbar__text { display: flex; flex-direction: column; min-width: 0; }
+.c0-seasonbar__text strong { font-family: var(--c0-f-display); font-weight: 400; font-size: 22px; line-height: var(--c0-lh-tight); }
+.c0-seasonbar__text .c0-hand { color: var(--c0-sub); }
+.c0-seasonbar .c0-btn-wrap { flex: none; }
+@media (max-width: 420px) { .c0-hs__time li { grid-template-columns: minmax(0, 1fr) auto; } .c0-hs__time li > span:first-child { grid-column: 1 / -1; } }

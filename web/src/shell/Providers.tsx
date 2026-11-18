@@ -7,6 +7,7 @@ import { registerServiceWorker } from "../lib/push";
 import { MenuDrawer } from "./MenuDrawer";
 import { WelcomeBack } from "./WelcomeBack";
 import { VotePrompt, VoteSheet } from "./Vote";
+import { SeasonPrompt } from "./SeasonNews";
 import { ResultModal } from "./ResultModal";
 import { RaidWatcher } from "./RaidWatcher";
 import { GuideHost } from "./GuideHost";
@@ -160,6 +161,7 @@ export function Providers({ children }: { children: ReactNode }) {
         <QueenAlert />
         <VoteSheet />
         <VotePrompt />
+        <SeasonPrompt />
         <ResultModal />
         <RaidWatcher />
         <GuideHost />

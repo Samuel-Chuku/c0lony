@@ -8,6 +8,7 @@ import { Status, estimateShare, seasonDays, useColonies, useNow, useSeason } fro
 import { useSession } from "../../lib/session";
 import { LeaderRow } from "../leaderboard/LeaderRow";
 import { ClaimButton } from "../profile/ClaimButton";
+import { LastSeasonCard } from "../history/SeasonResults";
 import "./season.css";
 
 const byScore = (a: { score: bigint; id: bigint }, b: { score: bigint; id: bigint }) =>
@@ -44,6 +45,8 @@ export function SeasonScreen() {
           Half the pot is shared by score among every colony still alive at the end that was fed at least twice. The other half is shared by score among the top quarter.
         </p>
       </Card>
+
+      <LastSeasonCard />
 
       <h2 className="c0-ss__h">YOUR STANDING</h2>
       {mine ? (
@@ -87,6 +90,7 @@ export function SeasonScreen() {
       <Link className="c0-ss__more" href="/leaderboard">Full leaderboard ›</Link>
 
       <div className="c0-ss__links">
+        <Link className="c0-ss__link" href="/seasons"><span>Season history</span><span aria-hidden="true">›</span></Link>
         <Link className="c0-ss__link" href="/how-to-play"><span>How to play</span><span aria-hidden="true">›</span></Link>
         <Link className="c0-ss__link" href="/burns"><span>Burns</span><span aria-hidden="true">›</span></Link>
         <Link className="c0-ss__link" href="/invite"><span>Invite friends</span><span aria-hidden="true">›</span></Link>
