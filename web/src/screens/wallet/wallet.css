@@ -38,6 +38,22 @@
 .c0-sendto__addr { font-size: var(--c0-fs-caption); color: var(--c0-sub); overflow-wrap: anywhere; }
 .c0-sendto__meta { font-size: var(--c0-fs-caption); color: var(--c0-ink); }
 
-/* Get WIF from another chain: nine chains in a 3 x 3 grid so every name fits */
-.c0-xchain__chains { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--c0-s2); }
-.c0-xchain__chains > * { width: 100%; min-width: 0; }
+/* Get WIF from another chain: chain grid, then that chain's coins, then one card showing the choice */
+.c0-xpick__chains { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--c0-s2); }
+.c0-xpick__chain { display: flex; flex-direction: column; align-items: center; gap: var(--c0-s1); padding: var(--c0-s2) var(--c0-s1); background: var(--c0-paper-hi); color: var(--c0-ink); border: var(--c0-bw) solid var(--c0-ink); box-shadow: var(--c0-shadow-card); font-family: var(--c0-f-display); font-size: 18px; cursor: pointer; min-height: 76px; }
+.c0-xpick__chain img, .c0-xpick__token img, .c0-xpick__logo img:first-child { border-radius: 50%; }
+.c0-xpick__head { display: flex; align-items: center; gap: var(--c0-s2); font-size: var(--c0-fs-body); color: var(--c0-sub); }
+.c0-xpick__head img { border-radius: 50%; }
+.c0-xpick__tokens { display: flex; flex-direction: column; gap: var(--c0-s2); }
+.c0-xpick__token { display: flex; align-items: center; gap: var(--c0-s3); padding: var(--c0-s2) var(--c0-s3); background: var(--c0-paper-hi); color: var(--c0-ink); border: var(--c0-bw) solid var(--c0-ink); box-shadow: var(--c0-shadow-card); cursor: pointer; text-align: left; min-height: 56px; }
+.c0-xpick__sym { flex: 1; font-family: var(--c0-f-display); font-size: 22px; }
+.c0-xpick__sym small { font-family: var(--c0-f-body); font-size: var(--c0-fs-caption); color: var(--c0-sub); }
+.c0-xpick__bal { font-size: var(--c0-fs-body); color: var(--c0-sub); }
+.c0-xpick__picked { display: flex; align-items: center; gap: var(--c0-s3); width: 100%; padding: var(--c0-s3); background: var(--c0-paper-hi); color: var(--c0-ink); border: var(--c0-bw) solid var(--c0-ink); box-shadow: var(--c0-shadow-card); cursor: pointer; text-align: left; }
+.c0-xpick__logo { position: relative; flex: none; width: 44px; height: 44px; }
+.c0-xpick__badge { position: absolute; right: -2px; bottom: -2px; border: 2px solid var(--c0-paper-hi); border-radius: 50%; background: var(--c0-paper-hi); }
+.c0-xpick__what { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.c0-xpick__what strong { font-family: var(--c0-f-display); font-weight: 400; font-size: 24px; line-height: 1; }
+.c0-xpick__what small { font-size: var(--c0-fs-caption); color: var(--c0-sub); }
+.c0-xpick__change { font-family: var(--c0-f-display); font-size: 18px; flex: none; }
+.c0-xpick__chain:focus-visible, .c0-xpick__token:focus-visible, .c0-xpick__picked:focus-visible { outline: var(--c0-focus); outline-offset: var(--c0-focus-offset); }

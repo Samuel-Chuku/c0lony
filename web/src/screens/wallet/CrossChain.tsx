@@ -3,7 +3,7 @@
 // WIF lands in the same wallet on Robinhood Chain. A transfer in flight is tracked through reloads.
 import { useEffect, useRef, useState } from "react";
 import { formatUnits, parseUnits, type Address } from "viem";
-import { Button, Chip, ChipRow, Wif } from "../../ui";
+import { Button, Wif } from "../../ui";
 import { CROSS_CHAIN } from "../../config";
 import { fmtWif, shortAddress } from "../../lib/format";
 import { useSession } from "../../lib/session";
@@ -16,6 +16,10 @@ import {
   balanceOf, explorerTx, getLifiQuote, lifiStatus, loadPending, NATIVE, savePending, sendLifi,
   type CrossChain as Src, type CrossToken, type LifiQuote, type Pending, type SendStep,
 } from "../../lib/lifi";
+
+const CHAIN_FILE: Record<number, string> = { 1: "ethereum", 10: "optimism", 56: "bsc", 130: "unichain", 143: "monad", 999: "hyperevm", 5042: "arc", 8453: "base", 42161: "arbitrum" };
+const chainLogo = (id: number) => `/xchain/chain-${CHAIN_FILE[id]}.svg`;
+const tokenLogo = (symbol: string) => symbol === "USDT0" ? "/xchain/token-usdt0.png" : `/xchain/token-${symbol.toLowerCase()}.svg`;
 
 const STEP: Record<SendStep, string> = { switching: "Switching network…", approving: "Approving…", sending: "Sending…" };
 
@@ -43,6 +47,8 @@ export function CrossChainSwap() {
   const [sError, setSError] = useState<string | null>(null);
   const [pending, setPending] = useState<Pending | null>(null);
   const [copied, setCopied] = useState(false);
+  const [picking, setPicking] = useState<"chain" | "token" | null>("chain");
+  const [listBal, setListBal] = useState<Record<string, bigint | null>>({});
   const amount = parseAmount(text, token.decimals);
 
   // a transfer from an earlier visit keeps being tracked
@@ -103,12 +109,19 @@ export function CrossChainSwap() {
     return () => { stop = true; clearInterval(id); };
   }, [pending, me]);
 
-  const pickChain = (c: Src) => {
-    setSrc(c);
-    const same = c.tokens.find((t) => t.symbol === token.symbol);
-    setToken(same ?? c.tokens[0]);
-    setText("");
-  };
+  // balances of every coin on the chosen chain, for the coin list
+  useEffect(() => {
+    if (picking !== "token" || !me) return;
+    let live = true;
+    setListBal({});
+    for (const t of src.tokens) {
+      balanceOf(src, t, me).then((b) => live && setListBal((m) => ({ ...m, [t.symbol]: b }))).catch(() => live && setListBal((m) => ({ ...m, [t.symbol]: null })));
+    }
+    return () => { live = false; };
+  }, [picking, src, me]);
+
+  const pickChain = (c: Src) => { setSrc(c); setPicking(c.tokens.length === 1 ? null : "token"); if (c.tokens.length === 1) setToken(c.tokens[0]); setText(""); };
+  const pickToken = (t: CrossToken) => { setToken(t); setPicking(null); setText(""); };
   const max = () => {
     if (bal === null) return;
     const v = token.address === NATIVE ? (bal * 97n) / 100n : bal; // leave a little of the gas token for gas
@@ -154,14 +167,47 @@ export function CrossChainSwap() {
         </div>
       ) : null}
 
-      <div className="c0-wd__label"><span>From</span><span>gas there: {src.gas}</span></div>
-      <div className="c0-xchain__chains">
-        {CROSS_CHAIN.chains.map((c) => <Chip key={c.id} selected={c.id === src.id} onClick={() => pickChain(c)}>{c.name}</Chip>)}
-      </div>
-      <ChipRow>
-        {src.tokens.map((t) => <Chip key={t.symbol} selected={t.symbol === token.symbol} onClick={() => { setToken(t); setText(""); }}>{t.symbol}</Chip>)}
-      </ChipRow>
+      {picking === "chain" ? (
+        <>
+          <div className="c0-wd__label"><span>Step 1 · pick the chain your coins are on</span></div>
+          <div className="c0-xpick__chains">
+            {CROSS_CHAIN.chains.map((c) => (
+              <button key={c.id} type="button" className="c0-xpick__chain" onClick={() => pickChain(c)}>
+                <img src={chainLogo(c.id)} alt="" width={36} height={36} />
+                <span>{c.name}</span>
+              </button>
+            ))}
+          </div>
+        </>
+      ) : picking === "token" ? (
+        <>
+          <div className="c0-xpick__head">
+            <button type="button" className="c0-wd__mini" onClick={() => setPicking("chain")}>‹ Chains</button>
+            <img src={chainLogo(src.id)} alt="" width={24} height={24} />
+            <span>Step 2 · pick a coin on {src.name}</span>
+          </div>
+          <div className="c0-xpick__tokens">
+            {src.tokens.map((t) => (
+              <button key={t.symbol} type="button" className="c0-xpick__token" onClick={() => pickToken(t)}>
+                <img src={tokenLogo(t.symbol)} alt="" width={36} height={36} />
+                <span className="c0-xpick__sym">{t.symbol}{t.address === NATIVE || (src.id === 5042 && t.symbol === "USDC") ? <small> · gas token</small> : null}</span>
+                <span className="c0-xpick__bal">{!me ? "" : listBal[t.symbol] === undefined ? "…" : listBal[t.symbol] === null ? "?" : show(listBal[t.symbol]!, t.decimals)}</span>
+              </button>
+            ))}
+          </div>
+        </>
+      ) : (
+        <button type="button" className="c0-xpick__picked" onClick={() => setPicking("chain")} aria-label={`Paying with ${token.symbol} on ${src.name}. Change`}>
+          <span className="c0-xpick__logo">
+            <img src={tokenLogo(token.symbol)} alt="" width={40} height={40} />
+            <img className="c0-xpick__badge" src={chainLogo(src.id)} alt="" width={20} height={20} />
+          </span>
+          <span className="c0-xpick__what"><strong>{token.symbol} on {src.name}</strong><small>gas there: {src.gas}</small></span>
+          <span className="c0-xpick__change">Change ›</span>
+        </button>
+      )}
 
+      {picking ? null : (<>
       <div className="c0-wd__label">
         <span>Amount</span>
         <span>You have {bal === null ? "…" : show(bal, token.decimals)} {token.symbol} on {src.name}</span>
@@ -193,6 +239,9 @@ export function CrossChainSwap() {
       ) : null}
       {qError ? <div className="c0-blocked" role="alert">{qError}</div> : null}
 
+      </>)}
+
+      {picking ? null : (<>
       <Button variant="wif" fullWidth busy={step ? STEP[step] : undefined}
         disabledReason={reason ?? (quote ? undefined : quoting ? "Finding a route" : "No route yet")}
         error={sError ?? undefined} onClick={() => void go()}>
@@ -202,6 +251,7 @@ export function CrossChainSwap() {
         You sign on {src.name} and need a little {src.gas} there for gas. The WIF arrives in this same wallet on Robinhood Chain. Routed by LI.FI; C0LONY charges nothing.
         {me ? <> Your wallet on Robinhood Chain: <a href={addressUrl(me)} target="_blank" rel="noreferrer">{shortAddress(me)}</a>.</> : null}
       </p>
+      </>)}
     </div>
   );
 }
