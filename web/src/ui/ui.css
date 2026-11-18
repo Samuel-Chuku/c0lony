@@ -457,3 +457,4 @@ a { color: var(--c0-fg); }
 .c0-votebar__text strong { font-family: var(--c0-f-display); font-weight: 400; font-size: 22px; line-height: var(--c0-lh-tight); }
 .c0-votebar__text .c0-hand { color: var(--c0-sub); }
 .c0-votebar .c0-btn-wrap { flex: none; }
+.c0-votelink { align-self: flex-start; display: inline-flex; align-items: center; min-height: var(--c0-tap); color: var(--c0-ink); font-size: var(--c0-fs-body); text-decoration: underline; }

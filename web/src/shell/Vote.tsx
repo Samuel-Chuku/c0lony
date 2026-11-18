@@ -28,7 +28,10 @@ export function VoteSheet() {
     success: () => ({
       title: "Your votes are in",
       tone: "wif",
-      lines: [`${fmtInt(Number(amountOf(text) / E18))} WIF burned for C0LONY. Thank you!`, "The total on the World is Flat page updates in a minute or so."],
+      lines: [
+        `${fmtInt(Number(amountOf(text) / E18))} WIF burned for C0LONY. Thank you!`,
+        <>The total updates in a minute or so on the <a href={VOTE?.page} target="_blank" rel="noreferrer">World is Flat vote page ›</a></>,
+      ],
     }),
   });
   useEffect(() => { if (!isOpen) { setText(""); setStep(null); action.reset(); } }, [isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -68,6 +71,7 @@ export function VoteSheet() {
       <p className="c0-wsheet__note">
         {amount > 0n ? `${fmtInt(Number(amount / E18))} votes. ` : ""}Votes burn WIF for good and can't be undone. Two wallet steps: approve, then vote. Voting closes at {closesAt}.
       </p>
+      <a className="c0-votelink" href={VOTE.page} target="_blank" rel="noreferrer">See C0LONY's votes on the World is Flat page ›</a>
       <Button variant="wif" fullWidth disabledReason={reason ?? undefined} error={action.error ?? undefined}
         busy={action.busy ? (step === "approving" ? "Approving WIF (1 of 2)…" : "Voting (2 of 2)…") : undefined} onClick={() => void vote()}>
         Vote{amount > 0n ? ` · ${fmtWif(amount)} WIF` : ""}
