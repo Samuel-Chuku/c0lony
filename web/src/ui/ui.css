@@ -450,3 +450,10 @@ a { color: var(--c0-fg); }
 .c0-raidstrip:hover .c0-raidstrip__go { transform: translate(1px, 1px); box-shadow: 1px 1px 0 var(--c0-ink); }
 .c0-potstrip__link { color: inherit; text-decoration: none; }
 .c0-potstrip__link:hover .c0-potstrip__cap { text-decoration: underline; }
+
+/* World is Flat final: the vote strip on every tab (shell/Vote.tsx). Paper, with the gold Vote button since it burns WIF. */
+.c0-votebar { display: flex; align-items: center; justify-content: space-between; gap: var(--c0-s3); background: var(--c0-paper); color: var(--c0-ink); border-bottom: var(--c0-bw) solid var(--c0-ink); padding: var(--c0-s2) var(--c0-s4); box-sizing: border-box; }
+.c0-votebar__text { display: flex; flex-direction: column; min-width: 0; }
+.c0-votebar__text strong { font-family: var(--c0-f-display); font-weight: 400; font-size: 22px; line-height: var(--c0-lh-tight); }
+.c0-votebar__text .c0-hand { color: var(--c0-sub); }
+.c0-votebar .c0-btn-wrap { flex: none; }

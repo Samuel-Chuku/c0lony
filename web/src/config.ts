@@ -36,6 +36,15 @@ export const NETWORKS = {
       wif: "0x5173b8eA6923c2d40267890D45C46a3480954773",
       courier: "0xABD01eb9A641A25aB69dBaDe0C25F8386153bE31", // WIF sends with gas paid in WIF (2026-11-10)
     },
+    // World is Flat final: vote for C0LONY from inside the game (2026-11-18). From worldisflat.fun/build/api/vote-window
+    // and /build/api/projects/c0lony. vote(submissionId, amount, deadline) burns the WIF; a vote mined after the
+    // deadline reverts and burns nothing. Remove once the final is over.
+    vote: {
+      contract: "0xd1b711917a405782da2ec650a0ee4711a76a5535",
+      projectId: 43,
+      deadline: 1795022999, // 2026-11-18 17:29:59 UTC, the last second a vote counts
+      page: "https://worldisflat.fun/build/projects/c0lony/vote",
+    },
   },
 } as const;
 

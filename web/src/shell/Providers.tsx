@@ -6,6 +6,7 @@ import { SessionProvider } from "../lib/session";
 import { registerServiceWorker } from "../lib/push";
 import { MenuDrawer } from "./MenuDrawer";
 import { WelcomeBack } from "./WelcomeBack";
+import { VotePrompt, VoteSheet } from "./Vote";
 import { ResultModal } from "./ResultModal";
 import { RaidWatcher } from "./RaidWatcher";
 import { GuideHost } from "./GuideHost";
@@ -157,6 +158,8 @@ export function Providers({ children }: { children: ReactNode }) {
         <ShortcutsHelp open={keys} onClose={() => setKeys(false)} />
         <WelcomeBack />
         <QueenAlert />
+        <VoteSheet />
+        <VotePrompt />
         <ResultModal />
         <RaidWatcher />
         <GuideHost />

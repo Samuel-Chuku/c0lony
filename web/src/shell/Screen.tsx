@@ -16,6 +16,7 @@ import { useShell } from "./Providers";
 import { SideRail, tabHref } from "./SideRail";
 import { SoundToggle } from "./SoundToggle";
 import { RaidStrip, TodoBell } from "./TodoBell";
+import { VoteBanner } from "./Vote";
 
 export type ScreenProps = {
   title?: ReactNode;
@@ -69,6 +70,7 @@ export function Screen({ title, sub, tab, back, header, wide, children }: Screen
         />
       )}
       {tab !== "raids" ? <RaidStrip /> : null}
+      <VoteBanner />
       {!shell.online && (
         <BlockedStrip>
           Offline · showing your colony{shell.lastOnline ? ` as of ${timeOf(shell.lastOnline)}` : ""}
